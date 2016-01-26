@@ -1,0 +1,3 @@
+*.msi
+installer/osvrRenderManager-cache/*
+

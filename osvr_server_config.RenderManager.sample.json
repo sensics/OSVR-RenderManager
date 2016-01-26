@@ -1,0 +1,37 @@
+{
+  "plugins": [
+    "com_osvr_VideoBasedHMDTracker" /* This is a manual-load plugin, so we must explicitly list it */
+  ],
+  "drivers": [
+    {
+      "plugin": "org_opengoggles_bundled_Multiserver",
+      "driver": "YEI_3Space_Sensor",
+      "params": {
+        "port": "COM3"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "destination": "/me/hands/left",
+      "source": {
+        "changeBasis": {
+          "x": "x",
+          "y": "z",
+          "z": "-y"
+        },
+        "child": {
+          "tracker": "/org_opengoggles_bundled_Multiserver/YEI_3Space_Sensor0",
+          "sensor": 0
+        }
+      }
+    },
+    {
+      "destination": "/me/head",
+      "source": {
+        "tracker": "/com_osvr_VideoBasedHMDTracker/TrackedCamera0_0",
+        "sensor": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,356 @@
+/** @file
+    @brief Latency test program that uses the OSVR direct-to-display interface
+           and D3D to render a scene with low latency.
+
+    @date 2015
+
+    @author
+    Russ Taylor working through ReliaSolve.com for Sensics, Inc.
+    <http://sensics.com/osvr>
+*/
+
+// Copyright 2015 Sensics, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Internal Includes
+#include <osvr/ClientKit/Context.h>
+#include <osvr/ClientKit/Interface.h>
+#include <osvr/RenderKit/RenderManager.h>
+#include <quat.h>
+
+// Library/third-party includes
+#include <windows.h>
+#include <initguid.h>
+#include <d3d11.h>
+#include <wrl.h>
+// - none
+
+// Standard includes
+#include <iostream>
+#include <string>
+#include <stdlib.h> // For exit()
+
+// This must come after we include <d3d11.h> so its pointer types are defined.
+#include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+
+// Includes from our own directory
+#include "pixelshader.h"
+#include "vertexshader.h"
+
+// Static global variables we use for rendering.
+static Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
+static Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
+
+FLOAT red = 1, green = 1, blue = 1;
+double TRANSLATION_THRESHOLD = 0.002;
+double ROTATION_THRESHOLD = 0.05;
+
+// Set to true when it is time for the application to quit.
+// Handlers below that set it to true when the user causes
+// any of a variety of events so that we shut down the system
+// cleanly.  This only works on Windows, but so does D3D...
+static bool quit = false;
+
+#ifdef _WIN32
+// Note: On Windows, this runs in a different thread from
+// the main application.
+static BOOL CtrlHandler(DWORD fdwCtrlType) {
+    switch (fdwCtrlType) {
+    // Handle the CTRL-C signal.
+    case CTRL_C_EVENT:
+    // CTRL-CLOSE: confirm that the user wants to exit.
+    case CTRL_CLOSE_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+        quit = true;
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+#endif
+
+// This callback sets a boolean value whose pointer is passed in to
+// the state of the button that was pressed.  This lets the callback
+// be used to handle any button press that just needs to update state.
+void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
+                      const OSVR_ButtonReport* report) {
+    bool* result = static_cast<bool*>(userdata);
+    *result = (report->state != 0);
+}
+
+// Handles deciding when to change the background color from black to
+// white based on tracker motion.  Whenever motion moves beyond a
+// threshold away from previous result, we trigger.  We only trigger
+// after a minimum delay.
+static void myTrackerCallback(void* userdata,
+                              const OSVR_TimeValue* /*timestamp*/,
+                              const OSVR_PoseReport* report) {
+    static const double TRACKER_DELAY = 0.5;
+    static OSVR_TimeValue last_trigger = {};
+    OSVR_TimeValue now;
+    osvrTimeValueGetNow(&now);
+
+    static OSVR_PoseState last_pose;
+
+    // If we haven't yet had a value set (time = 0),
+    // don't check for changes, just update the location and
+    // store the time we got it.
+    if (last_trigger.seconds == 0) {
+        last_pose = report->pose;
+        last_trigger = now;
+        return;
+    }
+
+    // If it hasn't been long enough since our last trigger, just
+    // store the value and return.
+    OSVR_TimeValue diff = now;
+    osvrTimeValueDifference(&diff, &last_trigger);
+    if (diff.seconds + diff.microseconds / 1e6 < TRACKER_DELAY) {
+        last_pose = report->pose;
+        return;
+    }
+
+    // Move the Pose information into Quatlib data structures so
+    // we can operate on it using those functions.
+    q_xyz_quat_type info;
+    info.xyz[0] = report->pose.translation.data[0];
+    info.xyz[1] = report->pose.translation.data[1];
+    info.xyz[2] = report->pose.translation.data[2];
+    info.quat[Q_X] = osvrQuatGetX(&report->pose.rotation);
+    info.quat[Q_Y] = osvrQuatGetY(&report->pose.rotation);
+    info.quat[Q_Z] = osvrQuatGetZ(&report->pose.rotation);
+    info.quat[Q_W] = osvrQuatGetW(&report->pose.rotation);
+
+    q_xyz_quat_type q_last_pose;
+    q_last_pose.xyz[0] = last_pose.translation.data[0];
+    q_last_pose.xyz[1] = last_pose.translation.data[1];
+    q_last_pose.xyz[2] = last_pose.translation.data[2];
+    q_last_pose.quat[Q_X] = osvrQuatGetX(&last_pose.rotation);
+    q_last_pose.quat[Q_Y] = osvrQuatGetY(&last_pose.rotation);
+    q_last_pose.quat[Q_Z] = osvrQuatGetZ(&last_pose.rotation);
+    q_last_pose.quat[Q_W] = osvrQuatGetW(&last_pose.rotation);
+
+    // See if the position or rotation has changed by more than the
+    // threshold amount.  If so, toggle the background color and store
+    // the new value we're comparing against.  Also record the time so
+    // we will wait long enough before triggering again.
+    double deltaPos = q_vec_distance(info.xyz, q_last_pose.xyz);
+    double x, y, z, angle;
+    q_type invert_old;
+    q_invert(invert_old, q_last_pose.quat);
+    q_type composed;
+    q_mult(composed, info.quat, invert_old);
+    q_to_axis_angle(&x, &y, &z, &angle, composed);
+    double deltaRot = fabs(angle);
+    if ((deltaPos > TRANSLATION_THRESHOLD) || (deltaRot > ROTATION_THRESHOLD)) {
+
+        last_pose = report->pose;
+        last_trigger = now;
+        if (red == 0) {
+            red = green = blue = 1;
+        } else {
+            red = green = blue = 0;
+        }
+    }
+}
+
+bool SetupRendering(osvr::renderkit::GraphicsLibrary library,
+                    osvr::renderkit::RenderBuffer buffers) {
+    ID3D11Device* device = library.D3D11->device;
+    ID3D11DeviceContext* context = library.D3D11->context;
+    ID3D11RenderTargetView* renderTargetView = buffers.D3D11->colorBufferView;
+
+    // Setup vertex shader
+    auto hr = device->CreateVertexShader(g_triangle_vs, sizeof(g_triangle_vs),
+                                         nullptr, vertexShader.GetAddressOf());
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    // Setup pixel shader
+    hr = device->CreatePixelShader(g_triangle_ps, sizeof(g_triangle_ps),
+                                   nullptr, pixelShader.GetAddressOf());
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    // Set the input layout
+    ID3D11InputLayout* vertexLayout;
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+         D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    hr = device->CreateInputLayout(layout, _countof(layout), g_triangle_vs,
+                                   sizeof(g_triangle_vs), &vertexLayout);
+    if (SUCCEEDED(hr)) {
+        context->IASetInputLayout(vertexLayout);
+        vertexLayout->Release();
+        vertexLayout = nullptr;
+    }
+
+    // Create vertex buffer
+    ID3D11Buffer* vertexBuffer;
+    struct XMFLOAT3 {
+        float x;
+        float y;
+        float z;
+    };
+    struct SimpleVertex {
+        XMFLOAT3 Pos;
+    };
+    SimpleVertex vertices[3];
+    vertices[0].Pos.x = 0.0f;
+    vertices[0].Pos.y = 0.5f;
+    vertices[0].Pos.z = 0.5f;
+    vertices[1].Pos.x = 0.5f;
+    vertices[1].Pos.y = -0.5f;
+    vertices[1].Pos.z = 0.5f;
+    vertices[2].Pos.x = -0.5f;
+    vertices[2].Pos.y = -0.5f;
+    vertices[2].Pos.z = 0.5f;
+    CD3D11_BUFFER_DESC bufferDesc(sizeof(SimpleVertex) * _countof(vertices),
+                                  D3D11_BIND_VERTEX_BUFFER);
+    D3D11_SUBRESOURCE_DATA subResData = {vertices, 0, 0};
+    hr = device->CreateBuffer(&bufferDesc, &subResData, &vertexBuffer);
+    if (SUCCEEDED(hr)) {
+        // Set vertex buffer
+        UINT stride = sizeof(SimpleVertex);
+        UINT offset = 0;
+        context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+        vertexBuffer->Release();
+        vertexBuffer = nullptr;
+    }
+    // Set primitive topology
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    return true;
+}
+
+// Callbacks to draw things in world space, left-hand space, and right-hand
+// space.
+void DrawWorld(
+    void* userData //< Passed into AddRenderCallback
+    ,
+    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    ,
+    osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    ,
+    osvr::renderkit::OSVR_ViewportDescription
+        viewport //< Viewport we're rendering into
+    ,
+    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    ,
+    osvr::renderkit::OSVR_ProjectionMatrix
+        projection //< Projection matrix set by RenderManager
+    ,
+    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    ) {
+    ID3D11Device* device = library.D3D11->device;
+    ID3D11DeviceContext* context = library.D3D11->context;
+    ID3D11RenderTargetView* renderTargetView = buffers.D3D11->colorBufferView;
+
+    // Fill the background with black or white depending on the
+    // current state we're supposed to draw.
+    // Perform a random colorfill
+    FLOAT colorRgba[4] = {red, green, blue, 1.0f};
+    context->ClearRenderTargetView(renderTargetView, colorRgba);
+}
+
+// Callback to set up for rendering into a given eye (viewpoint and projection).
+void SetupEye(
+    void* userData //< Passed into SetViewProjectionCallback
+    ,
+    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    ,
+    osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    ,
+    osvr::renderkit::OSVR_ViewportDescription
+        viewport //< Viewport set by RenderManager
+    ,
+    osvr::renderkit::OSVR_ProjectionMatrix
+        projection //< Projection matrix set by RenderManager
+    ,
+    size_t whichEye //< Which eye are we setting up for?
+    ) {
+    ID3D11DeviceContext* context = library.D3D11->context;
+    ID3D11RenderTargetView* renderTargetView = buffers.D3D11->colorBufferView;
+
+    // Perform a random colorfill
+    FLOAT red = static_cast<FLOAT>((double)rand() / (double)RAND_MAX);
+    FLOAT green = static_cast<FLOAT>((double)rand() / (double)RAND_MAX);
+    FLOAT blue = static_cast<FLOAT>((double)rand() / (double)RAND_MAX);
+    FLOAT colorRgba[4] = {red, green, blue, 1.0f};
+    context->ClearRenderTargetView(renderTargetView, colorRgba);
+}
+
+int main(int argc, char* argv[]) {
+    // Get an OSVR client context to use to access the devices
+    // that we need.
+    osvr::clientkit::ClientContext context(
+        "org.opengoggles.exampleclients.TrackerCallback");
+
+    osvr::clientkit::Interface head = context.getInterface("/me/head");
+    head.registerCallback(myTrackerCallback, NULL);
+
+    // Open Direct3D and set up the context for rendering to
+    // an HMD.  Do this using the OSVR RenderManager interface,
+    // which maps to the nVidia or other vendor direct mode
+    // to reduce the latency.
+    osvr::renderkit::RenderManager* render =
+        osvr::renderkit::createRenderManager(context.get(), "Direct3D11");
+
+    if (!render || !render->doingOkay()) {
+        std::cerr << "Could not create RenderManager" << std::endl;
+        return 1;
+    }
+
+    // Set callback to handle setting up rendering in an eye
+    render->SetViewProjectionCallback(SetupEye);
+
+    // Register callback to render things
+    render->AddRenderCallback("/", DrawWorld);
+
+// Set up a handler to cause us to exit cleanly.
+#ifdef _WIN32
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
+#endif
+
+    // Open the display and make sure this worked.
+    osvr::renderkit::RenderManager::OpenResults ret = render->OpenDisplay();
+    if (ret.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
+        std::cerr << "Could not open display" << std::endl;
+        return 2;
+    }
+
+    // Set up the rendering state we need.
+    if (!SetupRendering(ret.library, ret.buffers)) {
+        return 3;
+    }
+
+    // Continue rendering until it is time to quit.
+    while (!quit) {
+        // Update the context so we get our callbacks called and
+        // update tracker state.
+        context.update();
+
+        render->Render();
+    }
+
+    // Close the Renderer interface cleanly.
+    delete render;
+
+    return 0;
+}
