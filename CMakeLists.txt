@@ -5,8 +5,6 @@ project(osvrRenderManager)
 # Local CMake Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set (CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};F:/Packages/nVidia/VR_SDK_under_NDA/2015-12-21-gameworks-vr-for-headset-developers-1.1/direct_mode/DirectModeSample;F:/Packages/SDL/SDL2-2.0.3;F:/Packages/OpenCV/opencv-2.4.10/build;C:/Program Files/jsoncpp;C:/Program Files/Microsoft SDKs/Windows/v6.0;F:/taylorr/Personal/Work/consulting/Sensics/OSVR/src/OSVR-Core/vendor/eigen-3.2.5;C:/usr/local CACHE PATH "Path that CMake uses to find packages")
-
 #-----------------------------------------------------------------------------
 # Export libraries along with our DLLs if we want to build shared
 # Allow the developer to select if Dynamic or Static libraries are built
