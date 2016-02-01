@@ -94,12 +94,7 @@ namespace osvr {
                 }
             }
 
-            inline bool doingOkay() override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                return mRenderManager->doingOkay();
-            }
-
-            inline OpenResults OpenDisplay() override {
+            OpenResults OpenDisplay() override {
                 //std::lock_guard<std::mutex> lock(mLock);
                 OpenResults ret = mRenderManager->OpenDisplay();
                 if (ret.status != OpenStatus::FAILURE) {
@@ -108,7 +103,7 @@ namespace osvr {
                 return ret;
             }
 
-            inline virtual bool OSVR_RENDERMANAGER_EXPORT
+            bool OSVR_RENDERMANAGER_EXPORT
             RegisterRenderBuffers(const std::vector<RenderBuffer>& buffers,
                 bool appWillNotOverwriteBeforeNewPresent = false) override {
                 // @todo: check that we haven't started the thread yet (i.e. OpenDisplay called)
@@ -220,7 +215,7 @@ namespace osvr {
                 return mRenderManager->RegisterRenderBuffers(renderBuffers, appWillNotOverwriteBeforeNewPresent);
             }
 
-            inline virtual bool OSVR_RENDERMANAGER_EXPORT
+            bool OSVR_RENDERMANAGER_EXPORT
             PresentRenderBuffers(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
@@ -291,41 +286,6 @@ namespace osvr {
                     mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
                 }
                 return true;
-            }
-
-            inline virtual bool OSVR_RENDERMANAGER_EXPORT
-            GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                return mRenderManager->GetTimingInfo(whichEye, info);
-            }
-
-            inline virtual size_t OSVR_RENDERMANAGER_EXPORT
-            LatchRenderInfo(const RenderParams& params = RenderParams()) override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                return mRenderManager->LatchRenderInfo();
-            }
-
-            inline virtual RenderInfo OSVR_RENDERMANAGER_EXPORT
-            GetRenderInfo(size_t index) override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                return mRenderManager->GetRenderInfo(index);
-            }
-
-            inline virtual OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshes(
-                DistortionMeshType type,
-                std::vector<DistortionParameters> const& distort) override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                return mRenderManager->UpdateDistortionMeshes(type, distort);
-            }
-
-            inline virtual OSVR_RENDERMANAGER_EXPORT void SetRoomRotationUsingHead() override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                mRenderManager->SetRoomRotationUsingHead();
-            }
-
-            inline virtual OSVR_RENDERMANAGER_EXPORT void ClearRoomToWorldTransform() override {
-                //std::lock_guard<std::mutex> lock(mLock);
-                mRenderManager->ClearRoomToWorldTransform();
             }
 
         protected:
@@ -432,47 +392,16 @@ namespace osvr {
 
             //===================================================================
             // Overloaded render functions from the base class.
-            inline bool RenderFrameInitialize() override {
-                // @todo lock?
-                return mRenderManager->RenderFrameInitialize();
-            }
+            bool RenderDisplayInitialize(size_t display) override { return true; }
+            bool RenderEyeFinalize(size_t eye) override { return true; }
 
-            inline bool RenderDisplayInitialize(size_t display) override {
-                // @todo lock?
-                return mRenderManager->RenderDisplayInitialize(display);
-            }
+            bool PresentDisplayInitialize(size_t display) override { return true; }
+            bool PresentDisplayFinalize(size_t display) override { return true; }
+            bool PresentFrameFinalize() override { return true; }
 
-            inline bool RenderEyeInitialize(size_t eye) override {
-                // @todo lock?
-                return mRenderManager->RenderEyeInitialize(eye);
-            }
-
-            inline virtual bool
-            RenderSpace(size_t whichSpace,
-                size_t whichEye,
-                OSVR_PoseState pose,
-                OSVR_ViewportDescription viewport,
-                OSVR_ProjectionMatrix projection) override {
-                // @todo lock?
-                return mRenderManager->RenderSpace(whichSpace, whichEye, pose, viewport, projection);
-            }
-
-            virtual bool RenderEyeFinalize(size_t eye) override {
-                // @todo lock?
-                return mRenderManager->RenderEyeFinalize(eye);
-            }
-
-            inline virtual bool RenderDisplayFinalize(size_t display) override {
-                // @todo lock?
-                return mRenderManager->RenderDisplayFinalize(display);
-            }
-
-            inline virtual bool RenderFrameFinalize() override {
-                // @todo lock?
-                return mRenderManager->RenderFrameFinalize();
-            }
-
-            inline OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(
+            // The distortion mesh is applied after time warp, so needs to be
+            // passed on down to the harnessed RenderManager to handle it.
+            OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(
                 DistortionMeshType type,
                 std::vector<DistortionParameters> const& distort) override {
                 // @todo lock?
@@ -480,7 +409,7 @@ namespace osvr {
                     distort);
             }
 
-            inline bool RegisterRenderBuffersInternal(
+            bool RegisterRenderBuffersInternal(
                 const std::vector<RenderBuffer>& buffers,
                 bool appWillNotOverwriteBeforeNewPresent = false) override {
 
@@ -506,31 +435,6 @@ namespace osvr {
 
                 return mRenderManager->RegisterRenderBuffersInternal(
                     buffers, appWillNotOverwriteBeforeNewPresent);
-            }
-
-            inline bool PresentDisplayInitialize(size_t display) override {
-                // @todo lock?
-                return mRenderManager->PresentDisplayInitialize(display);
-            }
-
-            inline bool PresentDisplayFinalize(size_t display) override {
-                // @todo lock?
-                return mRenderManager->PresentDisplayFinalize(display);
-            }
-
-            inline bool PresentFrameInitialize() override {
-                // @todo lock?
-                return mRenderManager->PresentFrameInitialize();
-            }
-
-            inline bool PresentFrameFinalize() override {
-                // @todo lock?
-                return mRenderManager->PresentFrameFinalize();
-            }
-
-            inline bool PresentEye(PresentEyeParameters params) override {
-                // @todo lock?
-                return mRenderManager->PresentEye(params);
             }
 
             friend RenderManager OSVR_RENDERMANAGER_EXPORT*
