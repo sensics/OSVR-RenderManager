@@ -12,7 +12,9 @@ Step 1: Run an OSVR server (obtained from an OSVR Core install) with a compatibl
    these are older-format files run against an older server, but should still work.)
   osvr_server_nondirectmode_window: Displays in a window that can be moved around.
   osvr_server_*: Configurations for various HMDs and modes
-  NOTE: As of version 6.36, AMD DirectMode will only work in Landscape mode
+  NOTE: As of version 6.36, AMD DirectMode will only work in Landscape mode.
+        The only current configuration file that works with AMD is OSVR HDK 1.2 landscape directmode.
+        You can also edit the other configuration files to make the rotation 0 rather than 90.
 
 Step 2: Run one of the example programs
   RenderManager*: Various graphics libraries and modes of operation.
