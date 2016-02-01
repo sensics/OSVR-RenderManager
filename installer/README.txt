@@ -26,7 +26,7 @@ Step 2: Run one of the example programs
 If DirectMode fails, you can run the DirectModeDebugging program to list available displays on nVidia.
 You can also run EnableOSVRDirectModeNVidia or EnableOSVRDirectModeAMD, depending on which type of graphics card you are using.
 
-NOTE: As of version 0.6.36, nVidia DirectMode only works with a driver that has been modified to white-list the display that you are using.  This should be already in the driver version 361.43 for OSVR and Vuzix displays.  To enable support for the 1.2 versions of OSVR, there is shortcut that will modify the registry.  Changing these requires a reboot before they take effect.
+NOTE: As of version 0.6.37, nVidia DirectMode only works with a driver that has been modified to white-list the display that you are using.  This should be already in the driver version 361.43 for OSVR and Vuzix displays.
 
 Since version 0.6.2, an osvr_server.exe must be running to open a display (this is where it gets information about the distortion correction and other system parameters).  The osvr_server.exe must use a configuration that defines /me/head (implicitly or explicitly) for head tracking to work.  There are shortcuts to run the server with various configuration files.  You can leave the server running and run multiple different clients one after the other.  All clients should work with all servers.
 
@@ -37,6 +37,9 @@ Since version 0.6.3, Time Warp works on both OpenGL and Direct3D, and in version
 Since version 0.6.3, distortion correction works on both OpenGL and Direct3D.  Since version 0.6.8, distortion correction uses an arbitrary polynomial distortion with respect to the distance from the center of projection on the screen.
 
 Version notes:
+0.6.37:
+ *ftr  Refactoring code to prepare for open-source release
+ *bug  Fixed bug with OpenGL non-DirectMode introduced as part of mac port
 0.6.36:
  *ftr  Added DirectMode (D2D) on AMD cards for both Direct3D11 and OpenGL
  *ftr  Asynchronous Time Warp (currently only in a single example program)
