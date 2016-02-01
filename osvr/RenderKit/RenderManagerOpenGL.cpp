@@ -97,9 +97,9 @@ static bool checkShaderError(GLuint shaderId) {
 
 static bool checkProgramError(GLuint programId) {
     GLint result = GL_FALSE;
+    glGetProgramiv(programId, GL_LINK_STATUS, &result);
     if (result == GL_FALSE) {
         int infoLength = 0;
-        glGetProgramiv(programId, GL_LINK_STATUS, &result);
         glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLength);
         if (infoLength > 1) {
           std::unique_ptr<GLchar> infoLog(new GLchar[infoLength + 1]);
