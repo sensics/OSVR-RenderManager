@@ -28,11 +28,11 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
+#include "RenderManagerD3D11ATW.h"
 #endif
 
 #ifdef RM_USE_NVIDIA_DIRECT_D3D11
 #include "RenderManagerNVidiaD3D.h"
-#include "RenderManagerD3D11ATW.h"
 #endif
 
 #ifdef RM_USE_NVIDIA_DIRECT_D3D11_OPENGL
@@ -2541,7 +2541,7 @@ namespace renderkit {
                   // the wrapped RenderManager should create its own graphics device
                   RenderManager::ConstructorParameters pTemp = p;
                   pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                  auto wrappedRm = new RenderManagerNVidiaD3D11(context, pTemp);
+                  auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
                   auto atwRm = new RenderManagerD3D11ATW(context, p, wrappedRm);
                   ret.reset(atwRm);
                 }
