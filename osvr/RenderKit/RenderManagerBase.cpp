@@ -2526,17 +2526,38 @@ namespace renderkit {
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
             if (p.m_directMode) {
-              // Try each available DirectRender library to see if we can
-              // get a pointer to a RenderManager that has access to the
-              // DirectMode display we want to use.
-              ret.reset(openRenderManagerDirectMode(context, p));
+              // If we've been asked for asynchronous time warp, we layer
+              // the request on top of a request for a DirectRender instance
+              // to harness.  @todo This should be doable on top of a non-
+              // DirectMode interface as well.
+              if (p.m_asynchronousTimeWarp) {
+                // @todo See about making this fall-back not be required.
+                if (p.m_graphicsLibrary.D3D11 == nullptr) {
+                  std::cerr << "Async timewarp enabled, but D3D11 graphics"
+                    << " library not passed in. Falling back to"
+                    << " synchronous timewarp." << std::endl;
+                  ret.reset(openRenderManagerDirectMode(context, p));
+                } else {
+                  // the wrapped RenderManager should create its own graphics device
+                  RenderManager::ConstructorParameters pTemp = p;
+                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                  auto wrappedRm = new RenderManagerNVidiaD3D11(context, pTemp);
+                  auto atwRm = new RenderManagerD3D11ATW(context, p, wrappedRm);
+                  ret.reset(atwRm);
+                }
+              } else {
+                // Try each available DirectRender library to see if we can
+                // get a pointer to a RenderManager that has access to the
+                // DirectMode display we want to use.
+                ret.reset(openRenderManagerDirectMode(context, p));
+              }
               if (ret == nullptr) {
                 std::cerr << "createRenderManager: Could not open the"
                   << " requested DirectMode display" << std::endl;
               }
             } else {
 #ifdef RM_USE_D3D11
-                ret.reset(new RenderManagerD3D11(context, p));
+              ret.reset(new RenderManagerD3D11(context, p));
 #else
               std::cerr << "createRenderManager: D3D11 render library "
                 "not compiled in"
