@@ -77,7 +77,7 @@ endif()
 
 if (NVAPI_FOUND)
 	# nVidia NDA files.
-	list(APPEND RenderManager_SOURCES osvr/RenderKit/NDA/nVidia/RenderManagerNVidiaD3D.cpp osvr/RenderKit/NDA/nVidia/RenderManagerNVidiaD3D.h)
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.cpp osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.h)
 	set(RM_USE_NVIDIA_DIRECT_D3D11 TRUE)
 	message(STATUS " - NVIDIA direct D3D11 support: enabled (found NVAPI)")
 else()
@@ -183,7 +183,7 @@ target_include_directories(osvrRenderManager PUBLIC
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 if (NVAPI_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE nvapi)
-	target_include_directories(osvrRenderManager PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/nVidia")
+	target_include_directories(osvrRenderManager PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
 endif()
 if (LIQUIDVR_FOUND)
 	target_include_directories(osvrRenderManager PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
@@ -254,7 +254,7 @@ install(EXPORT
 )
 
 if (NVAPI_FOUND)
-	set(NV_SRC_ROOT osvr/RenderKit/NDA/nVidia)
+	set(NV_SRC_ROOT osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA)
 	set(NVAPI_EXTRA_HEADERS ${NV_SRC_ROOT}/CheckSuccess.h ${NV_SRC_ROOT}/Util.h ${NV_SRC_ROOT}/NVAPIWrappers.h)
 
 	#-----------------------------------------------------------------------------
