@@ -614,7 +614,8 @@ namespace renderkit {
     bool RenderManager::PresentRenderBuffersInternal(
         const std::vector<RenderBuffer>& buffers,
         const std::vector<RenderInfo>& renderInfoUsed,
-        RenderParams renderParams, const std::vector<OSVR_ViewportDescription>&
+        const RenderParams &renderParams,
+        const std::vector<OSVR_ViewportDescription>&
                                        normalizedCroppingViewports,
         bool flipInY) {
         // Make sure we're doing okay.

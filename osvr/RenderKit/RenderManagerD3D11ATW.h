@@ -104,7 +104,7 @@ namespace osvr {
             }
 
             bool OSVR_RENDERMANAGER_EXPORT
-            PresentRenderBuffers(const std::vector<RenderBuffer>& renderBuffers,
+            PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
                 const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports =
@@ -172,7 +172,7 @@ namespace osvr {
                   mNextFrameInfo.flipInY = flipInY;
                   mNextFrameInfo.renderParams = renderParams;
                   mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
-                return true;
+                  return true;
             }
 
         protected:
