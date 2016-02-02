@@ -331,19 +331,37 @@ namespace osvr {
                 bool quit = getQuit();
                 size_t iteration = 0;
                 while (!quit) {
-                    auto renderInfo = mRenderManager->GetRenderInfo();
+
+                    // Wait until it is time to present the render buffers.
+                    // If we've got a specified maximum time before vsync,
+                    // we use that.  Otherwise, we set the threshold to 1ms
+                    // to give us some time to swap things out before vsync.
                     bool timeToPresent = false;
-                    const int presentWindow = 15; // in microseconds
-                    for (size_t i = 0; i < renderInfo.size(); i++) {
-                        osvr::renderkit::RenderTimingInfo timing;
-                        if (!mRenderManager->GetTimingInfo(i, timing)) {
-                            std::cerr << "RenderManagerThread::threadFunc() = couldn't get timing info for eye " << i << std::endl;
-                        }
-                        auto time = timing.timeUntilNextPresentRequired.microseconds;
-                        timeToPresent = time >= 0 && time < presentWindow;
-                        if (timeToPresent) {
-                            break;
-                        }
+
+                    // Convert from milliseconds to seconds
+                    float thresholdF = m_params.m_maxMSBeforeVsyncTimeWarp / 1e3f;
+                    if (thresholdF == 0) { thresholdF = 1e-3f; }
+                    OSVR_TimeValue threshold;
+                    threshold.seconds = static_cast<OSVR_TimeValue_Seconds>(thresholdF);
+                    thresholdF -= threshold.seconds;
+                    threshold.microseconds =
+                      static_cast<OSVR_TimeValue_Microseconds>(thresholdF * 1e6);
+
+                    // We use the timing info from the first display to
+                    // determine when it is time to present.
+                    // @todo Need one thread per display if we have displays
+                    // that are not gen-locked.
+                    // @todo Consider making a function that both the RenderManagerBase.cpp
+                    // and this code calls to check if we're within range.
+                    osvr::renderkit::RenderTimingInfo timing;
+                    if (!mRenderManager->GetTimingInfo(0, timing)) {
+                        std::cerr << "RenderManagerThread::threadFunc() = couldn't get timing info" << std::endl;
+                    }
+                    OSVR_TimeValue nextRetrace = timing.hardwareDisplayInterval;
+                    osvrTimeValueDifference(&nextRetrace,
+                      &timing.timeSincelastVerticalRetrace);
+                    if (osvrTimeValueGreater(&threshold, &nextRetrace)) {
+                      timeToPresent = true;
                     }
 
                     if (timeToPresent) {
