@@ -219,7 +219,8 @@ namespace osvr {
             PresentRenderBuffers(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
-                const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports = std::vector<OSVR_ViewportDescription>(),
+                const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports =
+                  std::vector<OSVR_ViewportDescription>(),
                 bool flipInY = false) override {
 
                 {
