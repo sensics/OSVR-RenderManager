@@ -580,7 +580,10 @@ namespace renderkit {
     bool RenderManager::RegisterRenderBuffers(
         const std::vector<RenderBuffer>& buffers,
         bool appWillNotOverwriteBeforeNewPresent) {
-        return RegisterRenderBuffersInternal(
+      // All public methods that use internal state should be guarded
+      // by a mutex.
+      std::lock_guard<std::mutex> lock(m_mutex);
+      return RegisterRenderBuffersInternal(
             buffers, appWillNotOverwriteBeforeNewPresent);
     }
 
@@ -611,7 +614,8 @@ namespace renderkit {
     bool RenderManager::PresentRenderBuffersInternal(
         const std::vector<RenderBuffer>& buffers,
         const std::vector<RenderInfo>& renderInfoUsed,
-        RenderParams renderParams, const std::vector<OSVR_ViewportDescription>&
+        const RenderParams &renderParams,
+        const std::vector<OSVR_ViewportDescription>&
                                        normalizedCroppingViewports,
         bool flipInY) {
         // Make sure we're doing okay.

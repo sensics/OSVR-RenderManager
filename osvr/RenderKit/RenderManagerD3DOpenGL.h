@@ -114,9 +114,6 @@ namespace renderkit {
         // We use the render-buffer registration to construct
         // D3D buffers to be used for PresentMode, which we then map
         // our buffers to.
-        bool RegisterRenderBuffers(
-            const std::vector<RenderBuffer>& buffers,
-            bool appWillNotOverwriteBeforeNewPresent = false) override;
         bool RegisterRenderBuffersInternal(
             const std::vector<RenderBuffer>& buffers,
             bool appWillNotOverwriteBeforeNewPresent = false) override;

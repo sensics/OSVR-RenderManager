@@ -281,20 +281,9 @@ namespace renderkit {
         return m_D3D11Renderer->PresentFrameFinalize();
     }
 
-    bool RenderManagerD3D11OpenGL::RegisterRenderBuffers(
-        const std::vector<RenderBuffer>& buffers,
-        bool appWillNotOverwriteBeforeNewPresent) {
-        // All public methods that use internal state should be guarded
-        // by a mutex.
-        std::lock_guard<std::mutex> lock(m_mutex);
-
-        return RegisterRenderBuffersInternal(
-            buffers, appWillNotOverwriteBeforeNewPresent);
-    }
-
     bool RenderManagerD3D11OpenGL::RegisterRenderBuffersInternal(
         const std::vector<RenderBuffer>& buffers,
-        bool /* appWillNotOverwriteBeforeNewPresent */) {
+        bool appWillNotOverwriteBeforeNewPresent) {
         // Make sure we're doing okay.
         if (!doingOkay()) {
             std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers(): "
@@ -477,7 +466,8 @@ namespace renderkit {
 
         // We're done -- call the base-class function to notify that we've
         // registered our buffers
-        return RenderManager::RegisterRenderBuffersInternal(buffers);
+        return RenderManager::RegisterRenderBuffersInternal(buffers,
+          appWillNotOverwriteBeforeNewPresent);
     }
 
     bool RenderManagerD3D11OpenGL::PresentEye(PresentEyeParameters params) {

@@ -419,7 +419,7 @@ namespace renderkit {
         /// @todo Make use of this when ATW is fully implemented.
         ///
         ///  @return Returns true on success and false on failure.
-        virtual bool OSVR_RENDERMANAGER_EXPORT
+        bool OSVR_RENDERMANAGER_EXPORT
         RegisterRenderBuffers(const std::vector<RenderBuffer>& buffers,
                               bool appWillNotOverwriteBeforeNewPresent = false);
 
@@ -466,7 +466,7 @@ namespace renderkit {
         /// Y before presentation (this is helpful for OpenGL/Direct3D
         /// interop, where the buffer coordinates are different).
         ///  @return Returns true on success and false on failure.
-        virtual bool OSVR_RENDERMANAGER_EXPORT
+        bool OSVR_RENDERMANAGER_EXPORT
         PresentRenderBuffers(const std::vector<RenderBuffer>& buffers,
                              const std::vector<RenderInfo>& renderInfoUsed,
                              const RenderParams& renderParams = RenderParams(),
@@ -801,7 +801,7 @@ namespace renderkit {
         virtual bool PresentRenderBuffersInternal(
             const std::vector<RenderBuffer>& buffers,
             const std::vector<RenderInfo>& renderInfoUsed,
-            RenderParams renderParams = RenderParams(),
+            const RenderParams& renderParams = RenderParams(),
             const std::vector<OSVR_ViewportDescription>&
                 normalizedCroppingViewports =
                     std::vector<OSVR_ViewportDescription>(),
