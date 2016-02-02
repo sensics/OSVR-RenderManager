@@ -125,6 +125,7 @@ namespace osvr {
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
                       std::cerr << "No Buffer info for key " << (size_t)key << std::endl;
+                      m_doingOkay = false;
                       mQuit = true;
                     }
                     auto bufferInfo = bufferInfoItr->second;
@@ -132,12 +133,14 @@ namespace osvr {
                     hr = bufferInfoItr->second.atwMutex->ReleaseSync(relKey);
                     if (FAILED(hr)) {
                       std::cerr << "Could not ReleaseSync in the render manager thread." << std::endl;
+                      m_doingOkay = false;
                       mQuit = true;
                     }
                     //std::cerr << "acquiring rtMutex " << (size_t)key << std::endl;
                     hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
                     if (FAILED(hr)) {
                       std::cerr << "Could not lock the render thread's mutex" << std::endl;
+                      m_doingOkay = false;
                       mQuit = true;
                     }
                   }
@@ -153,11 +156,13 @@ namespace osvr {
                       auto bufferInfoItr = mBufferMap.find(key);
                       if (bufferInfoItr == mBufferMap.end()) {
                           std::cerr << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                          m_doingOkay = false;
                           return false;
                       }
                       hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
                       if (FAILED(hr)) {
                           std::cerr << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
+                          m_doingOkay = false;
                           return false;
                       }
                       // and lock the ATW thread's mutex
@@ -165,6 +170,7 @@ namespace osvr {
                       hr = bufferInfoItr->second.atwMutex->AcquireSync(rtRelKey, INFINITE);
                       if (FAILED(hr)) {
                           std::cerr << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
+                          m_doingOkay = false;
                           return false;
                       }
                       mNextFrameInfo.renderBuffers.push_back(bufferInfoItr->second.rtBuffer);
@@ -263,6 +269,7 @@ namespace osvr {
                                     auto bufferInfoItr = mBufferMap.find(key);
                                     if (bufferInfoItr == mBufferMap.end()) {
                                         std::cerr << "No buffer info for key " << (size_t)key << std::endl;
+                                        m_doingOkay = false;
                                         mQuit = true;
                                     }
                                     atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
@@ -278,6 +285,7 @@ namespace osvr {
                                     mNextFrameInfo.normalizedCroppingViewports,
                                     mNextFrameInfo.flipInY)) {
                                     std::cerr << "PresentRenderBuffers() returned false, maybe because it was asked to quit" << std::endl;
+                                    m_doingOkay = false;
                                     mQuit = true;
                                 }
                             }
@@ -357,6 +365,7 @@ namespace osvr {
                     if (FAILED(hr)) {
                       std::cerr << "RenderManagerD3D11ATW::"
                       << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource." << std::endl;
+                      m_doingOkay = false;
                       return false;
                     }
 
@@ -365,6 +374,7 @@ namespace osvr {
                     if (FAILED(hr)) {
                       std::cerr << "RenderManagerD3D11ATW::"
                         << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource." << std::endl;
+                      m_doingOkay = false;
                       return false;
                     }
                     dxgiResource->Release(); // we don't need this anymore
@@ -376,6 +386,7 @@ namespace osvr {
                   if (FAILED(hr) || newInfo.rtMutex == nullptr) {
                     std::cerr << "RenderManagerD3D11ATW::"
                       << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the texture resource." << std::endl;
+                    m_doingOkay = false;
                     return false;
                   }
 
@@ -385,6 +396,7 @@ namespace osvr {
                   if (FAILED(hr)) {
                     std::cerr << "RenderManagerD3D11ATW::"
                       << "RegisterRenderBuffersInternal: Could not AcquireSync on a game render target's IDXGIKeyedMutex during registration." << std::endl;
+                    m_doingOkay = false;
                     return false;
                   }
 
@@ -401,6 +413,7 @@ namespace osvr {
                       if (FAILED(hr)) {
                         std::cerr << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: - failed to open shared resource." << std::endl;
+                        m_doingOkay = false;
                         return false;
                       }
 
@@ -409,6 +422,7 @@ namespace osvr {
                       if (FAILED(hr) || newInfo.atwMutex == nullptr) {
                         std::cerr << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: - failed to create keyed mutex." << std::endl;
+                        m_doingOkay = false;
                         return false;
                       }
 
@@ -432,6 +446,7 @@ namespace osvr {
                         std::cerr << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Could not create render target for eye " << i
                           << std::endl;
+                        m_doingOkay = false;
                         return false;
                       }
 
@@ -450,6 +465,7 @@ namespace osvr {
                     << "RegisterRenderBuffersInternal: Could not Register render"
                     << " buffers on harnessed RenderManager"
                     << std::endl;
+                  m_doingOkay = false;
                   return false;
                 }
                 
