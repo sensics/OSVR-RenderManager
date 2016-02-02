@@ -379,7 +379,7 @@ namespace osvr {
                                     auto bufferInfoItr = mBufferMap.find(key);
                                     if (bufferInfoItr == mBufferMap.end()) {
                                         std::cerr << "No buffer info for key " << (size_t)key << std::endl;
-                                        throw std::runtime_error("No buffer info for given key.");
+                                        mQuit = true;
                                     }
                                     atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
                                 }
