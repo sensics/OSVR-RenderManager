@@ -308,8 +308,7 @@ namespace osvr {
             void start() {
                 if (mStarted) {
                     std::cerr << "RenderManagerThread::start() - thread loop already started." << std::endl;
-                }
-                else {
+                } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
                 }
             }
@@ -411,7 +410,7 @@ namespace osvr {
             std::unique_ptr<RenderManagerD3D11Base> mRenderManager;
 
             //===================================================================
-            // Overloaded render functions from the base class.
+            // Overloaded render functions required from the base class.
             bool RenderDisplayInitialize(size_t display) override { return true; }
             bool RenderEyeFinalize(size_t eye) override { return true; }
 
@@ -419,6 +418,7 @@ namespace osvr {
             bool PresentDisplayFinalize(size_t display) override { return true; }
             bool PresentFrameFinalize() override { return true; }
 
+            //===================================================================
             // The distortion mesh is applied after time warp, so needs to be
             // passed on down to the harnessed RenderManager to handle it.
             OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(
@@ -432,8 +432,6 @@ namespace osvr {
             bool RegisterRenderBuffersInternal(
                 const std::vector<RenderBuffer>& buffers,
                 bool appWillNotOverwriteBeforeNewPresent = false) override {
-
-                // @todo lock?
 
                 // If they are promising to not present the same buffers
                 // each frame, make sure they have registered twice as
