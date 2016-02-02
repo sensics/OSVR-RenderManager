@@ -223,69 +223,67 @@ namespace osvr {
                   std::vector<OSVR_ViewportDescription>(),
                 bool flipInY = false) override {
 
-                {
-                    std::lock_guard<std::mutex> lock(mLock);
-                    HRESULT hr;
+                  std::lock_guard<std::mutex> lock(mLock);
+                  HRESULT hr;
 
-                    // For all the buffers that have been given to the ATW thread,
-                    // release them there and acquire them back for the render thread.
-                    // This starts us with the render thread owning all of the buffers.
-                    // Then clear the buffer list that is owned by the ATW thread.
-                    for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
-                      auto key = mNextFrameInfo.renderBuffers[i].D3D11;
+                  // For all the buffers that have been given to the ATW thread,
+                  // release them there and acquire them back for the render thread.
+                  // This starts us with the render thread owning all of the buffers.
+                  // Then clear the buffer list that is owned by the ATW thread.
+                  for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
+                    auto key = mNextFrameInfo.renderBuffers[i].D3D11;
+                    auto bufferInfoItr = mBufferMap.find(key);
+                    if (bufferInfoItr == mBufferMap.end()) {
+                      std::cerr << "No Buffer info for key " << (size_t)key << std::endl;
+                      mQuit = true;
+                    }
+                    auto bufferInfo = bufferInfoItr->second;
+                    //std::cerr << "releasing atwMutex " << (size_t)key << std::endl;
+                    hr = bufferInfoItr->second.atwMutex->ReleaseSync(relKey);
+                    if (FAILED(hr)) {
+                      std::cerr << "Could not ReleaseSync in the render manager thread." << std::endl;
+                      mQuit = true;
+                    }
+                    //std::cerr << "acquiring rtMutex " << (size_t)key << std::endl;
+                    hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
+                    if (FAILED(hr)) {
+                      std::cerr << "Could not lock the render thread's mutex" << std::endl;
+                      mQuit = true;
+                    }
+                  }
+                  mNextFrameInfo.renderBuffers.clear();
+
+                  // For all of the buffers we're getting ready to hand to the ATW thread,
+                  // we release our lock and lock them for that thread and then push them
+                  // onto the vector for use by that thread.
+                  for (size_t i = 0; i < renderBuffers.size(); i++) {
+                      // We need to unlock the render thread's mutex (remember they're locked initially)
+                      auto key = renderBuffers[i].D3D11;
+                      //std::cerr << "releasing rtMutex " << (size_t)key << std::endl;
                       auto bufferInfoItr = mBufferMap.find(key);
                       if (bufferInfoItr == mBufferMap.end()) {
-                        std::cerr << "No Buffer info for key " << (size_t)key << std::endl;
-                        mQuit = true;
+                          std::cerr << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                          return false;
                       }
-                      auto bufferInfo = bufferInfoItr->second;
-                      //std::cerr << "releasing atwMutex " << (size_t)key << std::endl;
-                      hr = bufferInfoItr->second.atwMutex->ReleaseSync(relKey);
+                      hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
                       if (FAILED(hr)) {
-                        std::cerr << "Could not ReleaseSync in the render manager thread." << std::endl;
-                        mQuit = true;
+                          std::cerr << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
+                          return false;
                       }
-                      //std::cerr << "acquiring rtMutex " << (size_t)key << std::endl;
-                      hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
+                      // and lock the ATW thread's mutex
+                      //std::cerr << "locking atwMutex " << (size_t)key << std::endl;
+                      hr = bufferInfoItr->second.atwMutex->AcquireSync(rtRelKey, INFINITE);
                       if (FAILED(hr)) {
-                        std::cerr << "Could not lock the render thread's mutex" << std::endl;
-                        mQuit = true;
+                          std::cerr << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
+                          return false;
                       }
-                    }
-                    mNextFrameInfo.renderBuffers.clear();
-
-                    // For all of the buffers we're getting ready to hand to the ATW thread,
-                    // we release our lock and lock them for that thread and then push them
-                    // onto the vector for use by that thread.
-                    for (size_t i = 0; i < renderBuffers.size(); i++) {
-                        // We need to unlock the render thread's mutex (remember they're locked initially)
-                        auto key = renderBuffers[i].D3D11;
-                        //std::cerr << "releasing rtMutex " << (size_t)key << std::endl;
-                        auto bufferInfoItr = mBufferMap.find(key);
-                        if (bufferInfoItr == mBufferMap.end()) {
-                            std::cerr << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
-                            return false;
-                        }
-                        hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
-                        if (FAILED(hr)) {
-                            std::cerr << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
-                            return false;
-                        }
-                        // and lock the ATW thread's mutex
-                        //std::cerr << "locking atwMutex " << (size_t)key << std::endl;
-                        hr = bufferInfoItr->second.atwMutex->AcquireSync(rtRelKey, INFINITE);
-                        if (FAILED(hr)) {
-                            std::cerr << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
-                            return false;
-                        }
-                        mNextFrameInfo.renderBuffers.push_back(bufferInfoItr->second.rtBuffer);
-                    }
-                    mFirstFramePresented = true;
-                    mNextFrameInfo.renderInfo = renderInfoUsed;
-                    mNextFrameInfo.flipInY = flipInY;
-                    mNextFrameInfo.renderParams = renderParams;
-                    mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
-                }
+                      mNextFrameInfo.renderBuffers.push_back(bufferInfoItr->second.rtBuffer);
+                  }
+                  mFirstFramePresented = true;
+                  mNextFrameInfo.renderInfo = renderInfoUsed;
+                  mNextFrameInfo.flipInY = flipInY;
+                  mNextFrameInfo.renderParams = renderParams;
+                  mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
                 return true;
             }
 
