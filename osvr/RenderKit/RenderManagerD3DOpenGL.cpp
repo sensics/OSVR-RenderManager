@@ -281,17 +281,6 @@ namespace renderkit {
         return m_D3D11Renderer->PresentFrameFinalize();
     }
 
-    bool RenderManagerD3D11OpenGL::RegisterRenderBuffers(
-        const std::vector<RenderBuffer>& buffers,
-        bool appWillNotOverwriteBeforeNewPresent) {
-        // All public methods that use internal state should be guarded
-        // by a mutex.
-        std::lock_guard<std::mutex> lock(m_mutex);
-
-        return RegisterRenderBuffersInternal(
-            buffers, appWillNotOverwriteBeforeNewPresent);
-    }
-
     bool RenderManagerD3D11OpenGL::RegisterRenderBuffersInternal(
         const std::vector<RenderBuffer>& buffers,
         bool appWillNotOverwriteBeforeNewPresent) {

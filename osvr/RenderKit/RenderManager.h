@@ -419,7 +419,7 @@ namespace renderkit {
         /// @todo Make use of this when ATW is fully implemented.
         ///
         ///  @return Returns true on success and false on failure.
-        virtual bool OSVR_RENDERMANAGER_EXPORT
+        bool OSVR_RENDERMANAGER_EXPORT
         RegisterRenderBuffers(const std::vector<RenderBuffer>& buffers,
                               bool appWillNotOverwriteBeforeNewPresent = false);
 
