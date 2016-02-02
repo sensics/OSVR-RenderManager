@@ -350,7 +350,8 @@ namespace osvr {
                         std::lock_guard<std::mutex> lock(mLock);
                         if (mFirstFramePresented) {
                             // Update the context so we get our callbacks called and
-                            // update tracker state.
+                            // update tracker state, which will be read during the
+                            // time-warp calculation in our harnessed RenderManager.
                             mRenderManager->m_context->update();
 
                             {
@@ -366,7 +367,9 @@ namespace osvr {
                                     atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
                                 }
 
-                                // Send the rendered results to the screen
+                                // Send the rendered results to the screen, using the
+                                // RenderInfo that was handed to us by the client the last
+                                // time they gave us some images.
                                 if (!mRenderManager->PresentRenderBuffers(
                                     atwRenderBuffers,
                                     mNextFrameInfo.renderInfo,
