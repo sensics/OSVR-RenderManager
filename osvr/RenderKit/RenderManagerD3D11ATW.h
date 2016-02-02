@@ -103,7 +103,9 @@ namespace osvr {
                 return ret;
             }
 
-            bool OSVR_RENDERMANAGER_EXPORT
+        protected:
+
+          bool OSVR_RENDERMANAGER_EXPORT
             PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
@@ -174,8 +176,6 @@ namespace osvr {
                   mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
                   return true;
             }
-
-        protected:
 
             ///**
             // * Construct an D3D ATW wrapper around an existing D3D render
