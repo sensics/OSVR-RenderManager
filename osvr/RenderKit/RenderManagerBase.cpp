@@ -580,7 +580,10 @@ namespace renderkit {
     bool RenderManager::RegisterRenderBuffers(
         const std::vector<RenderBuffer>& buffers,
         bool appWillNotOverwriteBeforeNewPresent) {
-        return RegisterRenderBuffersInternal(
+      // All public methods that use internal state should be guarded
+      // by a mutex.
+      std::lock_guard<std::mutex> lock(m_mutex);
+      return RegisterRenderBuffersInternal(
             buffers, appWillNotOverwriteBeforeNewPresent);
     }
 
