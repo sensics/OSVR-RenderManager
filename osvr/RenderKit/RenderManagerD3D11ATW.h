@@ -189,10 +189,6 @@ namespace osvr {
             //    mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
             //}
 
-            // @todo do we need these?
-            bool m_doingOkay;   //< Are we doing okay?
-            bool m_displayOpen; //< Has our display been opened?
-
             void start() {
                 if (mStarted) {
                     std::cerr << "RenderManagerThread::start() - thread loop already started." << std::endl;
