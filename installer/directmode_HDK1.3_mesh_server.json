@@ -65,7 +65,7 @@
 			],
    "distortion": {
     "type": "mono_point_samples",
-    "mono_point_samples_external_file": "C:/OSVR/directmode_HDK1.3_mesh_client.json"
+    "mono_point_samples_external_file": "./server/bin/directmode_HDK1.3_mesh_client.json"
    },
 			"rendering": {
 				"right_roll": 0,
