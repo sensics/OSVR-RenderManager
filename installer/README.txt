@@ -1,8 +1,8 @@
 IMPORTANT: This installer only includes sample applications and the libraries and source code needed to compile applications.  If you are running a pre-compiled Unity, Unreal, or other demo this will not update the version of RenderManager it is linked against; you must either obtain an updated demo or (if you're lucky) copy the RenderManager.dll file from this installer into appropriate location inside the game folder.
 
 IMPORTANT: Using DirectMode requires
-	nVidia driver version 361.43 or higher
-	or AMD Crimson drivers.
+	nVidia driver version 361.75 or higher
+	or AMD Crimson drivers (tested with version 16.1).
 
 FAQ: If you have multiple GPUs not in SLI mode, you need to select "Activate all displays" instead of "SLI Disabled" in the nVidia Control Panel under "Configure SLI, Surround, PhysX" to make DirectMode work.
 FAQ: If you get an error when running the RenderManager applications, you may need to install the Visual Studio redistributable runtime package.  There is a shortcut to do this installation.  This only has to be done once per computer.
