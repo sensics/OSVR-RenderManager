@@ -37,6 +37,11 @@ Since version 0.6.3, Time Warp works on both OpenGL and Direct3D, and in version
 Since version 0.6.3, distortion correction works on both OpenGL and Direct3D.  Since version 0.6.8, distortion correction uses an arbitrary polynomial distortion with respect to the distance from the center of projection on the screen.
 
 Version notes:
+0.6.38:
+ *bug  Added header files needed to compile the example code
+  bug  Updated the CMakeLists.txt file included with example code
+  bug  Updated the cmake directory shipped with example code
+  bug  Changed the meshdistort configuration to use relative paths
 0.6.37:
  *ftr  Refactoring code to prepare for open-source release
  *bug  Fixed bug with OpenGL non-DirectMode introduced as part of mac port

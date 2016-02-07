@@ -5,8 +5,6 @@ project(myProjectForOsvrRenderManager)
 # Local CMake Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-set (CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};C:/Program Files/jsoncpp;C:/Program Files/Microsoft SDKs/Windows/v6.0;C:/usr/local CACHE PATH "Path that CMake uses to find packages")
-
 #-----------------------------------------------------------------------------
 # This looks for an osvrConfig.cmake file - most of the time it can be
 # autodetected but you might need to specify osvr_DIR to be something like
@@ -14,10 +12,6 @@ set (CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};C:/Program Files/jsoncpp;C:/Program 
 # C:/Users/Ryan/Downloads/OSVR-Core-Snapshot-v0.1-406-gaa55515-build54-vs12-32bit
 # in the CMake GUI or command line
 find_package(osvr REQUIRED)
-find_package(jsoncpp REQUIRED)
-if(TARGET jsoncpp_lib_static AND NOT TARGET jsoncpp_lib)
-	add_library(jsoncpp_lib ALIAS jsoncpp_lib_static)
-endif()
 
 find_package(VRPN REQUIRED)	# For time-manipulation routines
 find_package(quatlib REQUIRED)	# For transformation construction
@@ -47,7 +41,7 @@ target_link_libraries(RenderManagerD3DExample3D PRIVATE osvr::osvrClientKitCpp o
 add_executable(RenderManagerD3DHeadSpaceExample RenderManagerD3DHeadSpaceExample.cpp)
 
 # This example uses the C++ wrapper, as suggested, so you'll need this line.
-target_link_libraries(RenderManagerD3DHeadSpaceExample PRIVATE osvr::osvrClientKitCpp osvr::osvrClient osvr::osvrCommon ${OSVRRENDERMANAGER_LIBRARIES})
+target_link_libraries(RenderManagerD3DHeadSpaceExample PRIVATE osvr::osvrClientKitCpp osvr::osvrClient osvr::osvrCommon ${OSVRRENDERMANAGER_LIBRARIES}  ${QUATLIB_LIBRARY})
 
 # D3D Example program using Present mode, which should eventually be open source
 add_executable(RenderManagerD3DPresentExample3D RenderManagerD3DPresentExample3D.cpp)
@@ -115,7 +109,7 @@ if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
 	# This example uses the C++ wrapper, as suggested, so you'll need this line.
 	# Surprisingly, this also lets it know where to find the header files.
 	target_include_directories(RenderManagerOpenGLHeadSpaceExample PRIVATE ${OPENGL_INCLUDE_DIRS})
-	target_link_libraries(RenderManagerOpenGLHeadSpaceExample PRIVATE osvr::osvrClientKitCpp osvr::osvrClient osvr::osvrCommon ${OSVRRENDERMANAGER_LIBRARIES} ${OPENGL_LIBRARY} GLEW::GLEW ${SDL2_LIBRARY})
+	target_link_libraries(RenderManagerOpenGLHeadSpaceExample PRIVATE osvr::osvrClientKitCpp osvr::osvrClient osvr::osvrCommon ${OSVRRENDERMANAGER_LIBRARIES} ${OPENGL_LIBRARY} GLEW::GLEW ${SDL2_LIBRARY} ${QUATLIB_LIBRARY})
 
 	#-----------------------------------------------------------------------------
 	# OpenGL Example program that uses the Get()/Present() interface, not Render().
