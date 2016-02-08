@@ -47,10 +47,6 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include "RenderManagerOpenGL.h"
 #endif
 
-#ifdef RM_USE_OPENGLES20
-#include "RenderManagerOpenGLES20.h"
-#endif
-
 #include "VendorIdTools.h"
 
 // OSVR Includes
@@ -2577,7 +2573,7 @@ namespace renderkit {
             if (p.m_directMode) {
 // nVidia DirectMode is currently only implemented under Direct3D11,
 // so we wrap this with an OpenGL renderer.
-#if defined(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL)
+#if defined(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL) && !defined(RM_USE_OPENGLES20)
                 // Set the parameters on the harnessed renderer to not apply the
                 // rendering fixes that we're applying.  Also set its render
                 // library
@@ -2649,17 +2645,7 @@ namespace renderkit {
                 return nullptr;
 #endif
             }
-        } else if (p.m_renderLibrary == "OpenGLES20") {
-#ifdef RM_USE_OPENGLES20
-          ret.reset(new RenderManagerOpenGLES20(context, p));
-#else
-          std::cerr << "createRenderManager: OpenGLES20 render library not "
-            "compiled in"
-            << std::endl;
-          return nullptr;
-#endif
-        }
-        else {
+        } else {
             std::cerr << "createRenderManager: Unrecognized render library: "
                       << p.m_renderLibrary << std::endl;
             return nullptr;
