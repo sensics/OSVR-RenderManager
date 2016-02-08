@@ -521,7 +521,7 @@ namespace renderkit {
         }
 
         // Set color and depth buffers for the frame buffer
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                              m_colorBuffers[eye].OpenGL->colorBufferName, 0);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                   GL_RENDERBUFFER, m_depthBuffers[eye]);
