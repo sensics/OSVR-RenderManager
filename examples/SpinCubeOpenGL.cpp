@@ -27,6 +27,7 @@
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include <osvr/RenderKit/RenderManager.h>
+#include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 #include <vrpn_Shared.h>
 #include <quat.h>
 #include "font.h" // Simple helper functions to generate and draw OpenGL bitmapped text
@@ -109,10 +110,8 @@ bool SetupRendering(osvr::renderkit::GraphicsLibrary library) {
 // Callback to set up a given display, which may have one or more eyes in it
 void SetupDisplay(
     void* userData //< Passed into SetDisplayCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -139,18 +138,13 @@ void SetupDisplay(
 // Callback to set up for rendering into a given eye (viewpoint and projection).
 void SetupEye(
     void* userData //< Passed into SetViewProjectionCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
-        projection //< Projection matrix set by RenderManager
-    ,
-    size_t whichEye //< Which eye are we setting up for?
+    , osvr::renderkit::OSVR_ProjectionMatrix
+        projectionToUse //< Projection matrix set by RenderManager
+    , size_t whichEye //< Which eye are we setting up for?
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -166,28 +160,38 @@ void SetupEye(
         return;
     }
 
-    // We don't do anything here -- everthing has been configured for us
-    // in the RenderManager.
+    // Set the viewport
+    glViewport(static_cast<GLint>(viewport.left),
+      static_cast<GLint>(viewport.lower),
+      static_cast<GLint>(viewport.width),
+      static_cast<GLint>(viewport.height));
+
+    // Set the OpenGL projection matrix based on the one we
+    // received.
+    GLdouble projection[16];
+    OSVR_Projection_to_OpenGL(projection,
+      projectionToUse);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMultMatrixd(projection);
+
+    // Set the matrix mode to ModelView, so render code doesn't mess with
+    // the projection matrix on accident.
+    glMatrixMode(GL_MODELVIEW);
 }
 
 // Callbacks to draw things in world space, left-hand space, and right-hand
 // space.
 void DrawWorld(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -205,146 +209,15 @@ void DrawWorld(
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
 
+    /// Put the transform into the OpenGL ModelView matrix
+    GLdouble modelView[16];
+    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, pose);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixd(modelView);
+
     /// Draw a cube with a 5-meter radius as the room we are floating in.
     draw_cube(5.0);
-}
-
-// This can be used to draw a heads-up display.  Unlike in a non-VR game,
-// this can't be drawn in screen space because it has to be at a consistent
-// location for stereo viewing through potentially-distorted and offset lenses
-// from the HMD.  This example uses standard 2D text drawn at the same location
-// in 3Space, but that won't work for displays that are not horizontally
-// aligned.
-// The more general approach is to render 3D text in the display, so it will be
-// oriented correctly in all displays.
-// NOTE: For a fixed-display set-up, you do want to draw in screen space.
-void DrawHead(
-    void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
-        viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
-        projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
-    ) {
-    std::string* stringToPrint = static_cast<std::string*>(userData);
-
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr
-            << "DrawHead: No OpenGL GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr << "DrawHead: No OpenGL RenderBuffer, this should not happen"
-                  << std::endl;
-        return;
-    }
-
-    osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
-
-    // Generate the font we're going to use the first time we are called.
-    // NOTE: This is an archaic way of generating a font and should not be used.
-    // in a real application.  It is here because it is the simplest way to do
-    // this in an example program without pulling in additional libraries.
-    static GLuint fontOffset = 0;
-    if (fontOffset == 0) {
-        fontOffset = loadFont(nullptr);
-    }
-
-    // Draw our head-locked text out in front of us.
-    // Set the color before setting the raster position, because it acts like
-    // glVertex
-    glTranslated(0, 0, -0.25);
-    glColor3d(1, 1, 1);
-    glRasterPos3f(0.0f, 0.0f, 0.0f);
-    drawStringInFont(fontOffset, stringToPrint->c_str());
-}
-
-void DrawLeftHand(
-    void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
-        viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
-        projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
-    ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr
-            << "DrawLeftHand: No OpenGL GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr
-            << "DrawLeftHand: No OpenGL RenderBuffer, this should not happen"
-            << std::endl;
-        return;
-    }
-
-    osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
-
-    /// Draw a cube with a 0.1-meter radius.
-    draw_cube(0.05);
-}
-
-void DrawRightHand(
-    void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
-        viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
-        projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
-    ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr << "DrawRightHand: No OpenGL GraphicsLibrary, this should "
-                     "not happen"
-                  << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr
-            << "DrawRightHand: No OpenGL RenderBuffer, this should not happen"
-            << std::endl;
-        return;
-    }
-
-    osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
-
-    /// Draw a cube with a 0.1-meter radius.
-    draw_cube(0.05);
 }
 
 void Usage(std::string name) {
@@ -417,9 +290,6 @@ int main(int argc, char* argv[]) {
     // Register callbacks to render things in left hand, right
     // hand, and world space.
     render->AddRenderCallback("/", DrawWorld);
-    render->AddRenderCallback("/me/head", DrawHead, &frameStringToPrint);
-    render->AddRenderCallback("/me/hands/left", DrawLeftHand);
-    render->AddRenderCallback("/me/hands/right", DrawRightHand);
 
 // Set up a handler to cause us to exit cleanly.
 #ifdef _WIN32

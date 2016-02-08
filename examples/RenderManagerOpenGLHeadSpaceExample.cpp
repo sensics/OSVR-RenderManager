@@ -27,6 +27,7 @@
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include <osvr/RenderKit/RenderManager.h>
+#include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 
 // Library/third-party includes
 #ifdef _WIN32
@@ -106,10 +107,8 @@ bool SetupRendering(osvr::renderkit::GraphicsLibrary library) {
 // Callback to set up a given display, which may have one or more eyes in it
 void SetupDisplay(
     void* userData //< Passed into SetDisplayCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -136,18 +135,13 @@ void SetupDisplay(
 // Callback to set up for rendering into a given eye (viewpoint and projection).
 void SetupEye(
     void* userData //< Passed into SetViewProjectionCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
-        projection //< Projection matrix set by RenderManager
-    ,
-    size_t whichEye //< Which eye are we setting up for?
+    , osvr::renderkit::OSVR_ProjectionMatrix
+        projectionToUse //< Projection matrix set by RenderManager
+    , size_t whichEye //< Which eye are we setting up for?
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -163,28 +157,38 @@ void SetupEye(
         return;
     }
 
-    // We don't do anything here -- everthing has been configured for us
-    // in the RenderManager.
+    // Set the viewport
+    glViewport(static_cast<GLint>(viewport.left),
+      static_cast<GLint>(viewport.lower),
+      static_cast<GLint>(viewport.width),
+      static_cast<GLint>(viewport.height));
+
+    // Set the OpenGL projection matrix based on the one we
+    // received.
+    GLdouble projection[16];
+    OSVR_Projection_to_OpenGL(projection,
+      projectionToUse);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMultMatrixd(projection);
+
+    // Set the matrix mode to ModelView, so render code doesn't mess with
+    // the projection matrix on accident.
+    glMatrixMode(GL_MODELVIEW);
 }
 
 // Callbacks to draw things in world space, left-hand space, and right-hand
 // space.
 void DrawWorld(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -202,6 +206,13 @@ void DrawWorld(
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
 
+    /// Put the transform into the OpenGL ModelView matrix
+    GLdouble modelView[16];
+    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, pose);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixd(modelView);
+
     /// Draw a cube with a 5-meter radius as the room we are floating in.
     draw_cube(5.0);
 
@@ -217,20 +228,14 @@ void DrawWorld(
 // NOTE: For a fixed-display set-up, you do want to draw in screen space.
 void DrawHead(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     std::string* stringToPrint = static_cast<std::string*>(userData);
 
@@ -250,6 +255,14 @@ void DrawHead(
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
 
+    /// Put the transform into the OpenGL ModelView matrix
+    GLdouble modelView[16];
+    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, pose);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixd(modelView);
+
+
     /// Draw a small cube in front of us.
     glTranslated(0, 0, -0.25);
     draw_cube(0.005);
@@ -257,20 +270,14 @@ void DrawHead(
 
 void DrawLeftHand(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -289,26 +296,27 @@ void DrawLeftHand(
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
 
+    /// Put the transform into the OpenGL ModelView matrix
+    GLdouble modelView[16];
+    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, pose);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixd(modelView);
+
     /// Draw a small cube.
     draw_cube(0.05);
 }
 
 void DrawRightHand(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -326,6 +334,13 @@ void DrawRightHand(
     }
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
+
+    /// Put the transform into the OpenGL ModelView matrix
+    GLdouble modelView[16];
+    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, pose);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMultMatrixd(modelView);
 
     /// Draw a small cube.
     draw_cube(0.05);
