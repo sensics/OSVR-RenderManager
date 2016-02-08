@@ -842,17 +842,19 @@ namespace renderkit {
         // always overwriting the whole thing.  We do need to store the
         // value of the depth-test bit and restore it, turning it off for
         // our use here.
-        // Push/pop and disable lighting.
-        // Push/pop and enable 2D texturing.
-        // Push/pop and disable face culling (in case client switched
-        // front-face)
-        glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT |
-                     GL_LIGHTING_BIT | GL_TEXTURE_BIT);
+        // Store the initial values of rendering state that we set, so we
+        // can restore it below.
+        // Disable depth testing.
+        // Enable 2D texturing.
+        // Disable face culling (in case client switched
+        // front-face).
 
+        GLboolean depthTest, texture2D, cullFace;
+        glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+        glGetBooleanv(GL_TEXTURE_2D, &texture2D);
+        glGetBooleanv(GL_CULL_FACE, &cullFace);
         glDisable(GL_DEPTH_TEST);
-        glDisable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         glDisable(GL_CULL_FACE);
 
         if (checkForGLError(
@@ -904,7 +906,25 @@ namespace renderkit {
         glDrawArrays(GL_TRIANGLES, 0,
                      static_cast<GLuint>(m_numTriangles[params.m_index] * 3));
 
-        glPopAttrib();
+        // Put rendering parameters back the way they were before we set them
+        // above.
+        if (depthTest) {
+          glEnable(GL_DEPTH_TEST);
+        } else {
+          glDisable(GL_DEPTH_TEST);
+        }
+
+        if (texture2D) {
+          glEnable(GL_TEXTURE_2D);
+        } else {
+          glDisable(GL_TEXTURE_2D);
+        }
+
+        if (cullFace) {
+          glEnable(GL_CULL_FACE);
+        } else {
+          glDisable(GL_CULL_FACE);
+        }
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;
