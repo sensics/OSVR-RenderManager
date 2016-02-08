@@ -47,6 +47,10 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include "RenderManagerOpenGL.h"
 #endif
 
+#ifdef RM_USE_OPENGLES20
+#include "RenderManagerOpenGLES20.h"
+#endif
+
 #include "VendorIdTools.h"
 
 // OSVR Includes
@@ -2645,7 +2649,17 @@ namespace renderkit {
                 return nullptr;
 #endif
             }
-        } else {
+        } else if (p.m_renderLibrary == "OpenGLES20") {
+#ifdef RM_USE_OPENGLES20
+          ret.reset(new RenderManagerOpenGLES20(context, p));
+#else
+          std::cerr << "createRenderManager: OpenGLES20 render library not "
+            "compiled in"
+            << std::endl;
+          return nullptr;
+#endif
+        }
+        else {
             std::cerr << "createRenderManager: Unrecognized render library: "
                       << p.m_renderLibrary << std::endl;
             return nullptr;

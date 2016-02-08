@@ -109,8 +109,10 @@ endif()
 # OpenGL library as a stand-alone renderer not wrapping D3D
 if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
 	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGLES20.cpp osvr/RenderKit/RenderManagerOpenGLES20.h)
 	message(STATUS " - OpenGL support: enabled (found OpenGL, GLEW, and SDL2)")
 	set(RM_USE_OPENGL TRUE)
+	set(RM_USE_OPENGLES20 TRUE)	# @todo Determine if this is available independently
 	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
 else()
 	message(STATUS " - OpenGL support: disabled (need all of OpenGL, GLEW, and SDL2, at least one was missing)")

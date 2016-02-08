@@ -1,0 +1,916 @@
+/** d@file
+@brief Source file implementing OSVR rendering interface for OpenGL
+ES version 2.0
+
+@date 2016
+
+@author
+Sensics, Inc.
+<http://sensics.com/osvr>
+*/
+
+// Copyright 2016 Sensics, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "RenderManagerOpenGLES20.h"
+#include "GraphicsLibraryOpenGL.h"
+#include <iostream>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
+//==========================================================================
+// Vertex and fragment shaders to perform our combination of asynchronous
+// time warp and distortion correction.
+static const GLchar* distortionVertexShader =
+    "#version 330 core\n"
+    "layout(location = 0) in vec4 position;\n"
+    "layout(location = 1) in vec2 textureCoordinateR;\n"
+    "layout(location = 2) in vec2 textureCoordinateG;\n"
+    "layout(location = 3) in vec2 textureCoordinateB;\n"
+    "out vec2 warpedCoordinateR;\n"
+    "out vec2 warpedCoordinateG;\n"
+    "out vec2 warpedCoordinateB;\n"
+    "uniform mat4 projectionMatrix;\n"
+    "uniform mat4 modelViewMatrix;\n"
+    "uniform mat4 textureMatrix;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = projectionMatrix * modelViewMatrix * position;\n"
+    "   warpedCoordinateR = vec2(textureMatrix * "
+    "      vec4(textureCoordinateR,0,1));\n"
+    "   warpedCoordinateG = vec2(textureMatrix * "
+    "      vec4(textureCoordinateG,0,1));\n"
+    "   warpedCoordinateB = vec2(textureMatrix * "
+    "      vec4(textureCoordinateB,0,1));\n"
+    "}\n";
+
+static const GLchar* distortionFragmentShader =
+    "#version 330 core\n"
+    "uniform sampler2D tex;\n"
+    "in vec2 warpedCoordinateR;\n"
+    "in vec2 warpedCoordinateG;\n"
+    "in vec2 warpedCoordinateB;\n"
+    "layout (location = 0) out vec4 outColor;\n"
+    "void main()\n"
+    "{\n"
+    "    outColor.r = texture2D(tex, warpedCoordinateR).r;\n"
+    "    outColor.g = texture2D(tex, warpedCoordinateG).g;\n"
+    "    outColor.b = texture2D(tex, warpedCoordinateB).b;\n"
+    "    outColor.a = 1;\n"
+    "}\n";
+
+static bool checkShaderError(GLuint shaderId) {
+    GLint result = GL_FALSE;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &result);
+    if (result == GL_FALSE) {
+        GLint maxLength = 0;
+        glGetProgramiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
+        if (maxLength > 1) {
+          std::unique_ptr<GLchar> infoLog(new GLchar[maxLength + 1]);
+          glGetProgramInfoLog(shaderId, maxLength, NULL, infoLog.get());
+          std::cerr << "osvr::renderkit::RenderManager::RenderManagerOpenGLES20"
+            << "::checkShaderError: Message returned from shader compiler: "
+            << infoLog.get() << std::endl;
+        } else {
+          std::cerr << "osvr::renderkit::RenderManager::RenderManagerOpenGLES20"
+            << "::checkShaderError: Empty error message from shader compiler."
+            << std::endl;
+        }
+        return false;
+    }
+    return true;
+}
+
+static bool checkProgramError(GLuint programId) {
+    GLint result = GL_FALSE;
+    glGetProgramiv(programId, GL_LINK_STATUS, &result);
+    if (result == GL_FALSE) {
+        int infoLength = 0;
+        glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLength);
+        if (infoLength > 1) {
+          std::unique_ptr<GLchar> infoLog(new GLchar[infoLength + 1]);
+          glGetProgramInfoLog(programId, infoLength, NULL, infoLog.get());
+          std::cerr << "osvr::renderkit::RenderManager::RenderManagerOpenGLES20"
+            << "::checkProgramError: Message returned from shader compiler: "
+            << infoLog.get() << std::endl;
+        } else {
+          std::cerr << "osvr::renderkit::RenderManager::RenderManagerOpenGLES20"
+            << "::checkProgramError: Empty error message from shader compiler."
+            << std::endl;
+        }
+        return false;
+    }
+    return true;
+}
+
+namespace osvr {
+namespace renderkit {
+
+    /// @todo Make this compile to no-op when debugging is off.
+    bool RenderManagerOpenGLES20::checkForGLError(const std::string& message) {
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+            std::cout << message << ": OpenGL error " << err << std::endl;
+        }
+        return (err != GL_NO_ERROR);
+    }
+
+    RenderManagerOpenGLES20::RenderManagerOpenGLES20(
+        std::shared_ptr<osvr::clientkit::ClientContext> context,
+        ConstructorParameters p)
+        : RenderManager(context, p) {
+        // Initialize all of the variables that don't have to be done in the
+        // list above, so we don't get warnings about out-of-order
+        // initialization if they are re-ordered in the header file.
+        m_doingOkay = true;
+        m_displayOpen = false;
+        m_GLContext = nullptr;
+
+        // Construct the appropriate GraphicsLibrary pointer.
+        m_library.OpenGL = new GraphicsLibraryOpenGL;
+        m_buffers.OpenGL = new RenderBufferOpenGL;
+    }
+
+    RenderManagerOpenGLES20::~RenderManagerOpenGLES20() {
+        removeOpenGLES20Contexts();
+
+        if (m_displayOpen) {
+
+            glDeleteFramebuffers(1, &m_frameBuffer);
+            size_t numEyes = GetNumEyes();
+            // @todo Handle the case of multiple displays per eye
+            for (size_t i = 0; i < numEyes; i++) {
+                glDeleteTextures(1, &m_colorBuffers[i].OpenGL->colorBufferName);
+                delete m_colorBuffers[i].OpenGL;
+                glDeleteRenderbuffers(1, &m_depthBuffers[i]);
+                glDeleteVertexArraysOES(1, &m_distortVAO[i]);
+                glDeleteBuffers(1, &m_distortBuffer[i]);
+                delete[] m_triangleBuffer[i];
+            }
+
+            /// @todo Clean up anything else we need to
+
+            m_displayOpen = false;
+        }
+        delete m_buffers.OpenGL;
+        delete m_library.OpenGL;
+        SDL_Quit();
+    }
+
+    bool RenderManagerOpenGLES20::constructRenderBuffers() {
+        //======================================================
+        // Create the framebuffer which regroups 0, 1,
+        // or more textures, and 0 or 1 depth buffer.
+        // It gets bound to the appropriate buffer for each eye
+        // during rendering.
+        m_frameBuffer = 0;
+        glGenFramebuffers(1, &m_frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+
+        //======================================================
+        // Create the render textures (and Z buffer textures) we're going
+        // to use to render into before presenting them as buffers to be
+        // displayed.  We make one per eye.  We'll set up to render into
+        // each of these before calling the render callbacks.
+        size_t numEyes = GetNumEyes();
+        for (size_t i = 0; i < numEyes; i++) {
+
+            // The color buffer for this eye
+            GLuint colorBufferName = 0;
+            glGenTextures(1, &colorBufferName);
+            RenderBuffer rb;
+            rb.OpenGL = new RenderBufferOpenGL;
+            rb.OpenGL->colorBufferName = colorBufferName;
+            m_colorBuffers.push_back(rb);
+
+            // "Bind" the newly created texture : all future texture functions
+            // will modify this texture
+            // glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, colorBufferName);
+
+            // Determine the appropriate size for the frame buffer to be used
+            // for
+            // this eye.
+            OSVR_ViewportDescription v;
+            ConstructViewportForRender(i, v);
+            int width = static_cast<int>(v.width);
+            int height = static_cast<int>(v.height);
+
+            // Give an empty image to OpenGL ( the last "0" means "empty" )
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                         GL_UNSIGNED_BYTE, 0);
+
+            // The depth buffer
+            GLuint depthrenderbuffer;
+            glGenRenderbuffers(1, &depthrenderbuffer);
+            glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width,
+                                  height);
+            m_depthBuffers.push_back(depthrenderbuffer);
+        }
+
+        // Register the render buffers we're going to use to present
+        return RegisterRenderBuffersInternal(m_colorBuffers);
+    }
+
+    bool RenderManagerOpenGLES20::addOpenGLES20Context(GLES20ContextParams p) {
+        // Initialize the SDL video subsystem.
+        if (!m_sdl_initialized) {
+            if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+                std::cerr << "RenderManagerOpenGLES20::addOpenGLContext: Could not "
+                             "initialize SDL"
+                          << std::endl;
+                return false;
+            }
+            m_sdl_initialized = true;
+        }
+
+        // Figure out the flags we want
+        Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+        if (p.fullScreen) {
+            //        flags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS;
+            flags |= SDL_WINDOW_BORDERLESS;
+        }
+        if (p.visible) {
+            flags |= SDL_WINDOW_SHOWN;
+        } else {
+            flags |= SDL_WINDOW_HIDDEN;
+        }
+
+        // Set the OpenGL attributes we want before opening the window
+        if (p.numBuffers > 1) {
+            SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        }
+        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, p.bitsPerPixel);
+        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, p.bitsPerPixel);
+        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, p.bitsPerPixel);
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, p.bitsPerPixel);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
+        // For now, append the display ID to the title.
+        /// @todo Make a different title for each window in the config file
+        char displayId = '0' + static_cast<char>(m_displays.size());
+        std::string windowTitle = m_params.m_windowTitle + displayId;
+
+        // For now, move the X position of the second display to the
+        // right of the entire display for the left one.
+        /// @todo Make the config-file entry a vector and read both
+        /// from it.
+        p.xPos += p.width * static_cast<int>(m_displays.size());
+
+        // Push back a new window and context.
+        m_displays.push_back(DisplayInfo());
+        m_displays.back().m_window = SDL_CreateWindow(
+            windowTitle.c_str(), p.xPos, p.yPos, p.width, p.height, flags);
+        if (m_displays.back().m_window == nullptr) {
+            std::cerr
+                << "RenderManagerOpenGLES20::addOpenGLContext: Could not get window"
+                << std::endl;
+            return false;
+        }
+
+        // Finally, create our OpenGL context.  If this is not the first
+        // display,
+        // we re-use the existing context.
+        // @todo Make the context-specific vector a singleton again, except for
+        // the display.
+        if (m_displays.size() > 0) {
+            // Share the current context
+            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+        } else {
+            // Replace the current context
+            // @todo When the user passes in the request to use the same
+            // context,
+            // we should also share the context here.
+            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+        }
+        m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
+        if (m_GLContext == nullptr) {
+            std::cerr << "RenderManagerOpenGLES20::addOpenGLContext: Could not get "
+                         "OpenGL context"
+                      << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::removeOpenGLES20Contexts() {
+        glDeleteProgram(m_programId);
+        if (m_GLContext) {
+            SDL_GL_DeleteContext(m_GLContext);
+        }
+        while (m_displays.size() > 0) {
+            if (m_displays.back().m_window == nullptr) {
+                std::cerr << "RenderManagerOpenGLES20::closeOpenGLContext: No "
+                             "window pointer"
+                          << std::endl;
+                return false;
+            }
+            SDL_DestroyWindow(m_displays.back().m_window);
+            m_displays.back().m_window = nullptr;
+            m_displays.pop_back();
+        }
+        return true;
+    }
+
+    RenderManager::OpenResults RenderManagerOpenGLES20::OpenDisplay(void) {
+        // All public methods that use internal state should be guarded
+        // by a mutex.
+        std::lock_guard<std::mutex> lock(m_mutex);
+
+        OpenResults ret;
+        ret.library = m_library;
+        ret.buffers = m_buffers;
+        ret.status = COMPLETE; // Until we hear otherwise
+        if (!doingOkay()) {
+            ret.status = FAILURE;
+            return ret;
+        }
+
+        /// @todo How to handle window resizing?
+
+        //======================================================
+        // Use SDL to get us an OpenGL context.
+        GLES20ContextParams p;
+        p.windowTitle = m_params.m_windowTitle;
+        p.fullScreen = m_params.m_windowFullScreen;
+        // @todo Pull this calculation out into the base class and
+        // store a separate virtual-screen and actual-screen size.
+        // If we've rotated the screen by 90 or 270, then the window
+        // we ask for on the screen has swapped aspect ratios.
+        if ((m_params.m_displayRotation ==
+             ConstructorParameters::Display_Rotation::Ninety) ||
+            (m_params.m_displayRotation ==
+             ConstructorParameters::Display_Rotation::TwoSeventy)) {
+            p.width = m_displayHeight;
+            p.height = m_displayWidth;
+        } else {
+            p.width = m_displayWidth;
+            p.height = m_displayHeight;
+        }
+        p.xPos = m_params.m_windowXPosition;
+        p.yPos = m_params.m_windowYPosition;
+        p.bitsPerPixel = m_params.m_bitsPerColor;
+        p.numBuffers = m_params.m_numBuffers;
+        p.visible = true;
+        for (size_t display = 0; display < GetNumDisplays(); display++) {
+            if (!addOpenGLES20Context(p)) {
+                std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Cannot get GL "
+                             "context "
+                          << "for display " << display << std::endl;
+                ret.status = FAILURE;
+                return ret;
+            }
+        }
+
+        //======================================================
+        // Set vertical sync behavior.
+        if (m_params.m_verticalSync) {
+            if (SDL_GL_SetSwapInterval(1) != 0) {
+                std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Warning: Could "
+                             "not set vertical retrace on"
+                          << std::endl;
+            }
+        } else {
+            if (SDL_GL_SetSwapInterval(0) != 0) {
+                std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Warning: Could "
+                             "not set vertical retrace off"
+                          << std::endl;
+            }
+        }
+
+        //======================================================
+        // Construct the present buffers we're going to use when in Render()
+        // mode, to
+        // wrap the Present interface.
+        if (!constructRenderBuffers()) {
+            removeOpenGLES20Contexts();
+            std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Could not "
+                         "construct present buffers to wrap Render() path"
+                      << std::endl;
+            ret.status = FAILURE;
+            return ret;
+        }
+
+        //======================================================
+        // Construct the shaders and program we'll use to present things
+        // handling ATW/distortion.
+        GLuint vertexShaderId;   //< Vertex shader for ATW/distortion
+        GLuint fragmentShaderId; //< Fragment shader for ATW/distortion
+
+        vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShaderId, 1, &distortionVertexShader, nullptr);
+        glCompileShader(vertexShaderId);
+        if (!checkShaderError(vertexShaderId)) {
+            removeOpenGLES20Contexts();
+            std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Could not "
+                         "construct vertex shader "
+                      << std::endl;
+            ret.status = FAILURE;
+            return ret;
+        }
+
+        fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShaderId, 1, &distortionFragmentShader, nullptr);
+        glCompileShader(fragmentShaderId);
+        if (!checkShaderError(fragmentShaderId)) {
+            removeOpenGLES20Contexts();
+            std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Could not "
+                         "construct fragment shader "
+                      << std::endl;
+            ret.status = FAILURE;
+            return ret;
+        }
+
+        m_programId = glCreateProgram();
+        glAttachShader(m_programId, vertexShaderId);
+        glAttachShader(m_programId, fragmentShaderId);
+        glLinkProgram(m_programId);
+        if (!checkProgramError(m_programId)) {
+            removeOpenGLES20Contexts();
+            std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Could not link "
+                         "shader program "
+                      << std::endl;
+            ret.status = FAILURE;
+            return ret;
+        }
+
+        m_projectionUniformId =
+            glGetUniformLocation(m_programId, "projectionMatrix");
+        m_modelViewUniformId =
+            glGetUniformLocation(m_programId, "modelViewMatrix");
+        m_textureUniformId = glGetUniformLocation(m_programId, "textureMatrix");
+
+        // Now that they are linked, we don't need to keep them around.
+        glDeleteShader(vertexShaderId);
+        glDeleteShader(fragmentShaderId);
+
+        if (!UpdateDistortionMeshesInternal(SQUARE,
+                                            m_params.m_distortionParameters)) {
+            removeOpenGLES20Contexts();
+            std::cerr << "RenderManagerOpenGLES20::OpenDisplay: Could not "
+                         "construct distortion mesh"
+                      << std::endl;
+            ret.status = FAILURE;
+            return ret;
+        }
+
+        //======================================================
+        // Fill in our library with the things the application may need to
+        // use to do its graphics state set-up.
+        ret.library = m_library;
+        ret.buffers = m_buffers;
+
+        checkForGLError("RenderManagerOpenGLES20::OpenDisplay");
+
+        //======================================================
+        // Done, we now have an open window to use.
+        m_displayOpen = true;
+        return ret;
+    }
+
+    bool RenderManagerOpenGLES20::RenderDisplayInitialize(size_t display) {
+        checkForGLError("RenderManagerOpenGLES20::RenderDisplayInitialize start");
+
+        // Make our OpenGL context current
+        SDL_GL_MakeCurrent(m_displays[display].m_window, m_GLContext);
+        checkForGLError("RenderManagerOpenGLES20::RenderDisplayInitialize end");
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::RenderEyeInitialize(size_t eye) {
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::RenderEyeInitialize starting")) {
+            return false;
+        }
+
+        // Render to our framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::RenderEyeInitialize glBindFrameBuffer")) {
+            return false;
+        }
+
+        // Set color and depth buffers for the frame buffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                             m_colorBuffers[eye].OpenGL->colorBufferName, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                  GL_RENDERBUFFER, m_depthBuffers[eye]);
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::RenderEyeInitialize Setting textures")) {
+            return false;
+        }
+
+        // Set the list of draw buffers.
+        // @todo Do we need to replace this with something?  It may not be needed.
+        /*
+        GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+        glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::RenderEyeInitialize DrawBuffers")) {
+            return false;
+        }
+        */
+
+        // Always check that our framebuffer is ok
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+            GL_FRAMEBUFFER_COMPLETE) {
+            std::cerr << "RenderManagerOpenGLES20::RenderEyeInitialize: Incomplete "
+                         "Framebuffer"
+                      << std::endl;
+            return false;
+        }
+
+        // Set the viewport to cover our entire render texture.
+        OSVR_ViewportDescription v;
+        ConstructViewportForRender(eye, v);
+        glViewport(static_cast<GLint>(v.left), static_cast<GLint>(v.lower),
+                   static_cast<GLint>(v.width), static_cast<GLint>(v.height));
+
+        // Call the display set-up callback for each eye, because they each
+        // have their own frame buffer.
+        if (m_displayCallback.m_callback != nullptr) {
+            m_displayCallback.m_callback(m_displayCallback.m_userData,
+                                         m_library, m_buffers);
+        }
+
+        if (checkForGLError("RenderManagerOpenGLES20::RenderEyeInitialize")) {
+            return false;
+        }
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::RenderSpace(
+        size_t whichSpace //< Index into m_callbacks vector
+        ,
+        size_t whichEye //< Which eye are we rendering for?
+        ,
+        OSVR_PoseState pose //< ModelView transform to use
+        ,
+        OSVR_ViewportDescription viewport //< Viewport to use
+        ,
+        OSVR_ProjectionMatrix projection //< Projection to use
+        ) {
+        /// @todo Fill in the timing information
+        OSVR_TimeValue deadline;
+        deadline.microseconds = 0;
+        deadline.seconds = 0;
+
+        RenderCallbackInfo& cb = m_callbacks[whichSpace];
+        cb.m_callback(cb.m_userData, m_library, m_buffers, viewport, pose,
+                      projection, deadline);
+
+        /// @todo Keep track of timing information
+
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::UpdateDistortionMeshesInternal(
+        DistortionMeshType type //< Type of mesh to produce
+        ,
+        std::vector<DistortionParameters> const&
+            distort //< Distortion parameters
+        ) {
+        // Clear the triangle and quad buffers if we have created them before.
+        m_numTriangles.clear();
+        m_triangleBuffer.clear();
+        for (size_t i = 0; i < m_distortVAO.size(); i++) {
+            glDeleteVertexArraysOES(1, &m_distortVAO[i]);
+        }
+        m_distortVAO.clear();
+        for (size_t i = 0; i < m_distortBuffer.size(); i++) {
+            glDeleteBuffers(1, &m_distortBuffer[i]);
+        }
+        m_distortBuffer.clear();
+
+        // Construct the data buffer that will hold the vertices and texture
+        // coordinates
+        // for R,G,B distortion mapping.  Fill it in with the vertices in the
+        // first
+        // block, the red texture coordinates in the next, then the green and
+        // then
+        // the blue.
+        size_t numEyes = GetNumEyes();
+        if (numEyes > distort.size()) {
+            std::cerr << "RenderManagerOpenGLES20::UpdateDistortionMesh: Not "
+                         "enough distortion "
+                      << "parameters for all eyes" << std::endl;
+            removeOpenGLES20Contexts();
+            return false;
+        }
+        for (size_t eye = 0; eye < numEyes; eye++) {
+
+            m_numTriangles.push_back(0);
+            m_triangleBuffer.push_back(nullptr);
+
+            std::vector<RenderManager::DistortionMeshVertex> mesh =
+                ComputeDistortionMesh(eye, type, distort[eye]);
+            m_numTriangles[eye] = mesh.size() / 3;
+            if (m_numTriangles[eye] == 0) {
+                std::cerr << "RenderManagerOpenGLES20::UpdateDistortionMesh: Could "
+                             "not create mesh "
+                          << "for eye " << eye << std::endl;
+                removeOpenGLES20Contexts();
+                return false;
+            }
+            // 4 floats for position, 2 for each texture coordinate (R,G,B)
+            m_triangleBuffer[eye] =
+                new GLfloat[m_numTriangles[eye] * 3 * (4 + 2 + 2 + 2)];
+            GLfloat* cur = m_triangleBuffer[eye];
+            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
+                for (size_t vert = 0; vert < 3; vert++) {
+                    *(cur++) = mesh[3 * tri + vert].m_pos[0];
+                    *(cur++) = mesh[3 * tri + vert].m_pos[1];
+                    *(cur++) = 0; // Z = 0
+                    *(cur++) = 1; // Homogeneous coordinate = 1
+                }
+            }
+            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
+                for (size_t vert = 0; vert < 3; vert++) {
+                    *(cur++) = mesh[3 * tri + vert].m_texRed[0];
+                    *(cur++) = mesh[3 * tri + vert].m_texRed[1];
+                }
+            }
+            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
+                for (size_t vert = 0; vert < 3; vert++) {
+                    *(cur++) = mesh[3 * tri + vert].m_texGreen[0];
+                    *(cur++) = mesh[3 * tri + vert].m_texGreen[1];
+                }
+            }
+            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
+                for (size_t vert = 0; vert < 3; vert++) {
+                    *(cur++) = mesh[3 * tri + vert].m_texBlue[0];
+                    *(cur++) = mesh[3 * tri + vert].m_texBlue[1];
+                }
+            }
+
+            // Construct the geometry we're going to render into the eyes
+            GLuint distortBuffer, distortVAO;
+            glGenVertexArraysOES(1, &distortVAO);
+            glBindVertexArrayOES(distortVAO);
+            glGenBuffers(1, &distortBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, distortBuffer);
+            glBufferData(GL_ARRAY_BUFFER, m_numTriangles[eye] * 3 *
+                                              (4 + 2 + 2 + 2) * sizeof(GLfloat),
+                         m_triangleBuffer[eye], GL_STATIC_DRAW);
+            m_distortBuffer.push_back(distortBuffer);
+            m_distortVAO.push_back(distortVAO);
+        }
+
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::RenderFrameInitialize() {
+        return PresentFrameInitialize();
+    }
+
+    bool RenderManagerOpenGLES20::RenderFrameFinalize() {
+        if (!PresentRenderBuffersInternal(m_colorBuffers, m_renderInfoForRender,
+                                          m_renderParamsForRender)) {
+            std::cerr << "RenderManagerD3D11OpenGL::RenderFrameFinalize: Could "
+                         "not present render buffers"
+                      << std::endl;
+            return false;
+        }
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::PresentDisplayInitialize(size_t display) {
+        if (display >= GetNumDisplays()) {
+            return false;
+        }
+
+        // Make our OpenGL context current
+        SDL_GL_MakeCurrent(m_displays[display].m_window, m_GLContext);
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::PresentDisplayFinalize(size_t display) {
+        if (display >= GetNumDisplays()) {
+            return false;
+        }
+
+        SDL_GL_SwapWindow(m_displays[display].m_window);
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::PresentFrameFinalize() {
+        // Let SDL handle any system events that it needs to.
+        SDL_Event e;
+        while (SDL_PollEvent(&e)) {
+            // If SDL has been given a quit event, what should we do?
+            // We return false to let the app know that something went wrong.
+            if (e.window.event == SDL_QUIT) {
+                return false;
+            } else if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool RenderManagerOpenGLES20::PresentEye(PresentEyeParameters params) {
+        if (params.m_buffer.OpenGL == nullptr) {
+            std::cerr
+                << "RenderManagerOpenGLES20::PresentEye(): NULL buffer pointer"
+                << std::endl;
+            return false;
+        }
+
+        // Construct the OpenGL viewport based on which eye this is.
+        OSVR_ViewportDescription viewportDesc;
+        if (!ConstructViewportForPresent(
+                params.m_index, viewportDesc,
+                m_params.m_displayConfiguration.getSwapEyes())) {
+            std::cerr << "RenderManagerOpenGLES20::PresentEye(): Could not "
+                         "construct viewport"
+                      << std::endl;
+            return false;
+        }
+        // Adjust the viewport based on how much the display window is
+        // rotated with respect to the rendering window.
+        viewportDesc = RotateViewport(viewportDesc);
+        glViewport(static_cast<GLint>(viewportDesc.left),
+                   static_cast<GLint>(viewportDesc.lower),
+                   static_cast<GLsizei>(viewportDesc.width),
+                   static_cast<GLsizei>(viewportDesc.height));
+
+        // Figure out which display we're rendering to for this eye.
+        /// @todo This will need to be generalized when we have multiple
+        /// displays
+        /// per eye.
+        size_t display = GetDisplayUsedByEye(params.m_index);
+
+        /// Switch to our vertex/shader programs
+        /// Store the user program so we can put it back again before
+        /// returning.
+        GLint userProgram;
+        glGetIntegerv(GL_CURRENT_PROGRAM, &userProgram);
+        glUseProgram(m_programId);
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::PresentEye after use program")) {
+            return false;
+        }
+
+        // Set up a Projection matrix that undoes the scale factor applied
+        // due to our rendering overfill factor.  This will put only the part
+        // of the geometry that should be visible inside the viewing frustum.
+        // @todo think about how we get square pixels, to properly handle
+        // distortion correction.
+        GLfloat myScale = m_params.m_renderOverfillFactor;
+        GLfloat scaleProj[16] = {myScale, 0, 0, 0, 0, myScale, 0, 0,
+                                 0,       0, 1, 0, 0, 0,       0, 1};
+        glUniformMatrix4fv(m_projectionUniformId, 1, GL_FALSE, scaleProj);
+        if (checkForGLError("RenderManagerOpenGLES20::PresentEye after projection "
+                            "matrix setting")) {
+            return false;
+        }
+
+        // Set up a ModelView matrix that handles rotating and flipping the
+        // geometry as needed to match the display scan-out circuitry and/or
+        // any changes needed by the inversion of window coordinates when
+        // switching between graphics systems (OpenGL and Direct3D, for
+        // example).
+        // @todo think about how we get square pixels, to properly handle
+        // distortion correction.
+        matrix16 modelView;
+        if (!ComputeDisplayOrientationMatrix(
+                static_cast<float>(params.m_rotateDegrees), params.m_flipInY,
+                modelView)) {
+            std::cerr << "RenderManagerOpenGLES20::PresentEye(): "
+                         "ComputeDisplayOrientationMatrix failed"
+                      << std::endl;
+            return false;
+        }
+        glUniformMatrix4fv(m_modelViewUniformId, 1, GL_FALSE, modelView.data);
+        if (checkForGLError("RenderManagerOpenGLES20::PresentEye after modelView "
+                            "matrix setting")) {
+            return false;
+        }
+
+        //=========================================================
+        // Asynchronous Time Warp.
+        // Set up the texture matrix to handle asynchronous time warp
+
+        float textureMat[] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        if (params.m_ATW != nullptr) {
+            // Because the matrix was built in compliance with the OpenGL
+            // spec, we can just directly use it.
+            memcpy(textureMat, params.m_ATW->data, 15 * sizeof(float));
+        }
+
+        // We now crop to a subregion of the texture.  This is used to handle
+        // the
+        // case where more than one eye is drawn into the same render texture
+        // (for example, as happens in the Unreal game engine).  We base this on
+        // the normalized cropping viewport, which will go from 0 to 1 in both
+        // X and Y for the full display, but which will be cut in half in in one
+        // dimension for the case where two eyes are packed into the same
+        // buffer.
+        // We scale and translate the texture coordinates by multiplying the
+        // texture matrix to map the original range (0..1) to the proper
+        // location.
+        // We read in, multiply, and write out textureMat.
+        matrix16 crop;
+        ComputeRenderBufferCropMatrix(params.m_normalizedCroppingViewport,
+                                      crop);
+        Eigen::Map<Eigen::MatrixXf> textureEigen(textureMat, 4, 4);
+        Eigen::Map<Eigen::MatrixXf> cropEigen(crop.data, 4, 4);
+        Eigen::MatrixXf full(4, 4);
+        full = textureEigen * cropEigen;
+        memcpy(textureMat, full.data(), 16 * sizeof(float));
+
+        glUniformMatrix4fv(m_textureUniformId, 1, GL_FALSE, textureMat);
+        if (checkForGLError("RenderManagerOpenGLES20::PresentEye after texture "
+                            "matrix setting")) {
+            return false;
+        }
+
+        // Render the geometry to fill the viewport, with the texture
+        // mapped onto it.
+
+        // NOTE: No need to clear the buffer in color or depth; we're
+        // always overwriting the whole thing.  We do need to store the
+        // value of the depth-test bit and restore it, turning it off for
+        // our use here.
+        // @todo get and restore state that we're going to change here.
+
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_CULL_FACE);
+
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::PresentEye after environment setting")) {
+            return false;
+        }
+
+        // Render to the 0th frame buffer, which is the screen.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // @todo save and later restore the state telling which texture is bound
+        // and which vertex attributes are set
+
+        // Bind our texture in Texture Unit 0
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, params.m_buffer.OpenGL->colorBufferName);
+
+        if (checkForGLError(
+                "RenderManagerOpenGLES20::PresentEye after texture bind")) {
+            return false;
+        }
+
+        // Bilinear filtering and clamp to the edge of the texture.  Set this
+        // after we've bound our texture.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        char* base = nullptr;
+        size_t vertBase = 0;
+        size_t redBase =
+            vertBase + m_numTriangles[params.m_index] * 3 * 4 * sizeof(GLfloat);
+        size_t greenBase =
+            redBase + m_numTriangles[params.m_index] * 3 * 2 * sizeof(GLfloat);
+        size_t blueBase =
+            greenBase +
+            m_numTriangles[params.m_index] * 3 * 2 * sizeof(GLfloat);
+        glBindVertexArrayOES(m_distortVAO[params.m_index]);
+        glBindBuffer(GL_ARRAY_BUFFER, m_distortBuffer[params.m_index]);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, base + vertBase);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, base + redBase);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, base + greenBase);
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, base + blueBase);
+        glEnableVertexAttribArray(3);
+        glDrawArrays(GL_TRIANGLES, 0,
+                     static_cast<GLuint>(m_numTriangles[params.m_index] * 3));
+
+        if (checkForGLError("RenderManagerOpenGLES20::PresentEye end")) {
+            return false;
+        }
+
+        // Put back the user's vertex/shader program.
+        glUseProgram(userProgram);
+
+        return true;
+    }
+
+} // namespace renderkit
+} // namespace osvr
