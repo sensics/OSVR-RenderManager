@@ -22,9 +22,16 @@ Sensics, Inc.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <GL/glew.h>
-#ifdef _WIN32
-#include <GL/wglew.h>
+#include <RenderManagerBackends.h>
+#ifdef RM_USE_OPENGLES20
+  #define glDeleteVertexArrays glDeleteVertexArraysOES
+  #define glGenVertexArrays glGenVertexArraysOES
+  #define glBindVertexArray glBindVertexArrayOES
+#else
+  #include <GL/glew.h>
+  #ifdef _WIN32
+    #include <GL/wglew.h>
+  #endif
 #endif
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
@@ -379,6 +386,7 @@ namespace renderkit {
             }
         }
 
+#ifndef RM_USE_OPENGLES20
         //======================================================
         // We need to call glewInit() so that we have access to
         // the extensions needed below.
@@ -391,6 +399,7 @@ namespace renderkit {
             ret.status = FAILURE;
             return ret;
         }
+#endif
 
         //======================================================
         // Set vertical sync behavior.

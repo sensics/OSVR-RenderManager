@@ -93,7 +93,21 @@ else()
 	message(STATUS " - AMD direct support: disabled (need LIQUIDVR)")
 endif()
 
-if (NVAPI_FOUND OR LIQUIDVR_FOUND)
+#-----------------------------------------------------------------------------
+# OpenGL library as a stand-alone renderer not wrapping D3D
+if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
+	message(STATUS " - OpenGL support: enabled (found OpenGL, GLEW, and SDL2)")
+	set(RM_USE_OPENGL TRUE)
+	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
+	#set(RM_USE_OPENGLES20 TRUE)
+else()
+	message(STATUS " - OpenGL support: disabled (need all of OpenGL, GLEW, and SDL2, at least one was missing)")
+endif()
+
+#-----------------------------------------------------------------------------
+# OpenGL wrapped around Direct3D
+if (NVAPI_FOUND OR LIQUIDVR_FOUND AND NOT RM_USE_OPENGLES20)
 	#-----------------------------------------------------------------------------
 	# OpenGL library as a wrapper for D3D DirectMode
 	if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
@@ -103,19 +117,6 @@ if (NVAPI_FOUND OR LIQUIDVR_FOUND)
 	else()
 		message(STATUS " - NVIDIA direct D3D11+OpenGL support: disabled (need all of NVAPI, OpenGL, GLEW, and SDL2, at least one was missing)")
 	endif()
-endif()
-
-#-----------------------------------------------------------------------------
-# OpenGL library as a stand-alone renderer not wrapping D3D
-if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
-	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
-	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGLES20.cpp osvr/RenderKit/RenderManagerOpenGLES20.h)
-	message(STATUS " - OpenGL support: enabled (found OpenGL, GLEW, and SDL2)")
-	set(RM_USE_OPENGL TRUE)
-	set(RM_USE_OPENGLES20 TRUE)	# @todo Determine if this is available independently
-	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
-else()
-	message(STATUS " - OpenGL support: disabled (need all of OpenGL, GLEW, and SDL2, at least one was missing)")
 endif()
 
 ###

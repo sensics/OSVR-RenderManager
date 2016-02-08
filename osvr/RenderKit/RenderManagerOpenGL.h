@@ -27,16 +27,28 @@ Sensics, Inc.
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManager.h"
+#include <RenderManagerBackends.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
+
+#ifdef RM_USE_OPENGLES20
+  #include <SDL.h>
+  // @todo Make sure this definition is kosher.  Seems like it should have been done
+  // automatically if it is, perhaps we need to include another file.
+  #define GL_GLEXT_PROTOTYPES
+  #include <SDL_opengles2.h>
 #else
-#include <GL/gl.h>
+  #ifdef __APPLE__
+    #include <OpenGL/gl.h>
+  #else
+    #include <GL/gl.h>
+  #endif
+  #include <SDL.h>
+  #include <SDL_opengl.h>
 #endif
-#include <SDL.h>
-#include <SDL_opengl.h>
+
 #include <stdlib.h>
 
 #include <vector>
