@@ -215,7 +215,7 @@ endif()
 
 if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
 	target_include_directories(osvrRenderManager PRIVATE ${OPENGL_INCLUDE_DIRS})
-	target_link_libraries(osvrRenderManager PRIVATE ${OPENGL_LIBRARY} GLEW::GLEW SDL2::SDL2)
+	target_link_libraries(osvrRenderManager PRIVATE GLEW::GLEW SDL2::SDL2 ${OPENGL_LIBRARY})
 endif()
 
 if(SDL2_DYNAMIC AND WIN32)
