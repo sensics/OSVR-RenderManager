@@ -573,14 +573,10 @@ namespace renderkit {
 
     bool RenderManagerOpenGL::RenderSpace(
         size_t whichSpace //< Index into m_callbacks vector
-        ,
-        size_t whichEye //< Which eye are we rendering for?
-        ,
-        OSVR_PoseState pose //< ModelView transform to use
-        ,
-        OSVR_ViewportDescription viewport //< Viewport to use
-        ,
-        OSVR_ProjectionMatrix projection //< Projection to use
+        , size_t whichEye //< Which eye are we rendering for?
+        , OSVR_PoseState pose //< ModelView transform to use
+        , OSVR_ViewportDescription viewport //< Viewport to use
+        , OSVR_ProjectionMatrix projection //< Projection to use
         ) {
         /// @todo Fill in the timing information
         OSVR_TimeValue deadline;
