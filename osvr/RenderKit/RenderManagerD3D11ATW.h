@@ -344,7 +344,6 @@ namespace osvr {
                 // data into and render from.
 
                 HRESULT hr;
-                auto rtDevice = mRTGraphicsLibrary->device;
 
                 std::vector<osvr::renderkit::RenderInfo> renderInfo = mRenderManager->GetRenderInfo();
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
