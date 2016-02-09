@@ -327,9 +327,11 @@ namespace renderkit {
     bool RenderManagerOpenGL::removeOpenGLContexts() {
         if (m_programId != 0) {
             glDeleteProgram(m_programId);
+            m_programId = 0;
         }
         if (m_GLContext) {
             SDL_GL_DeleteContext(m_GLContext);
+            m_GLContext = 0;
         }
         while (m_displays.size() > 0) {
             if (m_displays.back().m_window == nullptr) {
