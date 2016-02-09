@@ -272,6 +272,8 @@ namespace renderkit {
 #ifdef __APPLE__
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+            SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
         // For now, append the display ID to the title.
@@ -724,9 +726,7 @@ namespace renderkit {
         while (SDL_PollEvent(&e)) {
             // If SDL has been given a quit event, what should we do?
             // We return false to let the app know that something went wrong.
-            if (e.window.event == SDL_QUIT) {
-                return false;
-            } else if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
+            if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
                 return false;
             }
         }
