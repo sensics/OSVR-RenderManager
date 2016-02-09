@@ -95,11 +95,37 @@ namespace osvr {
             }
 
             OpenResults OpenDisplay() override {
-                //std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mLock);
+
+                // Try to open the display in the harnessed
+                // RenderManager.  Return false if it fails.
                 OpenResults ret = mRenderManager->OpenDisplay();
-                if (ret.status != OpenStatus::FAILURE) {
-                    start();
+                if (ret.status == OpenStatus::FAILURE) {
+                  std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
+                    "open display in harnessed RenderManager"
+                    << std::endl;
+                  return ret;
                 }
+
+                //======================================================
+                // Start our ATW sub-thread.
+                start();
+
+                //======================================================
+                // Fill in our library with the things the application may need to
+                // use to do its graphics state set-up.
+                m_library.D3D11->device = m_D3D11device;
+                m_library.D3D11->context = m_D3D11Context;
+
+                // Fill in our library and buffers, rather than those of
+                // the harnessed RenderManager, since these are the ones
+                // that the client will deal with.
+                // @todo Figure out what to do about the buffers
+                // (They may only be needed in the callback path, so we
+                // should consider pulling them out of the present path
+                // and not returning them here.)
+                ret.buffers = m_buffers;
+                ret.library = m_library;
                 return ret;
             }
 
