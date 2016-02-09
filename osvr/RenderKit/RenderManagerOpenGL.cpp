@@ -146,6 +146,7 @@ namespace renderkit {
         m_doingOkay = true;
         m_displayOpen = false;
         m_GLContext = nullptr;
+        m_programId = 0;
 
         // Construct the appropriate GraphicsLibrary pointer.
         m_library.OpenGL = new GraphicsLibraryOpenGL;
@@ -268,6 +269,12 @@ namespace renderkit {
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, p.bitsPerPixel);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+#ifdef __APPLE__
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+            SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
 
         // For now, append the display ID to the title.
         /// @todo Make a different title for each window in the config file
@@ -318,9 +325,13 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::removeOpenGLContexts() {
-        glDeleteProgram(m_programId);
+        if (m_programId != 0) {
+            glDeleteProgram(m_programId);
+            m_programId = 0;
+        }
         if (m_GLContext) {
             SDL_GL_DeleteContext(m_GLContext);
+            m_GLContext = 0;
         }
         while (m_displays.size() > 0) {
             if (m_displays.back().m_window == nullptr) {
@@ -717,9 +728,7 @@ namespace renderkit {
         while (SDL_PollEvent(&e)) {
             // If SDL has been given a quit event, what should we do?
             // We return false to let the app know that something went wrong.
-            if (e.window.event == SDL_QUIT) {
-                return false;
-            } else if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
+            if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
                 return false;
             }
         }
