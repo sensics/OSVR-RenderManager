@@ -424,9 +424,10 @@ int main(int argc, char* argv[]) {
 
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
-            myContext->OMSetDepthStencilState(depthStencilState, 1);
+          renderInfo[i].library.D3D11->context->OMSetDepthStencilState(depthStencilState, 1);
             RenderView(renderInfo[i], frameInfo[frame].renderBuffers[i].D3D11->colorBufferView,
-                frameInfo[frame].depthStencilViews[i], myDevice, myContext);
+                frameInfo[frame].depthStencilViews[i], myDevice,
+                renderInfo[i].library.D3D11->context);
         }
 
         // Send the rendered results to the screen
