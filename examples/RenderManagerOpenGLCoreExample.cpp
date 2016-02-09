@@ -364,10 +364,8 @@ bool SetupRendering(osvr::renderkit::GraphicsLibrary library) {
 // Callback to set up a given display, which may have one or more eyes in it
 void SetupDisplay(
     void* userData //< Passed into SetDisplayCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -394,18 +392,13 @@ void SetupDisplay(
 // Callback to set up for rendering into a given eye (viewpoint and projection).
 void SetupEye(
     void* userData //< Passed into SetViewProjectionCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    size_t whichEye //< Which eye are we setting up for?
+    , size_t whichEye //< Which eye are we setting up for?
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -421,27 +414,24 @@ void SetupEye(
         return;
     }
 
-    // We don't do anything here -- everthing has been configured for us
-    // in the RenderManager.
+    // Set the viewport
+    glViewport(static_cast<GLint>(viewport.left),
+      static_cast<GLint>(viewport.lower),
+      static_cast<GLint>(viewport.width),
+      static_cast<GLint>(viewport.height));
 }
 
 // Callbacks to draw things in world space.
 void DrawWorld(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -473,20 +463,14 @@ void DrawWorld(
 // provided for each hand if desired.
 void DrawHand(
     void* userData //< Passed into AddRenderCallback
-    ,
-    osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    ,
-    osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    ,
-    osvr::renderkit::OSVR_ViewportDescription
+    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
+    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
+    , osvr::renderkit::OSVR_ViewportDescription
         viewport //< Viewport we're rendering into
-    ,
-    OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    ,
-    osvr::renderkit::OSVR_ProjectionMatrix
+    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
+    , osvr::renderkit::OSVR_ProjectionMatrix
         projection //< Projection matrix set by RenderManager
-    ,
-    OSVR_TimeValue deadline //< When the frame should be sent to the screen
+    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
@@ -568,7 +552,7 @@ int main(int argc, char* argv[]) {
     }
     if (ret.library.OpenGL == nullptr) {
         std::cerr << "Attempted to run an OpenGL program with a config file "
-                  << "that specified a different renderling library."
+                  << "that specified a different rendering library."
                   << std::endl;
         return 3;
     }

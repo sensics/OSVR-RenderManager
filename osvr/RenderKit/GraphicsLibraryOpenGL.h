@@ -34,7 +34,8 @@ namespace renderkit {
     /// for a render callback handler in an application using OpenGL
     /// as its renderer.  It is in a separate include file so
     /// that only code that actually uses this needs to
-    /// include it.  NOTE: You must #include <GL/GL.h> before
+    /// include it.  NOTE: You must #include <GL/gl.h> or
+    /// and SDL or other version of GLES include file before
     /// including this file.
 
     class GraphicsLibraryOpenGL {
@@ -48,7 +49,8 @@ namespace renderkit {
     /// This is one of the members of the RenderBuffer union
     /// from RenderManager.h.  It stores the information needed
     /// for an OpenGL texture.
-    /// NOTE: You must #include <GL/gl.h> before
+    /// NOTE: You must #include <GL/gl.h> or
+    /// and SDL or other version of GLES include file before
     /// including this file.
 
     class RenderBufferOpenGL {

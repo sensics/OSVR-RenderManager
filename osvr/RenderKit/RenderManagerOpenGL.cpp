@@ -22,9 +22,16 @@ Sensics, Inc.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <GL/glew.h>
-#ifdef _WIN32
-#include <GL/wglew.h>
+#include <RenderManagerBackends.h>
+#ifdef RM_USE_OPENGLES20
+  #define glDeleteVertexArrays glDeleteVertexArraysOES
+  #define glGenVertexArrays glGenVertexArraysOES
+  #define glBindVertexArray glBindVertexArrayOES
+#else
+  #include <GL/glew.h>
+  #ifdef _WIN32
+    #include <GL/wglew.h>
+  #endif
 #endif
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
@@ -139,6 +146,7 @@ namespace renderkit {
         m_doingOkay = true;
         m_displayOpen = false;
         m_GLContext = nullptr;
+        m_programId = 0;
 
         // Construct the appropriate GraphicsLibrary pointer.
         m_library.OpenGL = new GraphicsLibraryOpenGL;
@@ -261,6 +269,12 @@ namespace renderkit {
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, p.bitsPerPixel);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+#ifdef __APPLE__
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+            SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
 
         // For now, append the display ID to the title.
         /// @todo Make a different title for each window in the config file
@@ -311,9 +325,13 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::removeOpenGLContexts() {
-        glDeleteProgram(m_programId);
+        if (m_programId != 0) {
+            glDeleteProgram(m_programId);
+            m_programId = 0;
+        }
         if (m_GLContext) {
             SDL_GL_DeleteContext(m_GLContext);
+            m_GLContext = 0;
         }
         while (m_displays.size() > 0) {
             if (m_displays.back().m_window == nullptr) {
@@ -379,6 +397,7 @@ namespace renderkit {
             }
         }
 
+#ifndef RM_USE_OPENGLES20
         //======================================================
         // We need to call glewInit() so that we have access to
         // the extensions needed below.
@@ -391,6 +410,7 @@ namespace renderkit {
             ret.status = FAILURE;
             return ret;
         }
+#endif
 
         //======================================================
         // Set vertical sync behavior.
@@ -521,20 +541,12 @@ namespace renderkit {
         }
 
         // Set color and depth buffers for the frame buffer
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                              m_colorBuffers[eye].OpenGL->colorBufferName, 0);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                   GL_RENDERBUFFER, m_depthBuffers[eye]);
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize Setting textures")) {
-            return false;
-        }
-
-        // Set the list of draw buffers.
-        GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-        glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-        if (checkForGLError(
-                "RenderManagerOpenGL::RenderEyeInitialize DrawBuffers")) {
             return false;
         }
 
@@ -546,25 +558,6 @@ namespace renderkit {
                       << std::endl;
             return false;
         }
-
-        // Set the viewport to cover our entire render texture.
-        OSVR_ViewportDescription v;
-        ConstructViewportForRender(eye, v);
-        glViewport(static_cast<GLint>(v.left), static_cast<GLint>(v.lower),
-                   static_cast<GLint>(v.width), static_cast<GLint>(v.height));
-
-        // Set the OpenGL projection matrix based on the one we
-        // computed.
-        GLdouble projection[16];
-        OSVR_Projection_to_OpenGL(projection,
-                                  m_renderInfoForRender[eye].projection);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glMultMatrixd(projection);
-
-        // Set the matrix mode to ModelView, so render code doesn't mess with
-        // the projection matrix on accident.
-        glMatrixMode(GL_MODELVIEW);
 
         // Call the display set-up callback for each eye, because they each
         // have their own frame buffer.
@@ -581,26 +574,15 @@ namespace renderkit {
 
     bool RenderManagerOpenGL::RenderSpace(
         size_t whichSpace //< Index into m_callbacks vector
-        ,
-        size_t whichEye //< Which eye are we rendering for?
-        ,
-        OSVR_PoseState pose //< ModelView transform to use
-        ,
-        OSVR_ViewportDescription viewport //< Viewport to use
-        ,
-        OSVR_ProjectionMatrix projection //< Projection to use
+        , size_t whichEye //< Which eye are we rendering for?
+        , OSVR_PoseState pose //< ModelView transform to use
+        , OSVR_ViewportDescription viewport //< Viewport to use
+        , OSVR_ProjectionMatrix projection //< Projection to use
         ) {
         /// @todo Fill in the timing information
         OSVR_TimeValue deadline;
         deadline.microseconds = 0;
         deadline.seconds = 0;
-
-        /// Put the transform into the OpenGL ModelView matrix
-        GLdouble modelView[16];
-        OSVR_PoseState_to_OpenGL(modelView, pose);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glMultMatrixd(modelView);
 
         RenderCallbackInfo& cb = m_callbacks[whichSpace];
         cb.m_callback(cb.m_userData, m_library, m_buffers, viewport, pose,
@@ -746,9 +728,7 @@ namespace renderkit {
         while (SDL_PollEvent(&e)) {
             // If SDL has been given a quit event, what should we do?
             // We return false to let the app know that something went wrong.
-            if (e.window.event == SDL_QUIT) {
-                return false;
-            } else if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
+            if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
                 return false;
             }
         }
@@ -880,17 +860,19 @@ namespace renderkit {
         // always overwriting the whole thing.  We do need to store the
         // value of the depth-test bit and restore it, turning it off for
         // our use here.
-        // Push/pop and disable lighting.
-        // Push/pop and enable 2D texturing.
-        // Push/pop and disable face culling (in case client switched
-        // front-face)
-        glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT |
-                     GL_LIGHTING_BIT | GL_TEXTURE_BIT);
+        // Store the initial values of rendering state that we set, so we
+        // can restore it below.
+        // Disable depth testing.
+        // Enable 2D texturing.
+        // Disable face culling (in case client switched
+        // front-face).
 
+        GLboolean depthTest, texture2D, cullFace;
+        glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+        glGetBooleanv(GL_TEXTURE_2D, &texture2D);
+        glGetBooleanv(GL_CULL_FACE, &cullFace);
         glDisable(GL_DEPTH_TEST);
-        glDisable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         glDisable(GL_CULL_FACE);
 
         if (checkForGLError(
@@ -942,7 +924,25 @@ namespace renderkit {
         glDrawArrays(GL_TRIANGLES, 0,
                      static_cast<GLuint>(m_numTriangles[params.m_index] * 3));
 
-        glPopAttrib();
+        // Put rendering parameters back the way they were before we set them
+        // above.
+        if (depthTest) {
+          glEnable(GL_DEPTH_TEST);
+        } else {
+          glDisable(GL_DEPTH_TEST);
+        }
+
+        if (texture2D) {
+          glEnable(GL_TEXTURE_2D);
+        } else {
+          glDisable(GL_TEXTURE_2D);
+        }
+
+        if (cullFace) {
+          glEnable(GL_CULL_FACE);
+        } else {
+          glDisable(GL_CULL_FACE);
+        }
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;

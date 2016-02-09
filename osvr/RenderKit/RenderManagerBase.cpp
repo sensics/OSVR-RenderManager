@@ -2147,6 +2147,7 @@ namespace renderkit {
         m_pnpIds.emplace_back(std::move(id));
     }
 
+#ifdef RM_USE_D3D11
     /// Used to open a Direct3D DirectRender RenderManager based on
     /// what kind of graphics card is installed in the machine.
     static RenderManagerD3D11Base *openRenderManagerDirectMode(
@@ -2185,6 +2186,7 @@ namespace renderkit {
 #endif
       return ret;
     }
+#endif
 
     //=======================================================================
     // Factory to create a specific instance of a RenderManager is below.
@@ -2529,6 +2531,7 @@ namespace renderkit {
         // Open the appropriate render manager based on the rendering library
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
+#ifdef RM_USE_D3D11
             if (p.m_directMode) {
               // If we've been asked for asynchronous time warp, we layer
               // the request on top of a request for a DirectRender instance
@@ -2560,20 +2563,19 @@ namespace renderkit {
                   << " requested DirectMode display" << std::endl;
               }
             } else {
-#ifdef RM_USE_D3D11
               ret.reset(new RenderManagerD3D11(context, p));
+            }
 #else
               std::cerr << "createRenderManager: D3D11 render library "
                 "not compiled in"
                 << std::endl;
               return nullptr;
 #endif
-            }
         } else if (p.m_renderLibrary == "OpenGL") {
             if (p.m_directMode) {
 // nVidia DirectMode is currently only implemented under Direct3D11,
 // so we wrap this with an OpenGL renderer.
-#if defined(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL)
+#if defined(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL) && !defined(RM_USE_OPENGLES20)
                 // Set the parameters on the harnessed renderer to not apply the
                 // rendering fixes that we're applying.  Also set its render
                 // library
