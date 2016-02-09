@@ -282,7 +282,7 @@ int main(int argc, char* argv[]) {
             textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
             // Create a new render target texture to use.
-            hr = myDevice->CreateTexture2D(
+            hr = renderInfo[i].library.D3D11->device->CreateTexture2D(
                 &textureDesc, NULL, &D3DTexture);
             if (FAILED(hr)) {
                 std::cerr << "Can't create texture for eye " << i << std::endl;
@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
             // Create the render target view.
             ID3D11RenderTargetView*
                 renderTargetView; //< Pointer to our render target view
-            hr = myDevice->CreateRenderTargetView(
+            hr = renderInfo[i].library.D3D11->device->CreateRenderTargetView(
                 D3DTexture, &renderTargetViewDesc, &renderTargetView);
             if (FAILED(hr)) {
                 std::cerr << "Could not create render target for eye " << i
@@ -337,7 +337,7 @@ int main(int argc, char* argv[]) {
             /// @todo Make this a parameter
             textureDescription.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
             ID3D11Texture2D* depthStencilBuffer;
-            hr = myDevice->CreateTexture2D(
+            hr = renderInfo[i].library.D3D11->device->CreateTexture2D(
                 &textureDescription, NULL, &depthStencilBuffer);
             if (FAILED(hr)) {
                 std::cerr << "Could not create depth/stencil texture for eye " << i
@@ -355,7 +355,7 @@ int main(int argc, char* argv[]) {
             depthStencilViewDescription.Texture2D.MipSlice = 0;
 
             ID3D11DepthStencilView* depthStencilView;
-            hr = myDevice->CreateDepthStencilView(
+            hr = renderInfo[i].library.D3D11->device->CreateDepthStencilView(
                 depthStencilBuffer,
                 &depthStencilViewDescription,
                 &depthStencilView);
@@ -393,8 +393,9 @@ int main(int argc, char* argv[]) {
     depthStencilDescription.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
     depthStencilDescription.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
+    // We only have one depth/stencil state for all displays.
     ID3D11DepthStencilState *depthStencilState;
-    hr = myDevice->CreateDepthStencilState(
+    hr = renderInfo[0].library.D3D11->device->CreateDepthStencilState(
         &depthStencilDescription,
         &depthStencilState);
     if (FAILED(hr)) {
