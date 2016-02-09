@@ -310,7 +310,7 @@ int main(int argc, char* argv[]) {
     }
     if (ret.library.D3D11 == nullptr) {
         std::cerr << "Attempted to run a Direct3D11 program with a config file "
-                  << "that specified a different renderling library."
+                  << "that specified a different rendering library."
                   << std::endl;
         return 3;
     }

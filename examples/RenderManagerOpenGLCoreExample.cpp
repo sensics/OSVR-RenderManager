@@ -552,7 +552,7 @@ int main(int argc, char* argv[]) {
     }
     if (ret.library.OpenGL == nullptr) {
         std::cerr << "Attempted to run an OpenGL program with a config file "
-                  << "that specified a different renderling library."
+                  << "that specified a different rendering library."
                   << std::endl;
         return 3;
     }
