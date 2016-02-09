@@ -146,6 +146,7 @@ namespace renderkit {
         m_doingOkay = true;
         m_displayOpen = false;
         m_GLContext = nullptr;
+        m_programId = 0;
 
         // Construct the appropriate GraphicsLibrary pointer.
         m_library.OpenGL = new GraphicsLibraryOpenGL;
@@ -268,6 +269,10 @@ namespace renderkit {
         SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, p.bitsPerPixel);
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+#ifdef __APPLE__
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+#endif
 
         // For now, append the display ID to the title.
         /// @todo Make a different title for each window in the config file
@@ -318,7 +323,9 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::removeOpenGLContexts() {
-        glDeleteProgram(m_programId);
+        if (m_programId != 0) {
+            glDeleteProgram(m_programId);
+        }
         if (m_GLContext) {
             SDL_GL_DeleteContext(m_GLContext);
         }
