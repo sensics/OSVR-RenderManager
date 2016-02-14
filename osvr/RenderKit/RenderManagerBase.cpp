@@ -1661,12 +1661,9 @@ namespace renderkit {
 
     Float2 RenderManager::DistortionCorrectTextureCoordinate(
         size_t eye //< Which eye?
-        ,
-        Float2 const& inCoords //< Coordinates to modify
-        ,
-        DistortionParameters distort //< Distortion parameters
-        ,
-        size_t color //< 0 = red, 1 = green, 2 = blue
+        , Float2 const& inCoords //< Coordinates to modify
+        , DistortionParameters distort //< Distortion parameters
+        , size_t color //< 0 = red, 1 = green, 2 = blue
         ) {
         Float2 ret = inCoords;
 
