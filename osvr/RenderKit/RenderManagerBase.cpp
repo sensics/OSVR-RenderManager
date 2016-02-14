@@ -1602,9 +1602,9 @@ namespace renderkit {
         return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     }
 
-    static Float2
-    interpolateNearestPoints(float xN, float yN,
-                             const MonoPointDistortionMeshDescription& points) {
+    Float2
+    RenderManager::UnstructuredMeshInterpolator::interpolateNearestPoints(
+            float xN, float yN) {
         Float2 ret;
 
         // Find the three non-collinear points in the mesh that are nearest
@@ -1616,10 +1616,10 @@ namespace renderkit {
         // points, we just go with the values from the closest point.
         typedef std::multimap<double, size_t> PointDistanceIndexMap;
         PointDistanceIndexMap map;
-        for (size_t i = 0; i < points.size(); i++) {
+        for (size_t i = 0; i < m_points.size(); i++) {
             // Insertion into the multimap sorts them by distance.
             map.insert(std::make_pair(
-                pointDistance(xN, yN, points[i][0][0], points[i][0][1]), i));
+                pointDistance(xN, yN, m_points[i][0][0], m_points[i][0][1]), i));
         }
 
         PointDistanceIndexMap::const_iterator it = map.begin();
@@ -1629,30 +1629,30 @@ namespace renderkit {
         it++;
         size_t third = first;
         while (it != map.end()) {
-            if (!nearly_collinear(points[first][0], points[second][0],
-                                  points[it->second][0])) {
+            if (!nearly_collinear(m_points[first][0], m_points[second][0],
+                                  m_points[it->second][0])) {
                 third = it->second;
                 break;
             }
             it++;
         }
         if (third == first) {
-            float xNew = static_cast<float>(points[first][1][0]);
-            float yNew = static_cast<float>(points[first][1][1]);
+            float xNew = static_cast<float>(m_points[first][1][0]);
+            float yNew = static_cast<float>(m_points[first][1][1]);
             ret[0] = xNew;
             ret[1] = yNew;
             return ret;
         }
 
         float xNew = static_cast<float>(interpolate(
-            points[first][0][0], points[first][0][1], points[first][1][0],
-            points[second][0][0], points[second][0][1], points[second][1][0],
-            points[third][0][0], points[third][0][1], points[third][1][0], xN,
+          m_points[first][0][0], m_points[first][0][1], m_points[first][1][0],
+          m_points[second][0][0], m_points[second][0][1], m_points[second][1][0],
+          m_points[third][0][0], m_points[third][0][1], m_points[third][1][0], xN,
             yN));
         float yNew = static_cast<float>(interpolate(
-            points[first][0][0], points[first][0][1], points[first][1][1],
-            points[second][0][0], points[second][0][1], points[second][1][1],
-            points[third][0][0], points[third][0][1], points[third][1][1], xN,
+          m_points[first][0][0], m_points[first][0][1], m_points[first][1][1],
+          m_points[second][0][0], m_points[second][0][1], m_points[second][1][1],
+          m_points[third][0][0], m_points[third][0][1], m_points[third][1][1], xN,
             yN));
         ret[0] = xNew;
         ret[1] = yNew;
@@ -1778,7 +1778,7 @@ namespace renderkit {
             // one that is not collinear with the first two (normalized dot
             // product magnitude far enough from 1).  If we don't find such
             // points, we just go with the values from the closest point.
-            ret = interpolateNearestPoints(xN, yN, points);
+            ret = m_interpolators[0][eye]->interpolateNearestPoints(xN, yN);
         } break;
         case osvr::renderkit::RenderManager::DistortionParameters::
             rgb_point_samples: {
@@ -1802,7 +1802,7 @@ namespace renderkit {
             // one that is not collinear with the first two (normalized dot
             // product magnitude far enough from 1).  If we don't find such
             // points, we just go with the values from the closest point.
-            ret = interpolateNearestPoints(xN, yN, points);
+            ret = m_interpolators[color][eye]->interpolateNearestPoints(xN, yN);
         } break;
         default:
             break;
@@ -1822,6 +1822,16 @@ namespace renderkit {
         , DistortionParameters distort //< Distortion parameters
         ) {
         std::vector<RenderManager::DistortionMeshVertex> ret;
+
+        // Clear any created interpolators, freeing up their memory
+        // first.  These may have been left behind by a failed
+        // mesh-creation from before.
+        for (size_t clr = 0; clr < m_interpolators.size(); clr++) {
+          for (size_t eye = 0; eye < m_interpolators[clr].size(); eye++) {
+            delete m_interpolators[clr][eye];
+          }
+        }
+        m_interpolators.clear();
 
         // Check the validity of the parameters, based on the ones we're
         // using.
@@ -1862,6 +1872,10 @@ namespace renderkit {
                           << distort.m_monoPointSamples.size() << std::endl;
                 return ret;
             }
+            // Add a new interpolator to be used when we're finding
+            // mesh coordinates.
+            std::vector<UnstructuredMeshInterpolator *> empty;
+            m_interpolators.push_back(empty);
             for (size_t eye = 0; eye < 2; eye++) {
                 if (distort.m_monoPointSamples[eye].size() < 3) {
                     std::cerr << "RenderManager::ComputeDistortionMesh: Need "
@@ -1896,6 +1910,10 @@ namespace renderkit {
                             << std::endl;
                         return ret;
                     }
+                    // Add a new interpolator to be used when we're finding
+                    // mesh coordinates.
+                    m_interpolators.back().emplace_back(new
+                      UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
                 }
             }
         } else if (distort.m_type ==
@@ -1914,6 +1932,10 @@ namespace renderkit {
                               << std::endl;
                     return ret;
                 }
+                // Add a new interpolator to be used when we're finding
+                // mesh coordinates.
+                std::vector<UnstructuredMeshInterpolator *> empty;
+                m_interpolators.push_back(empty);
                 for (size_t eye = 0; eye < 2; eye++) {
                     if (distort.m_rgbPointSamples[clr][eye].size() < 3) {
                         std::cerr
@@ -1958,6 +1980,11 @@ namespace renderkit {
                             return ret;
                         }
                     }
+
+                    // Add a new interpolator to be used when we're finding
+                    // mesh coordinates, one per eye.
+                    m_interpolators.back().emplace_back(new
+                      UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
                 }
             }
         } else {
@@ -2073,6 +2100,15 @@ namespace renderkit {
                          "mesh type: "
                       << type << std::endl;
         }
+
+        // Clear any created interpolators, freeing up their memory
+        // first.
+        for (size_t clr = 0; clr < m_interpolators.size(); clr++) {
+          for (size_t eye = 0; eye < m_interpolators[clr].size(); eye++) {
+            delete m_interpolators[clr][eye];
+          }
+        }
+        m_interpolators.clear();
 
         return ret;
     }

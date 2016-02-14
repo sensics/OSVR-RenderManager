@@ -1097,6 +1097,37 @@ namespace renderkit {
             OSVR_ViewportDescription normalizedCroppingViewport,
             matrix16& outMatrix);
 
+        /// @brief Spatial-calculation-acceleration structure.
+        ///  This class makes a spatial data structure that makes it faster
+        /// to determine the interpolated coordinates between vertices
+        /// in an unstructured mesh.  It pre-fills in a small list of the
+        /// nearest unstructured vertices to each location in a regular
+        /// grid and then uses these to more-rapidly identify the nearest
+        /// points when a large number of interpolations need to be done.
+        class UnstructuredMeshInterpolator {
+        public:
+          /// Constructor, provided the list of points it is to use.
+          UnstructuredMeshInterpolator(
+            const MonoPointDistortionMeshDescription& points) :
+            m_points(points) {};
+
+          /// Return an interpolation of the value based on the three
+          /// nearest non-collinear points in the unstructured mesh.
+          Float2 interpolateNearestPoints(float xN, float yN);
+
+        protected:
+          const MonoPointDistortionMeshDescription m_points;
+        };
+
+        /// Vector of interpolators constructed by the
+        /// ComputeDistortionMesh() function to be used by the
+        /// DistortionCorrectTextureCoordinate() function based on
+        /// the number of meshes needed (1 or 3) when it is using
+        /// an unstructured grid.
+        std::vector<    // One per color
+          std::vector<UnstructuredMeshInterpolator *> // One per eye
+          > m_interpolators;
+
         /// @brief Distortion-correct a texture coordinate in PresentMode
         ///  Takes a texture coordinate that is specified in the coordinate
         /// system of a Presented texture for a given eye, which has (0,0)
