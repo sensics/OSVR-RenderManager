@@ -998,14 +998,11 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructProjection(
             size_t whichEye //< Input; index of the eye to use
-            ,
-            double nearClipDistanceMeters //< Perpendicular distance to near
+            , double nearClipDistanceMeters //< Perpendicular distance to near
             // clipping plane
-            ,
-            double farClipDistanceMeters //< Perpendicular distance to far
+            , double farClipDistanceMeters //< Perpendicular distance to far
             // clipping plane
-            ,
-            OSVR_ProjectionMatrix& projection //< Output projection
+            , OSVR_ProjectionMatrix& projection //< Output projection
             );
 
         /// @brief Fill in the viewport for a given eye on the Render path
@@ -1017,8 +1014,7 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructViewportForRender(
             size_t whichEye //< Input; index of the eye to use
-            ,
-            OSVR_ViewportDescription& viewport //< Output viewport
+            , OSVR_ViewportDescription& viewport //< Output viewport
             );
 
         /// @brief Fill in the viewport for a given eye on the Present path
@@ -1037,10 +1033,8 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructViewportForPresent(
             size_t whichEye //< Input; index of the eye to use
-            ,
-            OSVR_ViewportDescription& viewport //< Output viewport
-            ,
-            bool swapEyes //< Should we swap left and right eyes?
+            , OSVR_ViewportDescription& viewport //< Output viewport
+            , bool swapEyes //< Should we swap left and right eyes?
             );
 
         /// @brief Adjust the viewport based on m_displayRotation
@@ -1057,12 +1051,9 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructModelView(
             size_t whichSpace //< Input; index of the space to use
-            ,
-            size_t whichEye //< Input; index of the eye to use
-            ,
-            RenderParams params //< Input; render parameters
-            ,
-            OSVR_PoseState&
+            , size_t whichEye //< Input; index of the eye to use
+            , RenderParams params //< Input; render parameters
+            , OSVR_PoseState&
                 eyeFromSpace //< Output info needed to make ModelView
             );
 
@@ -1083,10 +1074,8 @@ namespace renderkit {
         /// failure.
         bool ComputeDisplayOrientationMatrix(
             float rotateDegrees //< Rotation in degrees around Z
-            ,
-            bool flipInY //< Flip in Y after rotating?
-            ,
-            matrix16& outMatrix //< Matrix to use.
+            , bool flipInY //< Flip in Y after rotating?
+            , matrix16& outMatrix //< Matrix to use.
             );
 
         /// @brief Compute texture matrix adjustment to subset render buffer
@@ -1123,12 +1112,9 @@ namespace renderkit {
         ///  failure.
         Float2 DistortionCorrectTextureCoordinate(
             size_t eye //< Eye this relates to
-            ,
-            Float2 const& inCoords //< Coordinates to modify
-            ,
-            DistortionParameters distort //< Distortion parameters
-            ,
-            size_t color //< 0 = red, 1 = green, 2 = blue
+            , Float2 const& inCoords //< Coordinates to modify
+            , DistortionParameters distort //< Distortion parameters
+            , size_t color //< 0 = red, 1 = green, 2 = blue
             );
 
         /// Describes a vertex 3D position plus 2D texture coordinate.
@@ -1171,10 +1157,8 @@ namespace renderkit {
         ///  @return Vector of triangles (sets of 3 vertices), empty on failure.
         std::vector<DistortionMeshVertex> ComputeDistortionMesh(
             size_t eye //< Which eye?
-            ,
-            DistortionMeshType type //< Type of mesh to produce
-            ,
-            DistortionParameters distort //< Distortion parameters
+            , DistortionMeshType type //< Type of mesh to produce
+            , DistortionParameters distort //< Distortion parameters
             );
 
         //=============================================================
@@ -1210,14 +1194,10 @@ namespace renderkit {
         /// @brief Render objects in a specified space (from m_callbacks)
         virtual bool
         RenderSpace(size_t whichSpace //< Index into m_callbacks vector
-                    ,
-                    size_t whichEye //< Which eye are we rendering for?
-                    ,
-                    OSVR_PoseState pose //< ModelView transform to use
-                    ,
-                    OSVR_ViewportDescription viewport //< Viewport to use
-                    ,
-                    OSVR_ProjectionMatrix projection //< Projection to use
+                    , size_t whichEye //< Which eye are we rendering for?
+                    , OSVR_PoseState pose //< ModelView transform to use
+                    , OSVR_ViewportDescription viewport //< Viewport to use
+                    , OSVR_ProjectionMatrix projection //< Projection to use
                     ) = 0;
 
         /// @brief Finalize rendering for a specified eye

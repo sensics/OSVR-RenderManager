@@ -1821,10 +1821,8 @@ namespace renderkit {
     std::vector<RenderManager::DistortionMeshVertex>
     RenderManager::ComputeDistortionMesh(
         size_t eye //< Which eye?
-        ,
-        DistortionMeshType type //< Type of mesh to produce
-        ,
-        DistortionParameters distort //< Distortion parameters
+        , DistortionMeshType type //< Type of mesh to produce
+        , DistortionParameters distort //< Distortion parameters
         ) {
         std::vector<RenderManager::DistortionMeshVertex> ret;
 
