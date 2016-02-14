@@ -1602,61 +1602,155 @@ namespace renderkit {
         return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     }
 
+    RenderManager::UnstructuredMeshInterpolator::UnstructuredMeshInterpolator(
+        const MonoPointDistortionMeshDescription& points,
+        int numSamplesX, int numSamplesY
+        ) : m_points(points), m_numSamplesX(numSamplesX),
+        m_numSamplesY(numSamplesY) {
+
+      // Construct and fill in the grid of nearby points that is used by the
+      // interpolation function to accelerate the search for the three
+      // nearest non-collinear points.
+      std::vector< MonoPointDistortionMeshDescription> ySet;
+      MonoPointDistortionMeshDescription empty;
+      for (size_t y = 0; y < m_numSamplesY; y++) {
+        ySet.emplace_back(empty);
+      }
+      for (size_t x = 0; x < m_numSamplesX; x++) {
+        m_grid.emplace_back(ySet);
+      }
+      
+      // Go through each point in the unstructured grid and insert its index
+      // into all grid elements that are within 1/5th (rounded up) of the
+      // total span of the grid from its normalized location.
+      int xHalfSpan = static_cast<int>(0.9 + (1.0/5.0)*0.5 * m_numSamplesX);
+      int yHalfSpan = static_cast<int>(0.9 + (1.0/5.0)*0.5 * m_numSamplesY);
+      std::cout << "XXX Constructing from mesh of size " << points.size() << std::endl;
+      for (size_t i = 0; i < points.size(); i++) {
+        int xIndex = 0, yIndex = 0;
+        if (getIndex(points[i][0][0], points[i][0][1], xIndex, yIndex)) {
+
+          // Get the range of locations to insert
+          int xMin = xIndex - xHalfSpan;
+          if (xMin < 0) { xMin = 0; }
+          int xMax = xIndex + xHalfSpan;
+          if (xMax >= m_numSamplesX) { xMax = m_numSamplesX - 1; }
+          int yMin = yIndex - yHalfSpan;
+          if (yMin < 0) { yMin = 0; }
+          int yMax = yIndex + yHalfSpan;
+          if (yMax >= m_numSamplesY) { yMax = m_numSamplesY - 1; }
+
+          // Insert this point into each of these locations.
+          for (int x = xMin; x <= xMax; x++) {
+            for (int y = yMin; y <= yMax; y++) {
+              m_grid[x][y].push_back(points[i]);
+            }
+          }
+        }
+      }
+      for (size_t x = 0; x < m_numSamplesX; x++) {
+        std::cout << "XXX ";
+        for (size_t y = 0; y < m_numSamplesY; y++) {
+          std::cout << m_grid[x][y].size() << " ";
+        }
+        std::cout << std::endl;
+      }
+    }
+
     Float2
     RenderManager::UnstructuredMeshInterpolator::interpolateNearestPoints(
             float xN, float yN) {
-        Float2 ret;
+        Float2 ret = {};
 
-        // Find the three non-collinear points in the mesh that are nearest
-        // to the normalized point we are trying to look up.  We start by
-        // sorting the points based on distance from our location, selecting
-        // the first two, and then looking through the rest until we find
-        // one that is not collinear with the first two (normalized dot
-        // product magnitude far enough from 1).  If we don't find such
-        // points, we just go with the values from the closest point.
-        typedef std::multimap<double, size_t> PointDistanceIndexMap;
-        PointDistanceIndexMap map;
-        for (size_t i = 0; i < m_points.size(); i++) {
-            // Insertion into the multimap sorts them by distance.
-            map.insert(std::make_pair(
-                pointDistance(xN, yN, m_points[i][0][0], m_points[i][0][1]), i));
+        // Look in the spatial-acceleration grid to see if we can
+        // find three points without having to search the entire set of
+        // points.
+        int xIndex = 0, yIndex = 0;
+        if (!getIndex(xN, yN, xIndex, yIndex)) {
+          return ret;
+        }
+        MonoPointDistortionMeshDescription points;
+        points = getNearestPoints(xN, yN, m_grid[xIndex][yIndex]);
+
+        // If we didn't get enough points from the acceleration
+        // structure, look in the whole points array
+        if (points.size() < 3) {
+          points = getNearestPoints(xN, yN, m_points);
         }
 
-        PointDistanceIndexMap::const_iterator it = map.begin();
-        size_t first = it->second;
-        it++;
-        size_t second = it->second;
-        it++;
-        size_t third = first;
-        while (it != map.end()) {
-            if (!nearly_collinear(m_points[first][0], m_points[second][0],
-                                  m_points[it->second][0])) {
-                third = it->second;
-                break;
-            }
-            it++;
-        }
-        if (third == first) {
-            float xNew = static_cast<float>(m_points[first][1][0]);
-            float yNew = static_cast<float>(m_points[first][1][1]);
-            ret[0] = xNew;
-            ret[1] = yNew;
-            return ret;
+        // If we didn't get three points, just return the output of
+        // the first point we found.
+
+        if (points.size() < 3) {
+          float xNew = static_cast<float>(points[0][1][0]);
+          float yNew = static_cast<float>(points[0][1][1]);
+          ret[0] = xNew;
+          ret[1] = yNew;
+          return ret;
         }
 
+        // Found three points -- interpolate them.
         float xNew = static_cast<float>(interpolate(
-          m_points[first][0][0], m_points[first][0][1], m_points[first][1][0],
-          m_points[second][0][0], m_points[second][0][1], m_points[second][1][0],
-          m_points[third][0][0], m_points[third][0][1], m_points[third][1][0], xN,
-            yN));
+          points[0][0][0], points[0][0][1], points[0][1][0],
+          points[1][0][0], points[1][0][1], points[1][1][0],
+          points[2][0][0], points[2][0][1], points[2][1][0], xN,
+          yN));
         float yNew = static_cast<float>(interpolate(
-          m_points[first][0][0], m_points[first][0][1], m_points[first][1][1],
-          m_points[second][0][0], m_points[second][0][1], m_points[second][1][1],
-          m_points[third][0][0], m_points[third][0][1], m_points[third][1][1], xN,
-            yN));
+          points[0][0][0], points[0][0][1], points[0][1][1],
+          points[1][0][0], points[1][0][1], points[1][1][1],
+          points[2][0][0], points[2][0][1], points[2][1][1], xN,
+          yN));
         ret[0] = xNew;
         ret[1] = yNew;
         return ret;
+    }
+
+    MonoPointDistortionMeshDescription
+      RenderManager::UnstructuredMeshInterpolator::getNearestPoints(
+          float xN, float yN,
+          const MonoPointDistortionMeshDescription &points) {
+
+      MonoPointDistortionMeshDescription ret;
+
+      // Find the three non-collinear points in the mesh that are nearest
+      // to the normalized point we are trying to look up.  We start by
+      // sorting the points based on distance from our location, selecting
+      // the first two, and then looking through the rest until we find
+      // one that is not collinear with the first two (normalized dot
+      // product magnitude far enough from 1).  If we don't find such
+      // points, we just go with the values from the closest point.
+      typedef std::multimap<double, size_t> PointDistanceIndexMap;
+      PointDistanceIndexMap map;
+      //if (points.size() < 460 && points.size() > 0) std::cout << "XXX Sorting mesh of size " << points.size() << std::endl;
+      for (size_t i = 0; i < points.size(); i++) {
+        // Insertion into the multimap sorts them by distance.
+        map.insert(std::make_pair(
+          pointDistance(xN, yN, points[i][0][0], points[i][0][1]), i));
+      }
+
+      PointDistanceIndexMap::const_iterator it = map.begin();
+      size_t first = it->second;
+      it++;
+      size_t second = it->second;
+      it++;
+      size_t third = first;
+      while (it != map.end()) {
+        if (!nearly_collinear(points[first][0], points[second][0],
+          points[it->second][0])) {
+          third = it->second;
+          break;
+        }
+        it++;
+      }
+
+      // Push back all of the points we found, which may not include
+      // a third point if the first is the same as the third.
+      if (map.size() >= 1) { ret.push_back(points[first]); }
+      if (map.size() >= 2) { ret.push_back(points[second]); }
+      if (third != first) {
+        ret.push_back(points[third]);
+      }
+      return ret;
     }
 
     Float2 RenderManager::DistortionCorrectTextureCoordinate(
@@ -1778,7 +1872,7 @@ namespace renderkit {
             // one that is not collinear with the first two (normalized dot
             // product magnitude far enough from 1).  If we don't find such
             // points, we just go with the values from the closest point.
-            ret = m_interpolators[0][eye]->interpolateNearestPoints(xN, yN);
+            ret = m_interpolators[0]->interpolateNearestPoints(xN, yN);
         } break;
         case osvr::renderkit::RenderManager::DistortionParameters::
             rgb_point_samples: {
@@ -1802,7 +1896,7 @@ namespace renderkit {
             // one that is not collinear with the first two (normalized dot
             // product magnitude far enough from 1).  If we don't find such
             // points, we just go with the values from the closest point.
-            ret = m_interpolators[color][eye]->interpolateNearestPoints(xN, yN);
+            ret = m_interpolators[color]->interpolateNearestPoints(xN, yN);
         } break;
         default:
             break;
@@ -1827,9 +1921,7 @@ namespace renderkit {
         // first.  These may have been left behind by a failed
         // mesh-creation from before.
         for (size_t clr = 0; clr < m_interpolators.size(); clr++) {
-          for (size_t eye = 0; eye < m_interpolators[clr].size(); eye++) {
-            delete m_interpolators[clr][eye];
-          }
+            delete m_interpolators[clr];
         }
         m_interpolators.clear();
 
@@ -1874,47 +1966,43 @@ namespace renderkit {
             }
             // Add a new interpolator to be used when we're finding
             // mesh coordinates.
-            std::vector<UnstructuredMeshInterpolator *> empty;
-            m_interpolators.push_back(empty);
-            for (size_t eye = 0; eye < 2; eye++) {
-                if (distort.m_monoPointSamples[eye].size() < 3) {
-                    std::cerr << "RenderManager::ComputeDistortionMesh: Need "
-                                 "3+ points, found "
-                              << distort.m_monoPointSamples[eye].size()
-                              << std::endl;
+            if (distort.m_monoPointSamples[eye].size() < 3) {
+                std::cerr << "RenderManager::ComputeDistortionMesh: Need "
+                              "3+ points, found "
+                          << distort.m_monoPointSamples[eye].size()
+                          << std::endl;
+                return ret;
+            }
+            for (size_t i = 0; i < distort.m_monoPointSamples[eye].size();
+                  i++) {
+                if (distort.m_monoPointSamples[eye][i].size() != 2) {
+                    std::cerr
+                        << "RenderManager::ComputeDistortionMesh: Need 2 "
+                        << "points in the mesh, found "
+                        << distort.m_monoPointSamples[eye][i].size()
+                        << std::endl;
                     return ret;
                 }
-                for (size_t i = 0; i < distort.m_monoPointSamples[eye].size();
-                     i++) {
-                    if (distort.m_monoPointSamples[eye][i].size() != 2) {
-                        std::cerr
-                            << "RenderManager::ComputeDistortionMesh: Need 2 "
-                            << "points in the mesh, found "
-                            << distort.m_monoPointSamples[eye][i].size()
-                            << std::endl;
-                        return ret;
-                    }
-                    if (distort.m_monoPointSamples[eye][i][0].size() != 2) {
-                        std::cerr
-                            << "RenderManager::ComputeDistortionMesh: Need 2 "
-                            << "values in input point, found "
-                            << distort.m_monoPointSamples[eye][i][0].size()
-                            << std::endl;
-                        return ret;
-                    }
-                    if (distort.m_monoPointSamples[eye][i][1].size() != 2) {
-                        std::cerr
-                            << "RenderManager::ComputeDistortionMesh: Need 2 "
-                            << "values in output point, found "
-                            << distort.m_monoPointSamples[eye][i][1].size()
-                            << std::endl;
-                        return ret;
-                    }
-                    // Add a new interpolator to be used when we're finding
-                    // mesh coordinates.
-                    m_interpolators.back().emplace_back(new
-                      UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
+                if (distort.m_monoPointSamples[eye][i][0].size() != 2) {
+                    std::cerr
+                        << "RenderManager::ComputeDistortionMesh: Need 2 "
+                        << "values in input point, found "
+                        << distort.m_monoPointSamples[eye][i][0].size()
+                        << std::endl;
+                    return ret;
                 }
+                if (distort.m_monoPointSamples[eye][i][1].size() != 2) {
+                    std::cerr
+                        << "RenderManager::ComputeDistortionMesh: Need 2 "
+                        << "values in output point, found "
+                        << distort.m_monoPointSamples[eye][i][1].size()
+                        << std::endl;
+                    return ret;
+                }
+                // Add a new interpolator to be used when we're finding
+                // mesh coordinates.
+                m_interpolators.emplace_back(new
+                  UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
             }
         } else if (distort.m_type ==
                    RenderManager::DistortionParameters::rgb_point_samples) {
@@ -1934,58 +2022,54 @@ namespace renderkit {
                 }
                 // Add a new interpolator to be used when we're finding
                 // mesh coordinates.
-                std::vector<UnstructuredMeshInterpolator *> empty;
-                m_interpolators.push_back(empty);
-                for (size_t eye = 0; eye < 2; eye++) {
-                    if (distort.m_rgbPointSamples[clr][eye].size() < 3) {
+                if (distort.m_rgbPointSamples[clr][eye].size() < 3) {
+                    std::cerr
+                        << "RenderManager::ComputeDistortionMesh: Need "
+                            "3+ points, found "
+                        << distort.m_rgbPointSamples[clr][eye].size()
+                        << std::endl;
+                    return ret;
+                }
+                for (size_t i = 0;
+                      i < distort.m_rgbPointSamples[clr][eye].size(); i++) {
+                    if (distort.m_rgbPointSamples[clr][eye][i].size() !=
+                        2) {
                         std::cerr
                             << "RenderManager::ComputeDistortionMesh: Need "
-                               "3+ points, found "
-                            << distort.m_rgbPointSamples[clr][eye].size()
+                                "2 "
+                            << "points in the mesh, found "
+                            << distort.m_rgbPointSamples[clr][eye][i].size()
                             << std::endl;
                         return ret;
                     }
-                    for (size_t i = 0;
-                         i < distort.m_rgbPointSamples[clr][eye].size(); i++) {
-                        if (distort.m_rgbPointSamples[clr][eye][i].size() !=
-                            2) {
-                            std::cerr
-                                << "RenderManager::ComputeDistortionMesh: Need "
-                                   "2 "
-                                << "points in the mesh, found "
-                                << distort.m_rgbPointSamples[clr][eye][i].size()
-                                << std::endl;
-                            return ret;
-                        }
-                        if (distort.m_rgbPointSamples[clr][eye][i][0].size() !=
-                            2) {
-                            std::cerr
-                                << "RenderManager::ComputeDistortionMesh: Need "
-                                   "2 "
-                                << "values in input point, found "
-                                << distort.m_rgbPointSamples[clr][eye][i][0]
-                                       .size()
-                                << std::endl;
-                            return ret;
-                        }
-                        if (distort.m_rgbPointSamples[clr][eye][i][1].size() !=
-                            2) {
-                            std::cerr
-                                << "RenderManager::ComputeDistortionMesh: Need "
-                                   "2 "
-                                << "values in output point, found "
-                                << distort.m_rgbPointSamples[clr][eye][i][1]
-                                       .size()
-                                << std::endl;
-                            return ret;
-                        }
+                    if (distort.m_rgbPointSamples[clr][eye][i][0].size() !=
+                        2) {
+                        std::cerr
+                            << "RenderManager::ComputeDistortionMesh: Need "
+                                "2 "
+                            << "values in input point, found "
+                            << distort.m_rgbPointSamples[clr][eye][i][0]
+                                    .size()
+                            << std::endl;
+                        return ret;
                     }
-
-                    // Add a new interpolator to be used when we're finding
-                    // mesh coordinates, one per eye.
-                    m_interpolators.back().emplace_back(new
-                      UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
+                    if (distort.m_rgbPointSamples[clr][eye][i][1].size() !=
+                        2) {
+                        std::cerr
+                            << "RenderManager::ComputeDistortionMesh: Need "
+                                "2 "
+                            << "values in output point, found "
+                            << distort.m_rgbPointSamples[clr][eye][i][1]
+                                    .size()
+                            << std::endl;
+                        return ret;
+                    }
                 }
+
+                // Add a new interpolator to be used when we're finding
+                // mesh coordinates, one per eye.
+                m_interpolators.emplace_back(new
+                  UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
             }
         } else {
             std::cerr << "RenderManager::ComputeDistortionMesh: Unrecognized "
@@ -2104,9 +2188,7 @@ namespace renderkit {
         // Clear any created interpolators, freeing up their memory
         // first.
         for (size_t clr = 0; clr < m_interpolators.size(); clr++) {
-          for (size_t eye = 0; eye < m_interpolators[clr].size(); eye++) {
-            delete m_interpolators[clr][eye];
-          }
+            delete m_interpolators[clr];
         }
         m_interpolators.clear();
 

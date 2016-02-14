@@ -1107,26 +1107,94 @@ namespace renderkit {
         class UnstructuredMeshInterpolator {
         public:
           /// Constructor, provided the list of points it is to use.
+          /// Fills in the acceleration structure so that calls to
+          /// interpolate will be faster.
+          /// @param points Unstructured mesh points to use for interpolation
+          /// @param numSamplesX Optional parameter describing the size of
+          ///        the acceleration mesh structure.
+          /// @param numSamplesY Optional parameter describing the size of
+          ///        the acceleration mesh structure.
           UnstructuredMeshInterpolator(
-            const MonoPointDistortionMeshDescription& points) :
-            m_points(points) {};
+            const MonoPointDistortionMeshDescription& points,
+            int numSamplesX = 20,
+            int numSamplesY = 20
+          );
 
-          /// Return an interpolation of the value based on the three
+          /// Find an interpolation of the value based on the three
           /// nearest non-collinear points in the unstructured mesh.
+          /// Attempts to use the spatial acceleration structure to
+          /// speed up the query if it can.
+          /// @param xN Normalized x coordinate
+          /// @param yN Normalized y coordinate
+          /// @return Normalized coordinate interpolated from
+          ///  unstructured distortion map mesh.
           Float2 interpolateNearestPoints(float xN, float yN);
 
         protected:
+
+          /// Return the three nearest non-collinear points in the
+          /// unstructured mesh description passed in.  If there are
+          /// not three such points, can return fewer.
+          /// @param xN Normalized texture coordinate in X
+          /// @param yN Normalized texture coordinate in Y
+          /// @param points Vector of points to search in.
+          /// @return vector of up to three points.
+          MonoPointDistortionMeshDescription getNearestPoints(
+            float xN, float yN,
+            const MonoPointDistortionMeshDescription &points);
+
           const MonoPointDistortionMeshDescription m_points;
+
+          /// Structure to store points from the m_points array
+          /// in a regular mesh covering the range of
+          /// normalized texture coordinates from (0,0) to (1,1).
+          ///  It is filled by the constructor and is used by the
+          /// interpolator to hopefully provide a fast way to get
+          /// a list of the three nearest non-collinear points.
+          /// If there are not three such points here, the acceleration
+          /// has failed for a location and the full point list is
+          /// searched.
+          std::vector<    // Range in X
+            std::vector<  // Range in Y
+              MonoPointDistortionMeshDescription //< Points
+            >
+          > m_grid;
+          int m_numSamplesX = 0; //< Size of the grid in X
+          int m_numSamplesY = 0; //< Size of the grid in Y
+
+          // Return the index of the closest grid point to a
+          // specified location.  Clamps to the range of
+          // the grid even for points outside it.
+          /// @param xN [in] Normalized X coordinate
+          /// @param yN [in] Normalized Y coordinate
+          /// @param xIndexOut [out] Index of nearest grid point
+          /// @param yIndexOut [out] Index of nearest grid point
+          /// @return True on success, false on no samples in X,Y
+          inline bool getIndex(double xN, double yN,
+            int &xIndexOut, int yIndexOut) {
+            if (m_numSamplesX * m_numSamplesY == 0) {
+              return false;
+            }
+            int xIndex = static_cast<int>(xN * (m_numSamplesX - 1));
+            if (xIndex < 0) { xIndex = 0; }
+            if (xIndex >= m_numSamplesX) { xIndex = m_numSamplesX - 1; }
+            int yIndex = static_cast<int>(yN * (m_numSamplesY - 1));
+            if (yIndex < 0) { yIndex = 0; }
+            if (yIndex >= m_numSamplesY) { yIndex = m_numSamplesY - 1; }
+            xIndexOut = xIndex;
+            yIndexOut = yIndex;
+            return true;
+          };
         };
 
         /// Vector of interpolators constructed by the
         /// ComputeDistortionMesh() function to be used by the
         /// DistortionCorrectTextureCoordinate() function based on
-        /// the number of meshes needed (1 or 3) when it is using
-        /// an unstructured grid.
-        std::vector<    // One per color
-          std::vector<UnstructuredMeshInterpolator *> // One per eye
-          > m_interpolators;
+        /// the number of meshes needed (1 per color, the mesh is
+        /// computed per eye so we only need to keep those around
+        /// for our current eye)
+        /// when it is using an unstructured grid.
+        std::vector<UnstructuredMeshInterpolator *> m_interpolators;
 
         /// @brief Distortion-correct a texture coordinate in PresentMode
         ///  Takes a texture coordinate that is specified in the coordinate
