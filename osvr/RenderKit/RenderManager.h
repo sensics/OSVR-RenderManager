@@ -998,14 +998,11 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructProjection(
             size_t whichEye //< Input; index of the eye to use
-            ,
-            double nearClipDistanceMeters //< Perpendicular distance to near
+            , double nearClipDistanceMeters //< Perpendicular distance to near
             // clipping plane
-            ,
-            double farClipDistanceMeters //< Perpendicular distance to far
+            , double farClipDistanceMeters //< Perpendicular distance to far
             // clipping plane
-            ,
-            OSVR_ProjectionMatrix& projection //< Output projection
+            , OSVR_ProjectionMatrix& projection //< Output projection
             );
 
         /// @brief Fill in the viewport for a given eye on the Render path
@@ -1017,8 +1014,7 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructViewportForRender(
             size_t whichEye //< Input; index of the eye to use
-            ,
-            OSVR_ViewportDescription& viewport //< Output viewport
+            , OSVR_ViewportDescription& viewport //< Output viewport
             );
 
         /// @brief Fill in the viewport for a given eye on the Present path
@@ -1037,10 +1033,8 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructViewportForPresent(
             size_t whichEye //< Input; index of the eye to use
-            ,
-            OSVR_ViewportDescription& viewport //< Output viewport
-            ,
-            bool swapEyes //< Should we swap left and right eyes?
+            , OSVR_ViewportDescription& viewport //< Output viewport
+            , bool swapEyes //< Should we swap left and right eyes?
             );
 
         /// @brief Adjust the viewport based on m_displayRotation
@@ -1057,12 +1051,9 @@ namespace renderkit {
         /// @return True on success, false on failure.
         virtual bool ConstructModelView(
             size_t whichSpace //< Input; index of the space to use
-            ,
-            size_t whichEye //< Input; index of the eye to use
-            ,
-            RenderParams params //< Input; render parameters
-            ,
-            OSVR_PoseState&
+            , size_t whichEye //< Input; index of the eye to use
+            , RenderParams params //< Input; render parameters
+            , OSVR_PoseState&
                 eyeFromSpace //< Output info needed to make ModelView
             );
 
@@ -1083,10 +1074,8 @@ namespace renderkit {
         /// failure.
         bool ComputeDisplayOrientationMatrix(
             float rotateDegrees //< Rotation in degrees around Z
-            ,
-            bool flipInY //< Flip in Y after rotating?
-            ,
-            matrix16& outMatrix //< Matrix to use.
+            , bool flipInY //< Flip in Y after rotating?
+            , matrix16& outMatrix //< Matrix to use.
             );
 
         /// @brief Compute texture matrix adjustment to subset render buffer
@@ -1108,6 +1097,105 @@ namespace renderkit {
             OSVR_ViewportDescription normalizedCroppingViewport,
             matrix16& outMatrix);
 
+        /// @brief Spatial-calculation-acceleration structure.
+        ///  This class makes a spatial data structure that makes it faster
+        /// to determine the interpolated coordinates between vertices
+        /// in an unstructured mesh.  It pre-fills in a small list of the
+        /// nearest unstructured vertices to each location in a regular
+        /// grid and then uses these to more-rapidly identify the nearest
+        /// points when a large number of interpolations need to be done.
+        class UnstructuredMeshInterpolator {
+        public:
+          /// Constructor, provided the list of points it is to use.
+          /// Fills in the acceleration structure so that calls to
+          /// interpolate will be faster.
+          /// @param points Unstructured mesh points to use for interpolation
+          /// @param numSamplesX Optional parameter describing the size of
+          ///        the acceleration mesh structure.
+          /// @param numSamplesY Optional parameter describing the size of
+          ///        the acceleration mesh structure.
+          UnstructuredMeshInterpolator(
+            const MonoPointDistortionMeshDescription& points,
+            int numSamplesX = 20,
+            int numSamplesY = 20
+          );
+
+          /// Find an interpolation of the value based on the three
+          /// nearest non-collinear points in the unstructured mesh.
+          /// Attempts to use the spatial acceleration structure to
+          /// speed up the query if it can.
+          /// @param xN Normalized x coordinate
+          /// @param yN Normalized y coordinate
+          /// @return Normalized coordinate interpolated from
+          ///  unstructured distortion map mesh.
+          Float2 interpolateNearestPoints(float xN, float yN);
+
+        protected:
+
+          /// Return the three nearest non-collinear points in the
+          /// unstructured mesh description passed in.  If there are
+          /// not three such points, can return fewer.
+          /// @param xN Normalized texture coordinate in X
+          /// @param yN Normalized texture coordinate in Y
+          /// @param points Vector of points to search in.
+          /// @return vector of up to three points.
+          MonoPointDistortionMeshDescription getNearestPoints(
+            float xN, float yN,
+            const MonoPointDistortionMeshDescription &points);
+
+          const MonoPointDistortionMeshDescription m_points;
+
+          /// Structure to store points from the m_points array
+          /// in a regular mesh covering the range of
+          /// normalized texture coordinates from (0,0) to (1,1).
+          ///  It is filled by the constructor and is used by the
+          /// interpolator to hopefully provide a fast way to get
+          /// a list of the three nearest non-collinear points.
+          /// If there are not three such points here, the acceleration
+          /// has failed for a location and the full point list is
+          /// searched.
+          std::vector<    // Range in X
+            std::vector<  // Range in Y
+              MonoPointDistortionMeshDescription //< Points
+            >
+          > m_grid;
+          int m_numSamplesX = 0; //< Size of the grid in X
+          int m_numSamplesY = 0; //< Size of the grid in Y
+
+          // Return the index of the closest grid point to a
+          // specified location.  Clamps to the range of
+          // the grid even for points outside it.
+          /// @param xN [in] Normalized X coordinate
+          /// @param yN [in] Normalized Y coordinate
+          /// @param xIndexOut [out] Index of nearest grid point
+          /// @param yIndexOut [out] Index of nearest grid point
+          /// @return True on success, false on no samples in X,Y
+          inline bool getIndex(double xN, double yN,
+            int &xIndexOut, int &yIndexOut) {
+            if (m_numSamplesX * m_numSamplesY == 0) {
+              return false;
+            }
+            int xIndex = static_cast<int>(0.5 + xN * (m_numSamplesX - 1));
+            if (xIndex < 0) { xIndex = 0; }
+            if (xIndex >= m_numSamplesX) { xIndex = m_numSamplesX - 1; }
+            int yIndex = static_cast<int>(0.5 + yN * (m_numSamplesY - 1));
+            if (yIndex < 0) { yIndex = 0; }
+            if (yIndex >= m_numSamplesY) { yIndex = m_numSamplesY - 1; }
+            xIndexOut = xIndex;
+            yIndexOut = yIndex;
+            return true;
+          };
+        };
+
+        /// Vector of interpolators constructed by the
+        /// ComputeDistortionMesh() function to be used by the
+        /// DistortionCorrectTextureCoordinate() function based on
+        /// the number of meshes needed (1 per color, the mesh is
+        /// computed per eye so we only need to keep those around
+        /// for our current eye)
+        /// when it is using an unstructured grid.
+        std::vector<UnstructuredMeshInterpolator *> m_interpolators;
+
         /// @brief Distortion-correct a texture coordinate in PresentMode
         ///  Takes a texture coordinate that is specified in the coordinate
         /// system of a Presented texture for a given eye, which has (0,0)
@@ -1123,12 +1211,9 @@ namespace renderkit {
         ///  failure.
         Float2 DistortionCorrectTextureCoordinate(
             size_t eye //< Eye this relates to
-            ,
-            Float2 const& inCoords //< Coordinates to modify
-            ,
-            DistortionParameters distort //< Distortion parameters
-            ,
-            size_t color //< 0 = red, 1 = green, 2 = blue
+            , Float2 const& inCoords //< Coordinates to modify
+            , DistortionParameters distort //< Distortion parameters
+            , size_t color //< 0 = red, 1 = green, 2 = blue
             );
 
         /// Describes a vertex 3D position plus 2D texture coordinate.
@@ -1171,10 +1256,8 @@ namespace renderkit {
         ///  @return Vector of triangles (sets of 3 vertices), empty on failure.
         std::vector<DistortionMeshVertex> ComputeDistortionMesh(
             size_t eye //< Which eye?
-            ,
-            DistortionMeshType type //< Type of mesh to produce
-            ,
-            DistortionParameters distort //< Distortion parameters
+            , DistortionMeshType type //< Type of mesh to produce
+            , DistortionParameters distort //< Distortion parameters
             );
 
         //=============================================================
@@ -1210,14 +1293,10 @@ namespace renderkit {
         /// @brief Render objects in a specified space (from m_callbacks)
         virtual bool
         RenderSpace(size_t whichSpace //< Index into m_callbacks vector
-                    ,
-                    size_t whichEye //< Which eye are we rendering for?
-                    ,
-                    OSVR_PoseState pose //< ModelView transform to use
-                    ,
-                    OSVR_ViewportDescription viewport //< Viewport to use
-                    ,
-                    OSVR_ProjectionMatrix projection //< Projection to use
+                    , size_t whichEye //< Which eye are we rendering for?
+                    , OSVR_PoseState pose //< ModelView transform to use
+                    , OSVR_ViewportDescription viewport //< Viewport to use
+                    , OSVR_ProjectionMatrix projection //< Projection to use
                     ) = 0;
 
         /// @brief Finalize rendering for a specified eye
