@@ -1621,7 +1621,7 @@ namespace renderkit {
       }
       
       // Go through each point in the unstructured grid and insert its index
-      // into all grid elements that are within 1/5th (rounded up) of the
+      // into all grid elements that are within 1/4th (rounded up) of the
       // total span of the grid from its normalized location.
       int xHalfSpan = static_cast<int>(0.9 + (1.0/4.0)*0.5 * m_numSamplesX);
       int yHalfSpan = static_cast<int>(0.9 + (1.0/4.0)*0.5 * m_numSamplesY);
