@@ -63,10 +63,10 @@ to construct windows of the appropriate size for a given HMD or on-screen displa
 Configuration file entries describe window size, placement, and orientation.  For
 non-DirectMode operation, these show up within the operating virtual screen and can
 be either full-screen or windowed.  For DirectMode operation, they provide full-
-screen oepration on one or more displays.
+screen operation on one or more displays.
 
 * **OverFill & Oversampling:** To enable time warp to work, the rendered view must
-be larger than the view to be presented on a given frame.  This provides a border
+be larger than the image to be presented on a given frame.  This provides a border
 around the image that can be pulled in as the user's viewport rotates.  Also, the
 distortion caused by lenses in VR systems can cause a magnification of the screen
 that requires the application to render pixels at a higher density than the physical
@@ -79,14 +79,14 @@ speed for performance at run time without changes to the code.
 **Asynchronous Time Warp** is under development as of 2/15/2016.  There is a single
 D3D11 example program that runs on DirectMode displays under Windows.  This capability
 is not yet fully operational (the example program does not work when run without
-ATW enabled, and there are several open Github tickets).  When complete, this
+ATW enabled, and there are several open Github issues).  When complete, this
 mode will be enabled by a configuration-file setting.  It produces a separate rendering
 thread that re-warps and re-renders images at full rate even when the application
 renders too slowly to present a new image each frame.
 
 **DirectMode/Linux** is planned as graphics-card vendors finish drivers
-to enable it on this platform.  It will use the same RenderManager interface and
-configuration files as the current Windows implementations.
+to enable it on this platform.  It is being designed to use the same RenderManager
+interface and configuration files as the current Windows implementations.
 
 ## Two RenderManager Interfaces
 
