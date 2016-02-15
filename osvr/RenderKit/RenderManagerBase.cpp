@@ -2112,10 +2112,10 @@ namespace renderkit {
                     float yTexLow = y * quadTexSide;
                     float yTexHigh = (y + 1) * quadTexSide;
 
-                    auto posLL = {xLow, yLow};
-                    auto posLH = {xLow, yHigh};
-                    auto posHL = {xHigh, yLow};
-                    auto posHH = {xHigh, yHigh};
+                    Float2 posLL = { xLow, yLow };
+                    Float2 posLH = { xLow, yHigh };
+                    Float2 posHL = { xHigh, yLow };
+                    Float2 posHH = { xHigh, yHigh };
 
                     Float2 texLL = {xTexLow, yTexLow};
                     Float2 texLH = {xTexLow, yTexHigh};

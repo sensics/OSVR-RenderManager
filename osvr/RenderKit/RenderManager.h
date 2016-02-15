@@ -1216,10 +1216,10 @@ namespace renderkit {
             , size_t color //< 0 = red, 1 = green, 2 = blue
             );
 
-        /// Describes a vertex 3D position plus 2D texture coordinate.
+        /// Describes a vertex 2D position plus three 2D texture coordinates.
         class DistortionMeshVertex {
           public:
-            DistortionMeshVertex(std::vector<float> const& pos,
+            DistortionMeshVertex(Float2 const& pos,
                                  Float2 const& texRed, Float2 const& texGreen,
                                  Float2 const& texBlue)
                 : m_pos(pos), m_texRed(texRed), m_texGreen(texGreen),
@@ -1230,10 +1230,10 @@ namespace renderkit {
             // flipping OpenGL Y coordinates into Direct3D ones.
             static float flipTexCoord(float c) { return 1.0f - c; }
 
-            std::vector<float> m_pos; //< X,Y,Z
+            Float2 m_pos;             //< X,Y
             Float2 m_texRed;          //< U,V
             Float2 m_texGreen;        //< U,V
-            Float2 m_texBlue;         //< U,V`
+            Float2 m_texBlue;         //< U,V
         };
 
         /// @brief Constructs a mesh to correct lens distortions
