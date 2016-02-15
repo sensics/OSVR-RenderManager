@@ -1647,13 +1647,6 @@ namespace renderkit {
           }
         }
       }
-      for (size_t x = 0; x < m_numSamplesX; x++) {
-        std::cout << "XXX ";
-        for (size_t y = 0; y < m_numSamplesY; y++) {
-          std::cout << m_grid[x][y].size() << " ";
-        }
-        std::cout << std::endl;
-      }
     }
 
     Float2
