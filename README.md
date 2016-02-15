@@ -9,12 +9,12 @@ under non-disclosure agreements with the vendors.
 
 This code is built using CMake, and as of 1/26/2016 compiled on Windows, Linux
 (tested on Ubuntu) and Mac-OSX.  The Linux and Mac ports only support OpenGL and
-do not support direct-to-display (DirectMode) rendering.
+do not yet support direct-to-display (DirectMode) rendering.
 
 As of 1/26/2016, the mac port does not run because of the lack of a compatibility
 OpenGL library on that platform.  It needs to be modified to use the Core library
 (needed for the distortion-correction shaders) and to not include the legacy
-OpenGL examples.  As of 2/15/2016, The RenderManager internal OpenGL code is
+OpenGL examples.  As of 2/15/2016, the RenderManager internal OpenGL code is
 entirely Core-compatible (and also GLES 2.0 compatible).
 
 ## What RenderManager Provides
@@ -83,6 +83,10 @@ ATW enabled, and there are several open Github issues).  When complete, this
 mode will be enabled by a configuration-file setting.  It produces a separate rendering
 thread that re-warps and re-renders images at full rate even when the application
 renders too slowly to present a new image each frame.
+
+**Android** support is under development.  As of 2/15/2016, the OpenGL internal
+code is all compatible with OpenGL ES 2.0.  Work is underway to port RenderManager
+to Android on top of the existing OSVR-Core port.
 
 **DirectMode/Linux** is planned as graphics-card vendors finish drivers
 to enable it on this platform.  It is being designed to use the same RenderManager
