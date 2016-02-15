@@ -1626,7 +1626,7 @@ namespace renderkit {
       int xHalfSpan = static_cast<int>(0.9 + (1.0/4.0)*0.5 * m_numSamplesX);
       int yHalfSpan = static_cast<int>(0.9 + (1.0/4.0)*0.5 * m_numSamplesY);
       for (size_t i = 0; i < points.size(); i++) {
-        int xIndex = 0, yIndex = 0;
+        int xIndex, yIndex;
         if (getIndex(points[i][0][0], points[i][0][1], xIndex, yIndex)) {
 
           // Get the range of locations to insert
@@ -1664,7 +1664,7 @@ namespace renderkit {
         // Look in the spatial-acceleration grid to see if we can
         // find three points without having to search the entire set of
         // points.
-        int xIndex = 0, yIndex = 0;
+        int xIndex, yIndex;
         if (!getIndex(xN, yN, xIndex, yIndex)) {
           return ret;
         }
