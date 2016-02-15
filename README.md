@@ -1,9 +1,7 @@
 # OSVR-RenderManager
 
 This repository holds the open-source code for the OSVR RenderManager developed by
-Sensics.  It is licensed under the Apache-2 license.
-
-It has a set of submodules that point to sets of non-open source code to build
+Sensics.  It is licensed under the Apache-2 license.  It has a set of submodules that point to sets of non-open source code to build
 vendor-specific extensions to support direct rendering.  These were developed
 under non-disclosure agreements with the vendors.
 
@@ -15,7 +13,8 @@ As of 1/26/2016, the mac port does not run because of the lack of a compatibilit
 OpenGL library on that platform.  It needs to be modified to use the Core library
 (needed for the distortion-correction shaders) and to not include the legacy
 OpenGL examples.  As of 2/15/2016, the RenderManager internal OpenGL code is
-entirely Core-compatible (and also GLES 2.0 compatible).
+entirely Core-compatible (and also GLES 2.0 compatible).  **Help wanted from
+the community to finish the mac port, see the Github issue for more info.**
 
 ## What RenderManager Provides
 
