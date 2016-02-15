@@ -1175,10 +1175,10 @@ namespace renderkit {
             if (m_numSamplesX * m_numSamplesY == 0) {
               return false;
             }
-            int xIndex = static_cast<int>(xN * (m_numSamplesX - 1));
+            int xIndex = static_cast<int>(0.5 + xN * (m_numSamplesX - 1));
             if (xIndex < 0) { xIndex = 0; }
             if (xIndex >= m_numSamplesX) { xIndex = m_numSamplesX - 1; }
-            int yIndex = static_cast<int>(yN * (m_numSamplesY - 1));
+            int yIndex = static_cast<int>(0.5 + yN * (m_numSamplesY - 1));
             if (yIndex < 0) { yIndex = 0; }
             if (yIndex >= m_numSamplesY) { yIndex = m_numSamplesY - 1; }
             xIndexOut = xIndex;
