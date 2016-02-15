@@ -1171,7 +1171,7 @@ namespace renderkit {
           /// @param yIndexOut [out] Index of nearest grid point
           /// @return True on success, false on no samples in X,Y
           inline bool getIndex(double xN, double yN,
-            int &xIndexOut, int yIndexOut) {
+            int &xIndexOut, int &yIndexOut) {
             if (m_numSamplesX * m_numSamplesY == 0) {
               return false;
             }
