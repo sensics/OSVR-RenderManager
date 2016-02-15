@@ -1998,12 +1998,13 @@ namespace renderkit {
                         << std::endl;
                     return ret;
                 }
-                // Add a new interpolator to be used when we're finding
-                // mesh coordinates.
-                m_interpolators.emplace_back(new
-                  UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
             }
-        } else if (distort.m_type ==
+            // Add a new interpolator to be used when we're finding
+            // mesh coordinates.
+            m_interpolators.emplace_back(new
+              UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
+        }
+        else if (distort.m_type ==
                    RenderManager::DistortionParameters::rgb_point_samples) {
             if (distort.m_rgbPointSamples.size() != 3) {
                 std::cerr << "RenderManager::ComputeDistortionMesh: Need 3 "
