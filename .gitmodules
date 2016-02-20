@@ -1,6 +1,6 @@
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-AMD"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-AMD
-	url = git@github.com:sensics/OSVR-RenderManager-AMD.git
+	url = https://github.com/sensics/OSVR-RenderManager-AMD.git
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA
-	url = git@github.com:sensics/OSVR-RenderManager-NVIDIA.git
+	url = https://github.com/sensics/OSVR-RenderManager-NVIDIA.git
