@@ -4,3 +4,6 @@
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA
 	url = git@github.com:sensics/OSVR-RenderManager-NVIDIA.git
+[submodule "vendor/vrpn"]
+	path = vendor/vrpn
+	url = https://github.com/vrpn/vrpn.git

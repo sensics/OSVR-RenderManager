@@ -28,8 +28,9 @@ endif()
 
 include_directories("${EIGEN3_INCLUDE_DIR}")
 
-find_package(VRPN REQUIRED)	# For time-manipulation routines
-find_package(quatlib REQUIRED)	# For transformation construction
+
+# vendored dependencies
+add_subdirectory(vendor)
 include_directories(${VRPN_INCLUDE_DIRS})
 
 # Add one of these libraries for each vendor that we've got a driver
@@ -180,6 +181,7 @@ set (RenderManager_PUBLIC_HEADERS
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"
 )
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
+target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
