@@ -35,10 +35,7 @@ Sensics, Inc.
 
 #ifdef RM_USE_OPENGLES20
   #include <SDL.h>
-  // @todo Make sure this definition is kosher.  Seems like it should have been done
-  // automatically if it is, perhaps we need to include another file.
-  #define GL_GLEXT_PROTOTYPES
-  #include <SDL_opengles2.h>
+  #include <GLES2/gl2.h>
 #else
   #ifdef __APPLE__
     #include <OpenGL/gl3.h>
