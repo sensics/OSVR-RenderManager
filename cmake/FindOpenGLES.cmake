@@ -7,6 +7,7 @@
 
 # Downloaded from
 # https://sourceforge.net/p/alleg/allegro/ci/5.1/tree/cmake/FindOpenGLES.cmake
+# Modified to use the v2 library rather than the v1 library.
 
 if(OPENGLES_INCLUDE_DIR)
     # Already in cache, be silent
@@ -15,7 +16,7 @@ endif(OPENGLES_INCLUDE_DIR)
 
 find_path(OPENGLES_INCLUDE_DIR GLES/gl.h)
 
-find_library(OPENGLES_gl_LIBRARY NAMES GLESv1_CM)
+find_library(OPENGLES_gl_LIBRARY NAMES GLESv2)
 
 # Handle the QUIETLY and REQUIRED arguments and set OPENGLES_FOUND
 # to TRUE if all listed variables are TRUE.
