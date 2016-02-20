@@ -223,6 +223,11 @@ if (OPENGL_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE ${OPENGL_LIBRARY})
 endif()
 
+if (OPENGLES_FOUND)
+	target_include_directories(osvrRenderManager PRIVATE ${OPENGLES_INCLUDE_DIR})
+	target_link_libraries(osvrRenderManager PRIVATE ${OPENGLES_LIBRARIES})
+endif()
+
 if (GLEW_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE GLEW::GLEW)
 endif()
