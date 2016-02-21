@@ -34,7 +34,6 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/Util/TimeValueC.h>
-#include <osvr/ClientKit/Context.h>
 
 // Standard includes
 #include <vector>
@@ -42,6 +41,13 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <memory>
 #include <mutex>
 #include <array>
+
+// Forward declare the ClientContext class, so we don't depend on the OSVR C++ API.
+namespace osvr {
+namespace clientkit {
+    class ClientContext;
+} // namespace clientkit
+} // namespace osvr
 
 namespace osvr {
 namespace renderkit {
