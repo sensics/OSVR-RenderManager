@@ -2,18 +2,22 @@ if(NOT (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vrpn/vrpn_Connection.h" AND EXISTS "
 	message(FATAL_ERROR "You are missing the VRPN git submodule or one of its submodules- you must have not done a recursive clone. You can get it now by running git submodule update --init --recursive from the root source directory.")
 endif()
 
+set(BUILD_SHARED_LIBS OFF)
+
 # Build VRPN as subproject
-set(VRPN_GPL_SERVER FALSE CACHE INTERNAL "" FORCE)
-if(BUILD_CLIENT AND NOT BUILD_SERVER)
-    set(VRPN_BUILD_SERVER_LIBRARY FALSE CACHE INTERNAL "" FORCE)
-    set(VRPN_BUILD_CLIENT_LIBRARY TRUE CACHE INTERNAL "" FORCE)
-else()
-    set(VRPN_BUILD_SERVER_LIBRARY TRUE CACHE INTERNAL "" FORCE)
-    set(VRPN_BUILD_CLIENT_LIBRARY FALSE CACHE INTERNAL "" FORCE)
-    set(VRPN_USE_HID TRUE CACHE INTERNAL "" FORCE)
-    set(VRPN_USE_LOCAL_HIDAPI TRUE CACHE INTERNAL "" FORCE)
-    if(NOT WIN32)
-        set(VRPN_USE_LIBUSB_1_0 TRUE CACHE INTERNAL "" FORCE)
-    endif()
-endif()
+set(VRPN_GPL_SERVER FALSE CACHE BOOL "" FORCE)
+set(VRPN_BUILD_SERVER_LIBRARY FALSE CACHE BOOL "" FORCE)
+set(VRPN_BUILD_CLIENT_LIBRARY TRUE CACHE BOOL "" FORCE)
+set(VRPN_USE_LOCAL_HIDAPI FALSE CACHE BOOL "" FORCE)
 add_subdirectory(vrpn)
+
+# Create an interface target to more easily consume VRPN internally.
+add_library(vendored-vrpn INTERFACE)
+target_link_libraries(vendored-vrpn INTERFACE ${VRPN_CLIENT_LIBRARY})
+target_include_directories(vendored-vrpn INTERFACE ${VRPN_INCLUDE_DIRS})
+target_compile_definitions(vendored-vrpn INTERFACE ${VRPN_DEFINITIONS})
+
+# Create an interface target to more easily consume quatlib internally.
+add_library(vendored-quat INTERFACE)
+target_link_libraries(vendored-quat INTERFACE quat)
+target_include_directories(vendored-quat INTERFACE ${VRPN_INCLUDE_DIRS})
