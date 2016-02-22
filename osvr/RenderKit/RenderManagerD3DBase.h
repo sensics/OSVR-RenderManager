@@ -54,7 +54,7 @@ namespace renderkit {
       protected:
         /// Construct a D3D RenderManager.
         RenderManagerD3D11Base(
-            std::shared_ptr<osvr::clientkit::ClientContext> context,
+            OSVR_ClientContext context,
             ConstructorParameters p);
 
         virtual bool UpdateDistortionMeshesInternal(

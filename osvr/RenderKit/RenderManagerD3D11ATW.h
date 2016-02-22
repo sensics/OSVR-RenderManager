@@ -80,7 +80,7 @@ namespace osvr {
             * and deletes it when the wrapper is deleted.
             */
             RenderManagerD3D11ATW(
-                std::shared_ptr<osvr::clientkit::ClientContext> context,
+                OSVR_ClientContext context,
                 ConstructorParameters p, RenderManagerD3D11Base* D3DToHarness)
                 : RenderManagerD3D11Base(context, p) {
                 mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
@@ -215,7 +215,7 @@ namespace osvr {
             // * and deletes it when the wrapper is deleted.
             // */
             //RenderManagerD3D11ATW(
-            //    std::shared_ptr<osvr::clientkit::ClientContext> context,
+            //    OSVR_ClientContext context,
             //    ConstructorParameters p, std::unique_ptr<RenderManagerD3D11Base> && D3DToHarness)
             //    : RenderManager(context, p) {
             //    mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
@@ -285,7 +285,7 @@ namespace osvr {
                             // Update the context so we get our callbacks called and
                             // update tracker state, which will be read during the
                             // time-warp calculation in our harnessed RenderManager.
-                            mRenderManager->m_context->update();
+                            osvrClientUpdate(mRenderManager->m_context);
 
                             {
                                 // make a new RenderBuffers array with the atw thread's buffers

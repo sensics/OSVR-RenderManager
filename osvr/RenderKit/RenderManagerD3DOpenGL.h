@@ -65,7 +65,7 @@ namespace renderkit {
         // NOTE: This will call delete on the harnessed RenderManager
         // when it is destroyed.
         RenderManagerD3D11OpenGL(
-            std::shared_ptr<osvr::clientkit::ClientContext> context,
+            OSVR_ClientContext context,
             ConstructorParameters p,
             std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness);
 
