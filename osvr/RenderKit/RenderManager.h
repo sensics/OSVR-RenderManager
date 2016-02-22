@@ -42,6 +42,13 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <mutex>
 #include <array>
 
+// Forward declare the ClientContext class, so we don't depend on the OSVR C++ API.
+namespace osvr {
+namespace clientkit {
+    class ClientContext;
+} // namespace clientkit
+} // namespace osvr
+
 namespace osvr {
 namespace renderkit {
 

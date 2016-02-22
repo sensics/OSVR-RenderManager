@@ -56,6 +56,7 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <osvr/Client/RenderManagerConfig.h>
 #include <osvr/ClientKit/TransformsC.h>
 #include <osvr/Common/IntegerByteSwap.h>
+#include <osvr/ClientKit/Context.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
