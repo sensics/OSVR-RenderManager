@@ -567,6 +567,9 @@ int main(int argc, char* argv[]) {
         std::cerr << "Failed ot initialize GLEW\n" << std::endl;
         return -1;
     }
+    // Clear any GL error that Glew caused.  Apparently on Non-Windows
+    // platforms, this can cause a spurious  error 1280.
+    glGetError();
 
     // Continue rendering until it is time to quit.
     while (!quit) {
