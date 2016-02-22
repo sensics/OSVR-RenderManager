@@ -1135,7 +1135,7 @@ namespace renderkit {
         // If we are not rotating, just return the viewport
         // unchanged.
         if (m_params.m_displayRotation ==
-            ConstructorParameters::Display_Rotation::None) {
+            ConstructorParameters::Display_Rotation::Zero) {
             return viewport;
         }
 
@@ -2397,7 +2397,7 @@ namespace renderkit {
         switch (rotation) {
         case 0:
             p.m_displayRotation =
-                RenderManager::ConstructorParameters::Display_Rotation::None;
+                RenderManager::ConstructorParameters::Display_Rotation::Zero;
             break;
         case 90:
             p.m_displayRotation =

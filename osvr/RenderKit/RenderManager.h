@@ -615,7 +615,7 @@ namespace renderkit {
                 m_directModeIndex = 0;
                 m_directDisplayIndex = 0;
                 m_directHighPriority = false;
-                m_displayRotation = None;
+                m_displayRotation = Zero;
                 m_numBuffers = 2;
                 m_verticalSync = true;
                 m_verticalSyncBlocksRendering = false;
@@ -638,7 +638,7 @@ namespace renderkit {
                 m_graphicsLibrary = GraphicsLibrary();
             }
             typedef enum {
-                None,
+                Zero,
                 Ninety,
                 OneEighty,
                 TwoSeventy
