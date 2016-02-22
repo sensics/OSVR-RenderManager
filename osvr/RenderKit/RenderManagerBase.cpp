@@ -179,7 +179,7 @@ namespace osvr {
 namespace renderkit {
 
     RenderManager::RenderManager(
-        std::shared_ptr<osvr::clientkit::ClientContext> context,
+        OSVR_ClientContext context,
         const ConstructorParameters& p)
         : m_context(context) {
         // Initialize all of the variables that don't have to be done in the
@@ -209,7 +209,7 @@ namespace renderkit {
         m_displayWidth = m_params.m_displayConfiguration.getDisplayWidth();
         m_displayHeight = m_params.m_displayConfiguration.getDisplayHeight();
 
-        if (osvrClientGetInterface(m_context->get(), headSpaceName.c_str(),
+        if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
                                    &m_roomFromHeadInterface) ==
             OSVR_RETURN_FAILURE) {
             std::cerr << "RenderManager::RenderManager(): Can't get interface "
@@ -290,7 +290,7 @@ namespace renderkit {
         // If this is not world space, construct an interface
         // description so we can render objects here.
         if ((interfaceName.size() > 0) && (interfaceName != "/")) {
-            if (osvrClientGetInterface(m_context->get(), interfaceName.c_str(),
+            if (osvrClientGetInterface(m_context, interfaceName.c_str(),
                                        &cb.m_interface) ==
                 OSVR_RETURN_FAILURE) {
                 std::cerr << "RenderManager::AddRenderCallback(): Can't get "
@@ -321,7 +321,7 @@ namespace renderkit {
             if ((interfaceName == ci.m_interfaceName) &&
                 (callback == ci.m_callback) && (userData == ci.m_userData)) {
                 if (ci.m_interface != nullptr) {
-                    if (osvrClientFreeInterface(m_context->get(),
+                    if (osvrClientFreeInterface(m_context,
                                                 ci.m_interface) ==
                         OSVR_RETURN_FAILURE) {
                         std::cerr
@@ -363,7 +363,7 @@ namespace renderkit {
 
         // Update the transformations so that we have the most-recent
         // state in them.
-        if (osvrClientUpdate(m_context->get()) == OSVR_RETURN_FAILURE) {
+        if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
             std::cerr
                 << "RenderManager::Render(): client context update failed."
                 << std::endl;
@@ -521,7 +521,7 @@ namespace renderkit {
 
         // Update the transformations so that we have the most-recent
         // state in them.  Record the time at which we got this state.
-        if (osvrClientUpdate(m_context->get()) == OSVR_RETURN_FAILURE) {
+        if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
             std::cerr << "RenderManager::GetRenderInfo(): client context "
                          "update failed."
                       << std::endl;
@@ -668,7 +668,7 @@ namespace renderkit {
 
                 // Update the client context so we keep getting all required
                 // callbacks called during our busy-wait.
-                if (osvrClientUpdate(m_context->get()) == OSVR_RETURN_FAILURE) {
+                if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
                     std::cerr << "RenderManager::PresentRenderBuffers(): "
                                  "client context update failed."
                               << std::endl;
@@ -872,7 +872,7 @@ namespace renderkit {
         // by a mutex.
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        osvrClientSetRoomRotationUsingHead(m_context->get());
+        osvrClientSetRoomRotationUsingHead(m_context);
     }
 
     void RenderManager::ClearRoomToWorldTransform() {
@@ -880,7 +880,7 @@ namespace renderkit {
         // by a mutex.
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        osvrClientClearRoomToWorldTransform(m_context->get());
+        osvrClientClearRoomToWorldTransform(m_context);
     }
 
     size_t RenderManager::GetNumEyes() {
@@ -2257,7 +2257,7 @@ namespace renderkit {
     /// Used to open a Direct3D DirectRender RenderManager based on
     /// what kind of graphics card is installed in the machine.
     static RenderManagerD3D11Base *openRenderManagerDirectMode(
-      std::shared_ptr<osvr::clientkit::ClientContext> context
+      OSVR_ClientContext context
       , RenderManager::ConstructorParameters
       params
       )
@@ -2308,9 +2308,11 @@ namespace renderkit {
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
         // Construct the context we're going to pass it.
-        std::shared_ptr<osvr::clientkit::ClientContext> context =
-            std::make_shared<osvr::clientkit::ClientContext>(
-                "com.osvr.renderManager");
+        // @todo Destroy the context at the appropriate time.  Need to make sure
+        // this happens only once, so we'd like to use a shared_ptr() on the
+        // basic struct that is the underlying pointer and register the deletion
+        // function.
+        OSVR_ClientContext context = osvrClientInit("com.osvr.renderManager");
 
         // Wait until we get a connection to a display object, from which we
         // will
@@ -2326,8 +2328,8 @@ namespace renderkit {
         std::chrono::time_point<std::chrono::system_clock> start, end;
         start = std::chrono::system_clock::now();
         do {
-            osvrClientUpdate(context->get());
-            displayReturnCode = osvrClientGetDisplay(context->get(), &display);
+            osvrClientUpdate(context);
+            displayReturnCode = osvrClientGetDisplay(context, &display);
             end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = end - start;
             if (elapsed.count() >= 1) {
@@ -2358,8 +2360,8 @@ namespace renderkit {
             // making it
             // a header-only lib might fix it, but we're moving the code here
             // for now.
-            auto const configString =
-                context->getStringParameter("/renderManagerConfig");
+            std::string configString = osvrRenderManagerGetString(context,
+              "/renderManagerConfig");
             osvr::client::RenderManagerConfigPtr cfg(
                 new osvr::client::RenderManagerConfig(configString));
             pipelineConfig = cfg;
@@ -2429,7 +2431,7 @@ namespace renderkit {
         std::string jsonString;
         try {
             std::string jsonString =
-                osvrRenderManagerGetString(context->get(), "/display");
+                osvrRenderManagerGetString(context, "/display");
             OSVRDisplayConfiguration displayConfig(jsonString);
             p.m_displayConfiguration = displayConfig;
         } catch (std::exception& /*e*/) {

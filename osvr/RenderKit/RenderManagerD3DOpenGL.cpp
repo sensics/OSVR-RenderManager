@@ -35,7 +35,7 @@ namespace osvr {
 namespace renderkit {
 
     RenderManagerD3D11OpenGL::RenderManagerD3D11OpenGL(
-        std::shared_ptr<osvr::clientkit::ClientContext> context,
+        OSVR_ClientContext context,
         ConstructorParameters p,
         std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness)
         : RenderManagerOpenGL(context, p),

@@ -40,7 +40,7 @@ namespace renderkit {
       protected:
         /// Construct a D3D RenderManager.
         RenderManagerD3D11(
-            std::shared_ptr<osvr::clientkit::ClientContext> context,
+            OSVR_ClientContext context,
             ConstructorParameters p);
 
         // Classes and structures needed to do our rendering.

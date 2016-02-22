@@ -34,7 +34,7 @@ namespace osvr {
 namespace renderkit {
 
     RenderManagerD3D11::RenderManagerD3D11(
-        std::shared_ptr<osvr::clientkit::ClientContext> context,
+        OSVR_ClientContext context,
         ConstructorParameters p)
         : RenderManagerD3D11Base(context, p) {}
 

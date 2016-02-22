@@ -70,7 +70,7 @@ namespace renderkit {
       protected:
         /// Construct an OpenGL render manager.
         RenderManagerOpenGL(
-            std::shared_ptr<osvr::clientkit::ClientContext> context,
+            OSVR_ClientContext context,
             ConstructorParameters p);
 
         OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(

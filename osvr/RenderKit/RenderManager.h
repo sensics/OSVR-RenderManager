@@ -34,7 +34,6 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/Util/TimeValueC.h>
-#include <osvr/ClientKit/Context.h>
 
 // Standard includes
 #include <vector>
@@ -780,7 +779,7 @@ namespace renderkit {
 
       protected:
         /// @brief Constructor given OSVR context and parameters
-        RenderManager(std::shared_ptr<osvr::clientkit::ClientContext> context,
+        RenderManager(OSVR_ClientContext context,
                       const ConstructorParameters& p);
 
         /// Mutex to provide thread safety to this class and its
@@ -818,7 +817,7 @@ namespace renderkit {
             m_latchedRenderInfo; //< Stores vector of latched RenderInfo
 
         /// OSVR context to use.
-        std::shared_ptr<osvr::clientkit::ClientContext> m_context;
+        OSVR_ClientContext m_context;
 
         // Variables describing the desired characteristics of the
         // rendering, parsed from the display configuration file

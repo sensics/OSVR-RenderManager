@@ -136,7 +136,7 @@ namespace renderkit {
     }
 
     RenderManagerOpenGL::RenderManagerOpenGL(
-        std::shared_ptr<osvr::clientkit::ClientContext> context,
+        OSVR_ClientContext context,
         ConstructorParameters p)
         : RenderManager(context, p) {
         // Initialize all of the variables that don't have to be done in the
