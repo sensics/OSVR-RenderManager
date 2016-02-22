@@ -185,7 +185,7 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND NOT APPLE)
 	# steadiness of the rendering in the absence of motion.
 	add_executable(SpinCubeOpenGL SpinCubeOpenGL.cpp font.c)
 	target_link_libraries(SpinCubeOpenGL PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps vendored-vrpn vendored-quat)
-    target_compile_features(SpinCubeOpenGL PRIVATE cxx_range_for)
+	target_compile_features(SpinCubeOpenGL PRIVATE cxx_range_for)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
