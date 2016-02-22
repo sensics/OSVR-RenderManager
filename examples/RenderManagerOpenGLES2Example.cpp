@@ -25,6 +25,7 @@
 
 // Internal Includes
 #include <osvr/RenderKit/RenderManager.h>
+#include <osvr/ClientKit/Context.h>
 
 // Library/third-party includes
 #include <GLES2/gl2.h>
