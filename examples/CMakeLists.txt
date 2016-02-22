@@ -166,13 +166,26 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
  endif()
 endif()
 
+if(RM_USE_OPENGLES20)
+	#-----------------------------------------------------------------------------
+	# OpenGLES 2.0 Example program
+	add_executable(RenderManagerOpenGLES2Example RenderManagerOpenGLES2Example.cpp)
+	target_link_libraries(RenderManagerOpenGLES2Example PRIVATE osvrRM::osvrRenderManagerCpp ${OPENGLES2_LIBRARIES})
+
+	if(OSVRRM_INSTALL_EXAMPLES)
+		install(TARGETS
+			RenderManagerOpenGLES2Example
+			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
+endif()
+
 if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND NOT APPLE)
 	#-----------------------------------------------------------------------------
 	# OpenGL program that spins the world cube at a constant rate, useful for testing the
 	# steadiness of the rendering in the absence of motion.
 	add_executable(SpinCubeOpenGL SpinCubeOpenGL.cpp font.c)
 	target_link_libraries(SpinCubeOpenGL PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps vendored-vrpn vendored-quat)
-    target_compile_features(SpinCubeOpenGL PRIVATE cxx_range_for)
+	target_compile_features(SpinCubeOpenGL PRIVATE cxx_range_for)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS

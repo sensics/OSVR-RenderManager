@@ -38,6 +38,7 @@ include_directories(${VRPN_INCLUDE_DIRS})
 find_package(nvapi COMPONENTS NDA)
 find_package(liquidvr)
 find_package(OpenGL)
+find_package(OpenGLES2)
 find_package(GLEW)
 find_package(SDL2)
 if (WIN32)
@@ -95,14 +96,17 @@ endif()
 
 #-----------------------------------------------------------------------------
 # OpenGL library as a stand-alone renderer not wrapping D3D
-if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
+if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND SDL2_FOUND)
 	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
-	message(STATUS " - OpenGL support: enabled (found OpenGL, GLEW, and SDL2)")
+	message(STATUS " - OpenGL support: enabled")
 	set(RM_USE_OPENGL TRUE)
 	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
-	#set(RM_USE_OPENGLES20 TRUE)
+        if (OPENGLES2_FOUND)
+		message(STATUS " - OpenGLES2 support: enabled")
+		set(RM_USE_OPENGLES20 TRUE)
+	endif()
 else()
-	message(STATUS " - OpenGL support: disabled (need all of OpenGL, GLEW, and SDL2, at least one was missing)")
+	message(STATUS " - OpenGL support: disabled)")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -180,7 +184,9 @@ set (RenderManager_PUBLIC_HEADERS
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"
 )
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
-target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
+if (NOT ANDROID)
+  target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
+endif()
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
@@ -215,9 +221,25 @@ if(GLEW_FOUND AND WIN32 AND NOT GLEW_LIBRARY MATCHES ".*s.lib")
 	osvrrm_copy_deps(GLEW::GLEW)
 endif()
 
-if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
+if (OPENGL_FOUND)
 	target_include_directories(osvrRenderManager PRIVATE ${OPENGL_INCLUDE_DIRS})
-	target_link_libraries(osvrRenderManager PRIVATE GLEW::GLEW SDL2::SDL2 ${OPENGL_LIBRARY})
+	target_link_libraries(osvrRenderManager PRIVATE ${OPENGL_LIBRARY})
+endif()
+
+if (OPENGLES2_FOUND)
+	target_include_directories(osvrRenderManager PRIVATE ${OPENGLES2_INCLUDE_DIR})
+	target_link_libraries(osvrRenderManager PRIVATE ${OPENGLES2_LIBRARIES})
+	# @todo Assuming for now we're on Android if we are using GLES
+	message(STATUS "GLES Found, assuming compile for Android")
+	target_link_libraries(osvrRenderManager PRIVATE android)
+endif()
+
+if (GLEW_FOUND)
+	target_link_libraries(osvrRenderManager PRIVATE GLEW::GLEW)
+endif()
+
+if (SDL2_FOUND)
+	target_link_libraries(osvrRenderManager PRIVATE SDL2::SDL2)
 endif()
 
 if(SDL2_DYNAMIC AND WIN32)

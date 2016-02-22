@@ -34,11 +34,34 @@ Sensics, Inc.
 #endif
 
 #ifdef RM_USE_OPENGLES20
+  // @todo This presumes we're compiling on Android.
   #include <SDL.h>
-  // @todo Make sure this definition is kosher.  Seems like it should have been done
-  // automatically if it is, perhaps we need to include another file.
-  #define GL_GLEXT_PROTOTYPES
-  #include <SDL_opengles2.h>
+  #include <GLES2/gl2.h>
+  #include <GLES2/gl2ext.h>
+
+  // Bind the vertex-array extensions from the DLL
+  #include <dlfcn.h>
+  PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
+  PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES;
+  PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
+  class CalledBeforeCodeRuns {
+    public:
+      CalledBeforeCodeRuns() {
+	void *libhandle = dlopen("libGLESv2.so", RTLD_LAZY);
+
+	glBindVertexArrayOES = (PFNGLBINDVERTEXARRAYOESPROC)
+				dlsym(libhandle,
+				"glBindVertexArrayOES");
+	glDeleteVertexArraysOES = (PFNGLDELETEVERTEXARRAYSOESPROC)
+				dlsym(libhandle,
+				"glDeleteVertexArraysOES");
+	glGenVertexArraysOES = (PFNGLGENVERTEXARRAYSOESPROC)
+				dlsym(libhandle,
+				"glGenVertexArraysOES");
+    }
+  };
+  static CalledBeforeCodeRuns getFunctionPointers;
+
 #else
   #ifdef __APPLE__
     #include <OpenGL/gl3.h>
