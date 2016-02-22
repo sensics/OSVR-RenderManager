@@ -28,7 +28,6 @@ endif()
 
 include_directories("${EIGEN3_INCLUDE_DIR}")
 
-
 # vendored dependencies
 add_subdirectory(vendor)
 include_directories(${VRPN_INCLUDE_DIRS})
@@ -226,7 +225,7 @@ if(SDL2_DYNAMIC AND WIN32)
 endif()
 
 # This also lets it know where to find the header files.
-target_link_libraries(osvrRenderManager PUBLIC osvr::osvrClientKitCpp PRIVATE osvr::osvrClient jsoncpp_lib ${QUATLIB_LIBRARY})
+target_link_libraries(osvrRenderManager PUBLIC osvr::osvrClientKitCpp PRIVATE osvr::osvrClient jsoncpp_lib vendored-vrpn vendored-quat)
 osvrrm_copy_deps(osvr::osvrClientKit osvr::osvrClient osvr::osvrCommon osvr::osvrUtil)
 
 # Add the C++ interface target.

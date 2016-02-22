@@ -54,15 +54,15 @@ if(OSVRRM_HAVE_D3D11_SUPPORT)
 	endif()
 endif()
 
-if(OSVRRM_HAVE_D3D11_SUPPORT AND QUATLIB_FOUND)
+if(OSVRRM_HAVE_D3D11_SUPPORT)
 	#-----------------------------------------------------------------------------
 	# Latency test program
 	add_executable(LatencyTestD3DExample LatencyTestD3DExample.cpp ${COMMON_D3D_2D_SOURCES})
-	target_link_libraries(LatencyTestD3DExample PRIVATE osvrRM::osvrRenderManagerCpp ${QUATLIB_LIBRARY})
+	target_link_libraries(LatencyTestD3DExample PRIVATE osvrRM::osvrRenderManagerCpp vendored-quat)
 
 	# D3D Example program
 	add_executable(RenderManagerD3DHeadSpaceExample RenderManagerD3DHeadSpaceExample.cpp ${COMMON_D3D_SOURCES})
-	target_link_libraries(RenderManagerD3DHeadSpaceExample PRIVATE osvrRM::osvrRenderManagerCpp ${QUATLIB_LIBRARY})
+	target_link_libraries(RenderManagerD3DHeadSpaceExample PRIVATE osvrRM::osvrRenderManagerCpp vendored-quat)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
@@ -72,12 +72,12 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND QUATLIB_FOUND)
 	endif()
 endif()
 
-if(OSVRRM_HAVE_D3D11_SUPPORT AND VRPN_FOUND)
+if(OSVRRM_HAVE_D3D11_SUPPORT)
 	#-----------------------------------------------------------------------------
 	# D3D program that spins the world cube at a constant rate, useful for testing the
 	# steadiness of the rendering in the absence of motion.
 	add_executable(SpinCubeD3D SpinCubeD3D.cpp ${COMMON_D3D_SOURCES})
-	target_link_libraries(SpinCubeD3D PRIVATE osvrRM::osvrRenderManagerCpp ${VRPN_LIBRARIES})
+	target_link_libraries(SpinCubeD3D PRIVATE osvrRM::osvrRenderManagerCpp vendored-vrpn vendored-quat)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
@@ -144,12 +144,12 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
 	endif()
 endif()
 
-if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND VRPN_FOUND)
+if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND)
 	#-----------------------------------------------------------------------------
 	# OpenGL program that spins the world cube at a constant rate, useful for testing the
 	# steadiness of the rendering in the absence of motion.
 	add_executable(SpinCubeOpenGL SpinCubeOpenGL.cpp font.c)
-	target_link_libraries(SpinCubeOpenGL PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps ${VRPN_LIBRARIES})
+	target_link_libraries(SpinCubeOpenGL PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps vendored-vrpn vendored-quat)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
