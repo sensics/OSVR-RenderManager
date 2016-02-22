@@ -71,13 +71,12 @@ static const GLchar* distortionFragmentShader =
     "in vec2 warpedCoordinateR;\n"
     "in vec2 warpedCoordinateG;\n"
     "in vec2 warpedCoordinateB;\n"
-    "layout (location = 0) out vec4 outColor;\n"
+    "out vec3 color;\n"
     "void main()\n"
     "{\n"
-    "    outColor.r = texture2D(tex, warpedCoordinateR).r;\n"
-    "    outColor.g = texture2D(tex, warpedCoordinateG).g;\n"
-    "    outColor.b = texture2D(tex, warpedCoordinateB).b;\n"
-    "    outColor.a = 1;\n"
+    "    color.r = texture(tex, warpedCoordinateR).r;\n"
+    "    color.g = texture(tex, warpedCoordinateG).g;\n"
+    "    color.b = texture(tex, warpedCoordinateB).b;\n"
     "}\n";
 
 static bool checkShaderError(GLuint shaderId) {
@@ -397,6 +396,8 @@ namespace renderkit {
             }
         }
 
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after context creation");
+
 #ifndef RM_USE_OPENGLES20
         //======================================================
         // We need to call glewInit() so that we have access to
@@ -410,6 +411,9 @@ namespace renderkit {
             ret.status = FAILURE;
             return ret;
         }
+        // Clear any GL error that Glew caused.  Apparently on Non-Windows
+        // platforms, this can cause a spurious  error 1280.
+        glGetError();
 #endif
 
         //======================================================
@@ -428,6 +432,8 @@ namespace renderkit {
             }
         }
 
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after vsync setting");
+
         //======================================================
         // Construct the present buffers we're going to use when in Render()
         // mode, to
@@ -440,6 +446,8 @@ namespace renderkit {
             ret.status = FAILURE;
             return ret;
         }
+
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after constructRenderBuffers");
 
         //======================================================
         // Construct the shaders and program we'll use to present things
@@ -471,6 +479,8 @@ namespace renderkit {
             return ret;
         }
 
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after shader compile");
+
         m_programId = glCreateProgram();
         glAttachShader(m_programId, vertexShaderId);
         glAttachShader(m_programId, fragmentShaderId);
@@ -483,6 +493,8 @@ namespace renderkit {
             ret.status = FAILURE;
             return ret;
         }
+
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after program link");
 
         m_projectionUniformId =
             glGetUniformLocation(m_programId, "projectionMatrix");
@@ -510,7 +522,7 @@ namespace renderkit {
         ret.library = m_library;
         ret.buffers = m_buffers;
 
-        checkForGLError("RenderManagerOpenGL::OpenDisplay");
+        checkForGLError("RenderManagerOpenGL::OpenDisplay end");
 
         //======================================================
         // Done, we now have an open window to use.
@@ -528,10 +540,7 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::RenderEyeInitialize(size_t eye) {
-        if (checkForGLError(
-                "RenderManagerOpenGL::RenderEyeInitialize starting")) {
-            return false;
-        }
+        checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
@@ -584,9 +593,13 @@ namespace renderkit {
         deadline.microseconds = 0;
         deadline.seconds = 0;
 
+        checkForGLError(
+          "RenderManagerOpenGL::RenderSpace: Before calling user callback");
         RenderCallbackInfo& cb = m_callbacks[whichSpace];
         cb.m_callback(cb.m_userData, m_library, m_buffers, viewport, pose,
                       projection, deadline);
+        checkForGLError(
+          "RenderManagerOpenGL::RenderSpace: After calling user callback");
 
         /// @todo Keep track of timing information
 
@@ -693,6 +706,8 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::RenderFrameFinalize() {
+        checkForGLError(
+          "RenderManagerOpenGL::RenderFramaFinalize: start");
         if (!PresentRenderBuffersInternal(m_colorBuffers, m_renderInfoForRender,
                                           m_renderParamsForRender)) {
             std::cerr << "RenderManagerD3D11OpenGL::RenderFrameFinalize: Could "
@@ -707,9 +722,13 @@ namespace renderkit {
         if (display >= GetNumDisplays()) {
             return false;
         }
+        checkForGLError(
+          "RenderManagerOpenGL::PresentDisplayInitialize: start");
 
         // Make our OpenGL context current
         SDL_GL_MakeCurrent(m_displays[display].m_window, m_GLContext);
+        checkForGLError(
+          "RenderManagerOpenGL::PresentDisplayInitialize: after making GL current");
         return true;
     }
 
@@ -737,6 +756,10 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::PresentEye(PresentEyeParameters params) {
+        if (checkForGLError(
+                "RenderManagerOpenGL::PresentEye start")) {
+            return false;
+        }
         if (params.m_buffer.OpenGL == nullptr) {
             std::cerr
                 << "RenderManagerOpenGL::PresentEye(): NULL buffer pointer"
@@ -761,6 +784,10 @@ namespace renderkit {
                    static_cast<GLint>(viewportDesc.lower),
                    static_cast<GLsizei>(viewportDesc.width),
                    static_cast<GLsizei>(viewportDesc.height));
+        if (checkForGLError(
+                "RenderManagerOpenGL::PresentEye after glViewport")) {
+            return false;
+        }
 
         // Figure out which display we're rendering to for this eye.
         /// @todo This will need to be generalized when we have multiple
@@ -773,6 +800,7 @@ namespace renderkit {
         /// returning.
         GLint userProgram;
         glGetIntegerv(GL_CURRENT_PROGRAM, &userProgram);
+        checkForGLError("RenderManagerOpenGL::PresentEye after get user program");
         glUseProgram(m_programId);
         if (checkForGLError(
                 "RenderManagerOpenGL::PresentEye after use program")) {
@@ -867,12 +895,10 @@ namespace renderkit {
         // Disable face culling (in case client switched
         // front-face).
 
-        GLboolean depthTest, texture2D, cullFace;
+        GLboolean depthTest, cullFace;
         glGetBooleanv(GL_DEPTH_TEST, &depthTest);
-        glGetBooleanv(GL_TEXTURE_2D, &texture2D);
         glGetBooleanv(GL_CULL_FACE, &cullFace);
         glDisable(GL_DEPTH_TEST);
-        glEnable(GL_TEXTURE_2D);
         glDisable(GL_CULL_FACE);
 
         if (checkForGLError(
@@ -930,12 +956,6 @@ namespace renderkit {
           glEnable(GL_DEPTH_TEST);
         } else {
           glDisable(GL_DEPTH_TEST);
-        }
-
-        if (texture2D) {
-          glEnable(GL_TEXTURE_2D);
-        } else {
-          glDisable(GL_TEXTURE_2D);
         }
 
         if (cullFace) {
