@@ -184,7 +184,9 @@ set (RenderManager_PUBLIC_HEADERS
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"
 )
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
-target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
+if (NOT ANDROID)
+  target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
+endif()
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
