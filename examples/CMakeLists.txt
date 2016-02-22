@@ -1,5 +1,4 @@
 
-
 set(COMMON_D3D_SOURCES
 	D3DCube.h
 	D3DSimpleShader.h
@@ -92,6 +91,7 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND)
 	target_link_libraries(convenience_gldeps INTERFACE ${OPENGL_LIBRARY})
 	target_include_directories(convenience_gldeps INTERFACE ${OPENGL_INCLUDE_DIRS})
 
+ if (NOT APPLE)
 	#-----------------------------------------------------------------------------
 	# OpenGL Example program
 	add_executable(RenderManagerOpenGLExample RenderManagerOpenGLExample.cpp)
@@ -108,20 +108,27 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND)
 			RenderManagerOpenGLHeadSpaceExample
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
+ endif()
 endif()
 
 if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
 
 	#-----------------------------------------------------------------------------
+	# OpenGL Example program using the OpenGL Core profile
+	add_executable(RenderManagerOpenGLCoreExample RenderManagerOpenGLCoreExample.cpp)
+	target_link_libraries(RenderManagerOpenGLCoreExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
+	if(OSVRRM_INSTALL_EXAMPLES)
+		install(TARGETS
+			RenderManagerOpenGLCoreExample
+			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
+
+ if (NOT APPLE)
+	#-----------------------------------------------------------------------------
 	# OpenGL program that has an adjustable rendering delay, useful for testing the
 	# impact of various latency-hiding techniques.
 	add_executable(AdjustableRenderingDelayOpenGL AdjustableRenderingDelayOpenGL.cpp)
 	target_link_libraries(AdjustableRenderingDelayOpenGL PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
-
-	#-----------------------------------------------------------------------------
-	# OpenGL Example program using the OpenGL Core profile
-	add_executable(RenderManagerOpenGLCoreExample RenderManagerOpenGLCoreExample.cpp)
-	target_link_libraries(RenderManagerOpenGLCoreExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 
 	#-----------------------------------------------------------------------------
 	# OpenGL Example program that uses the Get()/Present() interface, not Render().
@@ -133,18 +140,17 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
 	add_executable(RenderManagerOpenGLPresentSideBySideExample RenderManagerOpenGLPresentSideBySideExample.cpp)
 	target_link_libraries(RenderManagerOpenGLPresentSideBySideExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 
-
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
 			AdjustableRenderingDelayOpenGL
-			RenderManagerOpenGLCoreExample
 			RenderManagerOpenGLPresentExample
 			RenderManagerOpenGLPresentSideBySideExample
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
+ endif()
 endif()
 
-if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND VRPN_FOUND)
+if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND VRPN_FOUND AND NOT APPLE)
 	#-----------------------------------------------------------------------------
 	# OpenGL program that spins the world cube at a constant rate, useful for testing the
 	# steadiness of the rendering in the absence of motion.
