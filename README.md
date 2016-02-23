@@ -13,13 +13,19 @@ is done using the [OSVR-Android-Build](https://github.com/OSVR/OSVR-Android-Buil
 project.
 
 Most users, who don't have access to the NDA repos, get using:
-    git clone git@github.com:sensics/OSVR-RenderManager.git
-    cd OSVR-RenderManager
-    git submodule init vendor/vrpn
-    git submodule update
+
+```
+git clone git@github.com:sensics/OSVR-RenderManager.git
+cd OSVR-RenderManager
+git submodule init vendor/vrpn
+git submodule update
+```
 
 Sensics internal users, who have access to the NDA repos, get using:
-    git clone --recursive git@github.com:sensics/OSVR-RenderManager.git
+
+```
+git clone --recursive git@github.com:sensics/OSVR-RenderManager.git
+```
 
 ## What RenderManager Provides
 
