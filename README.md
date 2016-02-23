@@ -1,20 +1,31 @@
 # OSVR-RenderManager
 
 This repository holds the open-source code for the OSVR RenderManager developed by
-Sensics.  It is licensed under the Apache-2 license.  It has a set of submodules that point to sets of non-open source code to build
+Sensics.  It is licensed under the Apache-2 license.  It has a set of submodules
+that point to sets of non-open source code to build
 vendor-specific extensions to support direct rendering.  These were developed
 under non-disclosure agreements with the vendors.
 
-This code is built using CMake, and as of 1/26/2016 compiled on Windows, Linux
-(tested on Ubuntu) and Mac-OSX.  The Linux and Mac ports only support OpenGL and
-do not yet support direct-to-display (DirectMode) rendering.
+Most users, who don't have access to the NDA repos, get using:
 
-As of 1/26/2016, the mac port does not run because of the lack of a compatibility
-OpenGL library on that platform.  It needs to be modified to use the Core library
-(needed for the distortion-correction shaders) and to not include the legacy
-OpenGL examples.  As of 2/15/2016, the RenderManager internal OpenGL code is
-entirely Core-compatible (and also GLES 2.0 compatible).  **Help wanted from
-the community to finish the mac port, see the Github issue for more info.**
+```
+git clone git@github.com:sensics/OSVR-RenderManager.git
+cd OSVR-RenderManager
+git submodule init vendor/vrpn
+git submodule update
+```
+
+Sensics internal users, who have access to the NDA repos, get using:
+
+```
+git clone --recursive git@github.com:sensics/OSVR-RenderManager.git
+```
+
+This code is built using CMake, and as of 2/23/2016 compiled on Windows, Linux
+(tested on Ubuntu) and Mac-OSX.  The Linux and Mac ports only support OpenGL and
+do not yet support direct-to-display (DirectMode) rendering.  The Android compile
+is done using the [OSVR-Android-Build](https://github.com/OSVR/OSVR-Android-Build)
+project.
 
 ## What RenderManager Provides
 
@@ -83,8 +94,9 @@ mode will be enabled by a configuration-file setting.  It produces a separate re
 thread that re-warps and re-renders images at full rate even when the application
 renders too slowly to present a new image each frame.
 
-**Android** support is under development.  As of 2/15/2016, the OpenGL internal
-code is all compatible with OpenGL ES 2.0.  Work is underway to port RenderManager
+**Android** support is under development.  As of 2/23/2016, the OpenGL internal
+code is all compatible with OpenGL ES 2.0 and there is an OpenGLES example
+application that build and links (not yet tested).  Work is underway to port RenderManager
 to Android on top of the existing OSVR-Core port.
 
 **DirectMode/Linux** is planned as graphics-card vendors finish drivers
