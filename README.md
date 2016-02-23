@@ -6,12 +6,6 @@ that point to sets of non-open source code to build
 vendor-specific extensions to support direct rendering.  These were developed
 under non-disclosure agreements with the vendors.
 
-This code is built using CMake, and as of 2/23/2016 compiled on Windows, Linux
-(tested on Ubuntu) and Mac-OSX.  The Linux and Mac ports only support OpenGL and
-do not yet support direct-to-display (DirectMode) rendering.  The Android compile
-is done using the [OSVR-Android-Build](https://github.com/OSVR/OSVR-Android-Build)
-project.
-
 Most users, who don't have access to the NDA repos, get using:
 
 ```
@@ -26,6 +20,12 @@ Sensics internal users, who have access to the NDA repos, get using:
 ```
 git clone --recursive git@github.com:sensics/OSVR-RenderManager.git
 ```
+
+This code is built using CMake, and as of 2/23/2016 compiled on Windows, Linux
+(tested on Ubuntu) and Mac-OSX.  The Linux and Mac ports only support OpenGL and
+do not yet support direct-to-display (DirectMode) rendering.  The Android compile
+is done using the [OSVR-Android-Build](https://github.com/OSVR/OSVR-Android-Build)
+project.
 
 ## What RenderManager Provides
 
