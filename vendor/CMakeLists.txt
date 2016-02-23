@@ -1,5 +1,5 @@
-if(NOT (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vrpn/vrpn_Connection.h" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vrpn/submodules/hidapi/hidapi/hidapi.h"))
-	message(FATAL_ERROR "You are missing the VRPN git submodule or one of its submodules- you must have not done a recursive clone. You can get it now by running git submodule update --init --recursive from the root source directory.")
+if(NOT (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vrpn/vrpn_Connection.h"))
+	message(FATAL_ERROR "You are missing the VRPN git submodule. You can get it now by running git submodule init vendor/vrpn; git submodule update from the root source directory.")
 endif()
 
 set(BUILD_SHARED_LIBS OFF)
@@ -9,6 +9,7 @@ set(VRPN_GPL_SERVER FALSE CACHE BOOL "" FORCE)
 set(VRPN_BUILD_SERVER_LIBRARY FALSE CACHE BOOL "" FORCE)
 set(VRPN_BUILD_CLIENT_LIBRARY TRUE CACHE BOOL "" FORCE)
 set(VRPN_USE_LOCAL_HIDAPI FALSE CACHE BOOL "" FORCE)
+set(VRPN_USE_LOCAL_JSONCPP FALSE CACHE BOOL "" FORCE)
 add_subdirectory(vrpn)
 
 # Create an interface target to more easily consume VRPN internally.
