@@ -57,6 +57,7 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <osvr/ClientKit/TransformsC.h>
 #include <osvr/Common/IntegerByteSwap.h>
 #include <osvr/ClientKit/ParametersC.h>
+#include <osvr/Util/EigenInterop.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
@@ -77,6 +78,8 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <memory>
 #include <map>
 #include <algorithm>
+
+namespace ei = osvr::util::eigen_interop;
 
 /// Used to determine if we have three 2D points that are almost
 /// in the same line.  If so, they are not good for use as a
@@ -1402,15 +1405,13 @@ namespace renderkit {
         for (size_t eye = 0; eye < numEyes; eye++) {
             /// @todo For CAVE displays and fish-tank VR, the projection matrix
             /// will not be the same between frames.  Make sure we're not
-            /// assuming
-            /// here that it is.
+            /// assuming here that it is.
 
             // Compute the scale to use during forward transform.
             // Scale the coordinates in X and Y so that they match the width and
             // height of a window at the specified distance from the origin.
             // We divide by the near clip distance to make the result match that
-            // at
-            // a unit distance and then multiply by the assumed depth.
+            // at a unit distance and then multiply by the assumed depth.
             float xScale = static_cast<float>(
                 (usedRenderInfo[eye].projection.right -
                  usedRenderInfo[eye].projection.left) /
@@ -1422,15 +1423,12 @@ namespace renderkit {
 
             // Compute the translation to use during forward transform.
             // Translate the points so that their center lies in the middle of
-            // the
-            // view frustum pushed out to the specified distance from the
+            // the view frustum pushed out to the specified distance from the
             // origin.
             // We take the mean coordinate of the two edges as the center that
-            // is
-            // to be moved to, and we move the space origin to there.
+            // is to be moved to, and we move the space origin to there.
             // We divide by the near clip distance to make the result match that
-            // at
-            // a unit distance and then multiply by the assumed depth.
+            // at a unit distance and then multiply by the assumed depth.
             // This assumes the default r texture coordinate of 0.
             float xTrans = static_cast<float>(
                 (usedRenderInfo[eye].projection.right +
@@ -1448,22 +1446,23 @@ namespace renderkit {
 
             // Translate the points back to a coordinate system with the
             // center at (0,0);
-            Eigen::Affine3f postTranslation(
+            Eigen::Isometry3f postTranslation(
                 Eigen::Translation3f(0.5f, 0.5f, 0.0f));
 
-            /// Scale the points so that they will fit into the range
-            /// (-0.5,-0.5)
+            // Scale the points so that they will fit into the range
+            // (-0.5,-0.5)
             // to (0.5,0.5) (the inverse of the scale below).
-            Eigen::Affine3f postScale(
+            Eigen::Isometry3f postScale(
                 Eigen::Scaling(1.0f / xScale, 1.0f / yScale, 1.0f));
 
-            /// Translate the points so that the projection center will lie on
+            // Translate the points so that the projection center will lie on
             // the -Z axis (inverse of the translation below).
-            Eigen::Affine3f postProjectionTranslate(
+            Eigen::Isometry3f postProjectionTranslate(
                 Eigen::Translation3f(-xTrans, -yTrans, -zTrans));
 
-            /// Compute the forward last ModelView matrix.
+            // Compute the forward last ModelView matrix.
             OSVR_PoseState lastModelOSVR = usedRenderInfo[eye].pose;
+#if 0
             Eigen::Quaternionf lastModelViewRotation(
                 static_cast<float>(osvrQuatGetW(&lastModelOSVR.rotation)),
                 static_cast<float>(osvrQuatGetX(&lastModelOSVR.rotation)),
@@ -1483,9 +1482,13 @@ namespace renderkit {
                 }
             }
             Eigen::Projective3f lastModelViewTransform(lastModelView);
+#endif
+            Eigen::Isometry3f lastModelViewTransform =
+                ei::map(lastModelOSVR).transform().cast<float>();
 
             /// Compute the inverse of the current ModelView matrix.
             OSVR_PoseState currentModelOSVR = currentRenderInfo[eye].pose;
+#if 0
             Eigen::Quaternionf currentModelViewRotation(
                 static_cast<float>(osvrQuatGetW(&currentModelOSVR.rotation)),
                 static_cast<float>(osvrQuatGetX(&currentModelOSVR.rotation)),
@@ -1512,26 +1515,32 @@ namespace renderkit {
                 currentModelView.inverse();
             Eigen::Projective3f currentModelViewInverseTransform(
                 currentModelViewInverse);
+#endif
+            Eigen::Isometry3f currentModelViewInverseTransform =
+                ei::map(currentModelOSVR).transform().cast<float>().inverse();
 
             /// Translate the origin to the center of the projected rectangle
-            Eigen::Affine3f preProjectionTranslate(
+            Eigen::Isometry3f preProjectionTranslate(
                 Eigen::Translation3f(xTrans, yTrans, zTrans));
 
             /// Scale from (-0.5,-0.5)/(0.5,0.5) to the actual frustum size
-            Eigen::Affine3f preScale(Eigen::Scaling(xScale, yScale, 1.0f));
+            Eigen::Isometry3f preScale(Eigen::Scaling(xScale, yScale, 1.0f));
 
             // Translate the points from a coordinate system that has (0.5,0.5)
             // as the origin to one that has (0,0) as the origin.
-            Eigen::Affine3f preTranslation(
+            Eigen::Isometry3f preTranslation(
                 Eigen::Translation3f(-0.5f, -0.5f, 0.0f));
 
             /// Compute the full matrix by multiplying the parts.
+            /// @todo Does this have to be projective? it looks like combining
+            /// isometries...
             Eigen::Projective3f full =
                 postTranslation * postScale * postProjectionTranslate *
-                lastModelView * currentModelViewInverse *
+                lastModelViewTransform * currentModelViewInverseTransform *
                 preProjectionTranslate * preScale * preTranslation;
 
             // Store the result.
+            /// @todo can we do this with eigen::map instead of memcp directly?
             matrix16 ATW;
             memcpy(ATW.data, full.matrix().data(), sizeof(ATW.data));
             m_asynchronousTimeWarps.push_back(ATW);
