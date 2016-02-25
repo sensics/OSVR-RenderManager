@@ -27,6 +27,7 @@ find_path(LIQUIDVR_INCLUDE_DIR
 	LiquidVRD2D.h
 	PATH_SUFFIXES
 	include
+	inc
 	PATHS
 	"${LIQUIDVR_ROOT_DIR}"
 	C:/usr/local
