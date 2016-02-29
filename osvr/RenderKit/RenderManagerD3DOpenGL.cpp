@@ -222,25 +222,6 @@ namespace renderkit {
             return false;
         }
 
-        // Set the viewport for rendering this eye
-        OSVR_ViewportDescription v;
-        ConstructViewportForRender(eye, v);
-        glViewport(static_cast<GLint>(v.left), static_cast<GLint>(v.lower),
-                   static_cast<GLint>(v.width), static_cast<GLint>(v.height));
-
-        // Set the OpenGL projection matrix based on the one we
-        // computed.
-        GLdouble projection[16];
-        OSVR_Projection_to_OpenGL(projection,
-                                  m_renderInfoForRender[eye].projection);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glMultMatrixd(projection);
-
-        // Set the matrix mode to ModelView, so render code doesn't mess with
-        // the projection matrix on accident.
-        glMatrixMode(GL_MODELVIEW);
-
         // Call the display set-up callback, which needs to be done now for each
         // eye
         if (m_displayCallback.m_callback != nullptr) {
