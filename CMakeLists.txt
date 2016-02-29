@@ -202,7 +202,7 @@ if (WIN32)
 endif()
 
 configure_file("Export.h.in"
-	sovr/RenderKit/Export.h
+	osvr/RenderKit/Export.h
 	@ONLY NEWLINE_STYLE LF)
 
 if(NOT BUILD_SHARED_LIBS)
