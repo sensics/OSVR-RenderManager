@@ -37,6 +37,16 @@ Since version 0.6.3, Time Warp works on both OpenGL and Direct3D, and in version
 Since version 0.6.3, distortion correction works on both OpenGL and Direct3D.  Since version 0.6.8, distortion correction uses an arbitrary polynomial distortion with respect to the distance from the center of projection on the screen.
 
 Version notes:
+0.6.39:
+ ISSUE Asynchronous Time Warp is broken (time warp is working)
+ ISSUE Multi-GPU support is broken (Intel + nVidia on same computer)
+ *ftr  Much more rapid unstructured grid distortion correction loading
+ *ftr  Mac OpenGL Core profile support is now working
+ *ftr  Builds and links (not yet tested) on Android
+  ftr  Installer stored shortcuts in sub-folders by type
+  ftr  Added GLES 2.0 sample program
+  ftr  Removed all legacy OpenGL function calls from RenderManager
+  bug  Fixed #define collision on Linux/X11
 0.6.38:
  *bug  Added header files needed to compile the example code
   bug  Updated the CMakeLists.txt file included with example code
