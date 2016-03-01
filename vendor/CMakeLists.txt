@@ -21,4 +21,4 @@ target_compile_definitions(vendored-vrpn INTERFACE ${VRPN_DEFINITIONS})
 # Create an interface target to more easily consume quatlib internally.
 add_library(vendored-quat INTERFACE)
 target_link_libraries(vendored-quat INTERFACE quat)
-target_include_directories(vendored-quat INTERFACE ${VRPN_INCLUDE_DIRS})
+target_include_directories(vendored-quat INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/vrpn/quat")
