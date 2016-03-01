@@ -28,6 +28,17 @@ include_directories("${EIGEN3_INCLUDE_DIR}")
 add_subdirectory(vendor)
 include_directories(${VRPN_INCLUDE_DIRS})
 
+# Check for the submodules
+set(HAVE_NVIDIA_NDA_SUBMODULE FALSE)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.cpp")
+	set(HAVE_NVIDIA_NDA_SUBMODULE TRUE)
+endif()
+
+set(HAVE_AMD_NDA_SUBMODULE FALSE)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.cpp")
+	set(HAVE_AMD_NDA_SUBMODULE TRUE)
+endif()
+
 # Add one of these libraries for each vendor that we've got a driver
 # for and add a No driver that tells that it is unavailable when we
 # don't find the driver library.
@@ -72,22 +83,22 @@ if (WIN32)
 	set(OSVRRM_HAVE_D3D11_SUPPORT ON)
 endif()
 
-if (NVAPI_FOUND)
+if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	# nVidia NDA files.
 	list(APPEND RenderManager_SOURCES osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.cpp osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.h)
 	set(RM_USE_NVIDIA_DIRECT_D3D11 TRUE)
-	message(STATUS " - NVIDIA direct D3D11 support: enabled (found NVAPI)")
+	message(STATUS " - NVIDIA direct D3D11 support: enabled (found NVAPI and NVIDIA NDA submodule)")
 else()
-	message(STATUS " - NVIDIA direct support: disabled (need NVAPI)")
+	message(STATUS " - NVIDIA direct support: disabled (need NVAPI and NVIDIA NDA submodule)")
 endif()
 
-if (LIQUIDVR_FOUND)
+if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	# AMD NDA files.
 	list(APPEND RenderManager_SOURCES osvr/RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.cpp osvr/RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.h)
 	set(RM_USE_AMD_DIRECT_D3D11 TRUE)
-	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR)")
+	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR and AMD NDA submodule)")
 else()
-	message(STATUS " - AMD direct support: disabled (need LIQUIDVR)")
+	message(STATUS " - AMD direct support: disabled (need LIQUIDVR and AMD NDA submodule)")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -107,7 +118,7 @@ endif()
 
 #-----------------------------------------------------------------------------
 # OpenGL wrapped around Direct3D
-if (NVAPI_FOUND OR LIQUIDVR_FOUND AND NOT RM_USE_OPENGLES20)
+if ((RM_USE_NVIDIA_DIRECT_D3D11 OR RM_USE_AMD_DIRECT_D3D11) AND NOT RM_USE_OPENGLES20)
 	#-----------------------------------------------------------------------------
 	# OpenGL library as a wrapper for D3D DirectMode
 	if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
@@ -115,7 +126,7 @@ if (NVAPI_FOUND OR LIQUIDVR_FOUND AND NOT RM_USE_OPENGLES20)
 		list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerD3DOpenGL.cpp osvr/RenderKit/RenderManagerD3DOpenGL.h)
 		set(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL TRUE)
 	else()
-		message(STATUS " - NVIDIA direct D3D11+OpenGL support: disabled (need all of NVAPI, OpenGL, GLEW, and SDL2, at least one was missing)")
+		message(STATUS " - Vendor direct D3D11+OpenGL support: disabled (need all of a vendor direct-mode D3D module, OpenGL, GLEW, and SDL2, at least one was missing)")
 	endif()
 endif()
 
@@ -187,11 +198,11 @@ target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-if (NVAPI_FOUND)
+if (RM_USE_NVIDIA_DIRECT_D3D11)
 	target_link_libraries(osvrRenderManager PRIVATE nvapi)
 	target_include_directories(osvrRenderManager PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
 endif()
-if (LIQUIDVR_FOUND)
+if (RM_USE_AMD_DIRECT_D3D11)
 	target_include_directories(osvrRenderManager PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
 endif()
 if (WIN32)
@@ -282,7 +293,7 @@ install(EXPORT
 	FILE ${PROJECT_NAME}Config.cmake
 )
 
-if (NVAPI_FOUND)
+if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	set(NV_SRC_ROOT osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA)
 	set(NVAPI_EXTRA_HEADERS ${NV_SRC_ROOT}/CheckSuccess.h ${NV_SRC_ROOT}/Util.h ${NV_SRC_ROOT}/NVAPIWrappers.h)
 
@@ -304,7 +315,7 @@ if (NVAPI_FOUND)
 	install(TARGETS EnableOSVRDirectMode DisableOSVRDirectMode DirectModeDebugging RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
-if (LIQUIDVR_FOUND)
+if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	set(AMD_SRC_ROOT osvr/RenderKit/NDA/OSVR-RenderManager-AMD)
 
 	#-----------------------------------------------------------------------------
