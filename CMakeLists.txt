@@ -22,8 +22,6 @@ find_package(osvr REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
-include_directories("${EIGEN3_INCLUDE_DIR}")
-
 # vendored dependencies
 add_subdirectory(vendor)
 include_directories(${VRPN_INCLUDE_DIRS})
@@ -65,13 +63,12 @@ set (RenderManager_SOURCES
 
 if (WIN32)
 	list(APPEND RenderManager_SOURCES
-	osvr/RenderKit/RenderManagerD3D11C.cpp
-	osvr/RenderKit/RenderManagerD3DBase.cpp
-	osvr/RenderKit/RenderManagerD3D.cpp
-	osvr/RenderKit/RenderManagerD3DBase.h
-	osvr/RenderKit/RenderManagerD3D.h
-	osvr/RenderKit/RenderManagerD3D11ATW.h
-)
+		osvr/RenderKit/RenderManagerD3D11C.cpp
+		osvr/RenderKit/RenderManagerD3DBase.cpp
+		osvr/RenderKit/RenderManagerD3D.cpp
+		osvr/RenderKit/RenderManagerD3DBase.h
+		osvr/RenderKit/RenderManagerD3D.h
+		osvr/RenderKit/RenderManagerD3D11ATW.h)
 endif()
 
 ###
@@ -108,7 +105,7 @@ if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND SDL2_FOUND)
 	message(STATUS " - OpenGL support: enabled")
 	set(RM_USE_OPENGL TRUE)
 	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
-        if (OPENGLES2_FOUND)
+	if (OPENGLES2_FOUND)
 		message(STATUS " - OpenGLES2 support: enabled")
 		set(RM_USE_OPENGLES20 TRUE)
 	endif()
@@ -197,7 +194,9 @@ endif()
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+	PRIVATE
+	${EIGEN3_INCLUDE_DIR})
 if (RM_USE_NVIDIA_DIRECT_D3D11)
 	target_link_libraries(osvrRenderManager PRIVATE nvapi)
 	target_include_directories(osvrRenderManager PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
@@ -237,6 +236,7 @@ if (OPENGLES2_FOUND)
 	target_include_directories(osvrRenderManager PRIVATE ${OPENGLES2_INCLUDE_DIR})
 	target_link_libraries(osvrRenderManager PRIVATE ${OPENGLES2_LIBRARIES})
 	# @todo Assuming for now we're on Android if we are using GLES
+	# TODO you can just do if(ANDROID)
 	message(STATUS "GLES Found, assuming compile for Android")
 	target_link_libraries(osvrRenderManager PRIVATE android)
 endif()
