@@ -20,11 +20,7 @@ option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 # in the CMake GUI or command line
 find_package(osvr REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(jsoncpp REQUIRED)
-if(TARGET jsoncpp_lib_static AND NOT TARGET jsoncpp_lib)
-	add_library(jsoncpp_lib INTERFACE)
-	target_link_libraries(jsoncpp_lib INTERFACE jsoncpp_lib_static)
-endif()
+find_package(JsonCpp REQUIRED)
 
 include_directories("${EIGEN3_INCLUDE_DIR}")
 
@@ -247,7 +243,14 @@ if(SDL2_DYNAMIC AND WIN32)
 endif()
 
 # This also lets it know where to find the header files.
-target_link_libraries(osvrRenderManager PUBLIC osvr::osvrClientKitCpp PRIVATE osvr::osvrClient jsoncpp_lib vendored-vrpn vendored-quat)
+target_link_libraries(osvrRenderManager
+	PUBLIC
+	osvr::osvrClientKitCpp
+	PRIVATE
+	JsonCpp::JsonCpp
+	osvr::osvrClient
+	vendored-vrpn
+	vendored-quat)
 osvrrm_copy_deps(osvr::osvrClientKit osvr::osvrClient osvr::osvrCommon osvr::osvrUtil)
 
 # Add the C++ interface target.
