@@ -6,7 +6,11 @@ that point to sets of non-open source code to build
 vendor-specific extensions to support direct rendering.  These were developed
 under non-disclosure agreements with the vendors.
 
-Most users, who don't have access to the NDA repos, get using:
+Most Windows users will want to install the precompiled binaries (which include
+the DirectMode interfaces for nVidia and AMD) using the installers provided at
+the [developer downloads site](http://osvr.github.io/using/).
+
+Those who don't have access to the NDA repositories get using:
 
 ```
 git clone git@github.com:sensics/OSVR-RenderManager.git
