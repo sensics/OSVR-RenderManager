@@ -22,10 +22,6 @@ find_package(osvr REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
-# vendored dependencies
-add_subdirectory(vendor)
-include_directories(${VRPN_INCLUDE_DIRS})
-
 # Check for the submodules
 set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
 set(HAVE_NVIDIA_NDA_SUBMODULE FALSE)
@@ -48,10 +44,10 @@ find_package(OpenGL)
 find_package(OpenGLES2)
 find_package(GLEW)
 find_package(SDL2)
-if (WIN32)
-	set(RM_USE_D3D11 TRUE)
-	message(STATUS " - D3D11 support: enabled (found WIN32)")
-endif()
+
+# Finally, vendored dependencies
+add_subdirectory(vendor)
+include_directories(${VRPN_INCLUDE_DIRS})
 
 #-----------------------------------------------------------------------------
 # Open (non-NDA) files
@@ -76,10 +72,13 @@ endif()
 ###
 # Graphics API support
 ###
+
 set(OSVRRM_HAVE_OPENGL_SUPPORT OFF)
 set(OSVRRM_HAVE_D3D11_SUPPORT OFF)
 if (WIN32)
 	set(OSVRRM_HAVE_D3D11_SUPPORT ON)
+	set(RM_USE_D3D11 TRUE)
+	message(STATUS " - D3D11 support: enabled (found WIN32)")
 endif()
 
 if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
