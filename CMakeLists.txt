@@ -10,6 +10,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Allow the developer to select if Dynamic or Static libraries are built
 
 include (GenerateExportHeader)
+
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 #-----------------------------------------------------------------------------
@@ -203,9 +204,11 @@ if (WIN32)
 	target_link_libraries(osvrRenderManager PRIVATE D3D11)
 endif()
 
-generate_export_header(osvrRenderManager
-	BASE_NAME OSVR_RENDERMANAGER
-	EXPORT_FILE_NAME osvr/RenderKit/Export.h)
+set(LIBNAME_FULL osvrRenderManager)
+set(EXPORT_BASENAME OSVR_RENDERMANAGER)
+configure_file("Export.h.in"
+	osvr/RenderKit/Export.h
+	@ONLY NEWLINE_STYLE LF)
 
 if(NOT BUILD_SHARED_LIBS)
 	target_compile_definitions(osvrRenderManager PUBLIC OSVR_RENDERMANAGER_STATIC_DEFINE)
