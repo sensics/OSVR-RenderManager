@@ -8,7 +8,7 @@
 			"directDisplayIndex": 0,
 			"directHighPriorityEnabled": true,
 			"numBuffers": 2,
-			"verticalSyncEnabled": false,
+			"verticalSyncEnabled": true,
 			"verticalSyncBlockRenderingEnabled": true,
 			"renderOverfillFactor": 2.0,
 			"renderOversampleFactor": 1.0,
