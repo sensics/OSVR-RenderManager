@@ -174,10 +174,6 @@ namespace renderkit {
             swapChainDescription.BufferDesc.Width = width;
             swapChainDescription.BufferDesc.Height = height;
             swapChainDescription.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            /// @todo Change refresh rate to match what was asked for, or was
-            /// found
-            swapChainDescription.BufferDesc.RefreshRate.Numerator = 60;
-            swapChainDescription.BufferDesc.RefreshRate.Denominator = 1;
             swapChainDescription.SampleDesc.Count = 1;
             swapChainDescription.SampleDesc.Quality = 0;
             hr = dxgiFactory->CreateSwapChain(m_D3D11device,
