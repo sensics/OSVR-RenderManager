@@ -29,9 +29,7 @@ find_path(LIQUIDVR_INCLUDE_DIR
 	include
 	inc
 	PATHS
-	"${LIQUIDVR_ROOT_DIR}"
-	C:/usr/local
-	/usr/local)
+	"${LIQUIDVR_ROOT_DIR}")
 
 # handle the QUIETLY and REQUIRED arguments and set LIQUIDVR_FOUND to TRUE if
 # all listed variables are TRUE
@@ -42,9 +40,10 @@ find_package_handle_standard_args(liquidvr
 
 if(LIQUIDVR_FOUND)
 	set(LIQUIDVR_INCLUDE_DIRS ${LIQUIDVR_INCLUDE_DIR})
-	# @todo Consider adding this as an (empty) library so we can
-	# do a target include dir rather than adding it to all.
-	include_directories(INTERFACE "${LIQUIDVR_INCLUDE_DIR}")
+	if(NOT TARGET liquidvr)
+		add_library(liquidvr INTERFACE)
+		target_include_directories(liquidvr INTERFACE "${LIQUIDVR_INCLUDE_DIR}")
+	endif()
 	mark_as_advanced(LIQUIDVR_ROOT_DIR)
 else()
 	set(LIQUIDVR_INCLUDE_DIRS)
@@ -53,4 +52,3 @@ else()
 endif()
 
 mark_as_advanced(LIQUIDVR_LIBRARY LIQUIDVR_INCLUDE_DIR)
-
