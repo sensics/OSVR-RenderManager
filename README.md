@@ -122,4 +122,4 @@ interfaces and features.
 
 ## Optimizing timing
 
-See the [Rendering Optimization](../doc/renderingOptimization.md) document for more information on how to optimize rendering performance using RenderManager.
+See the [Rendering Optimization](./doc/renderingOptimization.md) document for more information on how to optimize rendering performance using RenderManager.
