@@ -72,5 +72,5 @@ A reduction in GPU memory use (at risk of skipping frames and tearing) can be pr
 
 3/10/2016: When using nVidia DirectMode and a rendering recipe that waits until vsync occurs before doing the second rendering pass, we see tearing along the leading part of the screen; it appears to be waiting for the end of vsync rather than the start.
 
-3/10/2016: In one application that has non-trivial geometry, using the Oculus DK2 with single-buffer rendering with vsync off and app-blocks vsync on and maxMsBeforeVsync of 5 puts a vertical tear near the center of the panel (just inside the left eye).  Using a value of 3 puts it closer to the left edge.  A value of 2 is even closer to the left edge, as did 1.5.  A value of 1 made it disappear.
+3/10/2016: In one application that has non-trivial geometry, using the Oculus DK2 with single-buffer rendering with vsync off and app-blocks vsync on and maxMsBeforeVsync of 5 puts a vertical tear near the center of the panel (just inside the left eye).  Using a value of 3 puts it closer to the left edge.  A value of 2 is even closer to the left edge, as did 1.5.  A value of 1 made it disappear.  Repeating the study using an OSVR HDK 1.3 had similar results for 5ms and 2ms, and also had no tearing for 1ms.
 
