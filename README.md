@@ -90,7 +90,7 @@ speed for performance at run time without changes to the code.
 
 ## Coming Soon
 
-**Asynchronous Time Warp** is under development as of 2/15/2016.  There is a single
+**Asynchronous Time Warp** is under development as of 3/10/2016.  There is a single
 D3D11 example program that runs on DirectMode displays under Windows.  This capability
 is not yet fully operational (the example program does not work when run without
 ATW enabled, and there are several open Github issues).  When complete, this
@@ -119,3 +119,7 @@ application have complete control over render-buffer construction.
 
 There are a number of example programs that highlight the different RenderManager
 interfaces and features.
+
+## Optimizing timing
+
+See the [Rendering Optimization](./doc/renderingOptimization.md) document for more information on how to optimize rendering performance using RenderManager.
