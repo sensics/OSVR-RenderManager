@@ -2459,6 +2459,8 @@ namespace renderkit {
             p.addCandidatePNPID("VVR"); // 0xD25A
         } else if (p.m_displayConfiguration.getVendor() == "Vuzix") {
             p.addCandidatePNPID("IWR"); // 0xF226
+        } else if (p.m_displayConfiguration.getVendor() == "HTC") {
+          p.addCandidatePNPID("HVR"); // 0xD222
         }
         p.m_directModeIndex = -1; // -1 means select based on resolution
 
