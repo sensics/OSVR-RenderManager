@@ -53,6 +53,7 @@ include_directories(${VRPN_INCLUDE_DIRS})
 #-----------------------------------------------------------------------------
 # Open (non-NDA) files
 set (RenderManager_SOURCES
+	osvr/RenderKit/ComputeATW.h
 	osvr/RenderKit/RenderManagerBase.cpp
 	osvr/RenderKit/RenderManagerC.cpp
 	osvr/RenderKit/RenderKitGraphicsTransforms.cpp
