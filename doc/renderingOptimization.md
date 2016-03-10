@@ -1,4 +1,4 @@
-# OSVR Rendering Optimization
+# OSVR RenderManager Rendering Optimization
 
 This document describes aspects of the OSVR RenderManager's display pipeline relating to optimizing rendering performance and reducing latency.
 
