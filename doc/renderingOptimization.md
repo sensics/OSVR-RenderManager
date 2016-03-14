@@ -26,7 +26,7 @@ The timing diagram from above is repeated here for reference.
 
 ![Vertical Sync](./images/vsync_vs_trackers.png)
 
-Because the user's head is moving during the time rendering is happening, the image rendered to the screen will be out of date by the time it is presented to the user.  To reduce this artifact, RenderManager implements a **time warp** during its distortion-mapping render pass.  This is done through a texture-coordinate reprojection transform that makes the assumption of a 2-meter flat viewing surface to change the on-screen position of each texture coordinate.  (For rotation about the center of projection, this adjustment is exact; for translation of the head, it is only approximate.)
+Because the user's head is moving during the time rendering is happening, the image rendered to the screen will be out of date by the time it is presented to the user.  To reduce this artifact, RenderManager implements a **time warp** during its distortion-mapping render pass.  This is done through a texture-coordinate reprojection transform that makes the assumption of a 2-meter flat viewing surface to change the on-screen position of each texture coordinate.  (For rotation about the viewing direction, this adjustment is exact; for other rotations and translation of the head, it is only approximate.)
 
 So that it has the most-recent information, RenderManager requests new tracker reports.  Its behavior is controlled by several settings in the **timeWarp** portion of the OSVR server's renderManagerConfig section.
 
