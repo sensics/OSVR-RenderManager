@@ -141,16 +141,23 @@ void RenderView(
 }
 
 void Usage(std::string name) {
-    std::cerr << "Usage: " << name << " millsecondRenderinDelay" << std::endl;
+    std::cerr << "Usage: " << name 
+      << " [-random]"
+      << " millsecondRenderinDelay" << std::endl;
+    std::cerr << "  -random: Each frame, delay from 0 to the specified delay"
+      << std::endl;
     exit(-1);
 }
 
 int main(int argc, char* argv[]) {
     // Parse the command line
     int delayMilliSeconds = 0;
+    bool do_random = false;
     int realParams = 0;
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
+        if (std::string("-random") == argv[i]) {
+          do_random = true;
+        } else if (argv[i][0] == '-') {
             Usage(argv[0]);
         } else
             switch (++realParams) {
@@ -399,9 +406,15 @@ int main(int argc, char* argv[]) {
         }
 
         // Delay the requested length of time.
+        // If random, replace our value with a random number up
+        // to the requested delay.
         // Busy-wait so we don't get swapped out longer than we wanted.
+        int actualDelayMS = delayMilliSeconds;
+        if (do_random) {
+          actualDelayMS = rand() % (delayMilliSeconds + 1);
+        }
         auto end =
-            highresclock::now() + std::chrono::milliseconds(delayMilliSeconds);
+          highresclock::now() + std::chrono::milliseconds(actualDelayMS);
         do {
         } while (highresclock::now() < end);
 
