@@ -206,7 +206,9 @@ static double interpolate(double p1X, double p1Y, double val1, double p2X,
     q_vec_type ABC;
     q_vec_cross_product(ABC, v1, v2);
     if (q_vec_magnitude(ABC) == 0) {
-        std::cout << "XXX Zero-length vector" << std::endl;
+      // We can't get a normal, degenerate points, just return the first
+      // value.
+      return val1;
     }
     q_vec_normalize(ABC, ABC);
 
