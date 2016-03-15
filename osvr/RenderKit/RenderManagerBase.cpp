@@ -2428,6 +2428,12 @@ namespace renderkit {
         p.m_renderOverfillFactor = pipelineConfig->getRenderOverfillFactor();
         p.m_renderOversampleFactor =
             pipelineConfig->getRenderOversampleFactor();
+        p.m_clientPredictionEnabled =
+          pipelineConfig->getclientPredictionEnabled();
+        p.m_leftEyeDelayMS = pipelineConfig->getLeftEyeDelayMS();
+        p.m_rightEyeDelayMS = pipelineConfig->getRightEyeDelayMS();
+        p.m_clientPredictionLocalTimeOverride =
+          pipelineConfig->getclientPredictionLocalTimeOverride();
 
         std::string jsonString;
         try {
