@@ -635,8 +635,6 @@ namespace renderkit {
                 m_distortionCorrection = false;
 
                 m_clientPredictionEnabled = false;
-                m_leftEyeDelayMS = 0;
-                m_rightEyeDelayMS = 0;
                 m_clientPredictionLocalTimeOverride = false;
 
                 m_graphicsLibrary = GraphicsLibrary();
@@ -716,8 +714,7 @@ namespace renderkit {
 
             /// Prediction settings.
             bool m_clientPredictionEnabled; //< Use client-side prediction?
-            float m_leftEyeDelayMS; //< Delay from present to left-eye start
-            float m_rightEyeDelayMS; //< Delay from present to right-eye start
+            std::vector<float> m_eyeDelaysMS; //< Delay from present to eye start
             bool m_clientPredictionLocalTimeOverride;  //< Override tracker timestamp?
 
             OSVRDisplayConfiguration

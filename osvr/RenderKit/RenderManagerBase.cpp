@@ -2430,8 +2430,8 @@ namespace renderkit {
             pipelineConfig->getRenderOversampleFactor();
         p.m_clientPredictionEnabled =
           pipelineConfig->getclientPredictionEnabled();
-        p.m_leftEyeDelayMS = pipelineConfig->getLeftEyeDelayMS();
-        p.m_rightEyeDelayMS = pipelineConfig->getRightEyeDelayMS();
+        p.m_eyeDelaysMS.push_back(pipelineConfig->getLeftEyeDelayMS());
+        p.m_eyeDelaysMS.push_back(pipelineConfig->getRightEyeDelayMS());
         p.m_clientPredictionLocalTimeOverride =
           pipelineConfig->getclientPredictionLocalTimeOverride();
 
