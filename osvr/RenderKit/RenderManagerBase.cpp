@@ -2355,10 +2355,10 @@ namespace renderkit {
 
         osvr::client::RenderManagerConfigPtr pipelineConfig;
         try {
+            // @todo
             // this should be a temporary workaround to an issue with
-            // RenderManagerConfig API
-            // in osvrClient. I think it's a C++ cross-dll boundary issue, and
-            // making it
+            // RenderManagerConfig APIin osvrClient. I think it's a
+            // C++ cross-dll boundary issue, and making it
             // a header-only lib might fix it, but we're moving the code here
             // for now.
             std::string configString = osvrRenderManagerGetString(context,
