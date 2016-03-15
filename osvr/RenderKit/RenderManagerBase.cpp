@@ -108,6 +108,7 @@ static void PredictFuturePose(
 
   // If we have a change in orientation, make it.
   if (vel.angularVelocityValid) {
+
     // Start out the new orientation at the original one
     // from OSVR.
     q_type newOrientation;
@@ -769,14 +770,6 @@ namespace renderkit {
 
                 ++count;
             } while (!proceed);
-            /*
-            static size_t iter = 0;
-            if (++iter > 60) {
-              std::cout << "XXX Did " << count << " iterations waiting" <<
-            std::endl;
-              iter = 0;
-            }
-            */
         }
 
         // Store the previous matrices we returned to the client and a new set
@@ -1446,8 +1439,11 @@ namespace renderkit {
               OSVR_VelocityState vel;
               vel.linearVelocityValid = false;
               vel.angularVelocityValid = false;
-              osvrGetVelocityState(m_roomFromHeadInterface, &timestamp,
-                &vel);
+              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp,
+                  &vel) != OSVR_RETURN_SUCCESS) {
+                // We're okay with failure here, we just use a zero
+                // velocity to predict.
+              }
 
               // Predict the future pose of the head based on the velocity
               // information and how long we should predict.  Check the
