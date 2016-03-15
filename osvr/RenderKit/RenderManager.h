@@ -107,10 +107,10 @@ namespace renderkit {
         OSVR_TimeValue
             hardwareDisplayInterval; //< Time between refresh of display device
         OSVR_TimeValue timeSincelastVerticalRetrace; //< Time since the last
-        // retrace started
+        // retrace ended (the last presentation)
         OSVR_TimeValue timeUntilNextPresentRequired; //< How long until must
-        // present be made to make
-        // next vsync
+        // send images to RenderManager to display before the next frame is
+        // presented.
     } RenderTimingInfo;
 
     /// @brief Describes the parameters for a display callback handler.
