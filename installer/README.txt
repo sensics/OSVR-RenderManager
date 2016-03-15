@@ -1,11 +1,10 @@
 IMPORTANT: This installer only includes sample applications and the libraries and source code needed to compile applications.  If you are running a pre-compiled Unity, Unreal, or other demo this will not update the version of RenderManager it is linked against; you must either obtain an updated demo or (if you're lucky) copy the RenderManager.dll file from this installer into appropriate location inside the game folder.
 
 IMPORTANT: Using DirectMode requires
-	nVidia driver version 361.75 or higher
+	nVidia driver version 364.64 or higher (364.47 and 364.51 have a bug preventing it from working).
 	or AMD Crimson drivers (tested with version 16.1).
 
 FAQ: If you have multiple GPUs not in SLI mode, you need to select "Activate all displays" instead of "SLI Disabled" in the nVidia Control Panel under "Configure SLI, Surround, PhysX" to make DirectMode work.
-FAQ: If you get an error when running the RenderManager applications, you may need to install the Visual Studio redistributable runtime package.  There is a shortcut to do this installation.  This only has to be done once per computer.
 
 Step 1: Run an OSVR server (obtained from an OSVR Core install) with a compatible configuration file.
   (If you do not have this installed, you can run one of the servers using the installed shortcuts;
@@ -26,17 +25,25 @@ Step 2: Run one of the example programs
 If DirectMode fails, you can run the DirectModeDebugging program to list available displays on nVidia.
 You can also run EnableOSVRDirectModeNVidia or EnableOSVRDirectModeAMD, depending on which type of graphics card you are using.
 
-NOTE: As of version 0.6.37, nVidia DirectMode only works with a driver that has been modified to white-list the display that you are using.  This should be already in the driver version 361.43 for OSVR and Vuzix displays.
+NOTE: As of version 0.6.42, nVidia DirectMode only works with a driver that has been modified to white-list the display that you are using.  This should be already in the driver versions above 361.43 for OSVR and Vuzix displays.
 
-Since version 0.6.2, an osvr_server.exe must be running to open a display (this is where it gets information about the distortion correction and other system parameters).  The osvr_server.exe must use a configuration that defines /me/head (implicitly or explicitly) for head tracking to work.  There are shortcuts to run the server with various configuration files.  You can leave the server running and run multiple different clients one after the other.  All clients should work with all servers.
+An osvr_server.exe must be running to open a display (this is where it gets information about the distortion correction and other system parameters).  The osvr_server.exe must use a configuration that defines /me/head (implicitly or explicitly) for head tracking to work.  There are shortcuts to run the server with various configuration files.  You can leave the server running and run multiple different clients one after the other.  All clients should work with all servers.
 
 Since version 0.6.12, the configuration information for both the display and the RenderManager pipeline are read on the server.  This file can be edited to change the behavior of the display, including turning direct_mode on and off and turning vertical sync on (set vertical_sync_block_rendering true).
 
 Since version 0.6.3, Time Warp works on both OpenGL and Direct3D, and in version 0.6.8 a feature was added to ask it to wait until just before vsync (reducing latency by reading new tracker reports right up until vsync).  The DirectMode examples have this capability turned on.
 
-Since version 0.6.3, distortion correction works on both OpenGL and Direct3D.  Since version 0.6.8, distortion correction uses an arbitrary polynomial distortion with respect to the distance from the center of projection on the screen.
+Since version 0.6.3, distortion correction works on both OpenGL and Direct3D.  Since version 0.6.8, distortion correction can use an arbitrary polynomial distortion with respect to the distance from the center of projection on the screen.
+
+Source code for RenderManager, including example programs, is available at:
+  https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.42:
+ ISSUE Asynchronous Time Warp is broken (time warp is working)
+ ISSUE Multi-GPU support is broken (Intel + nVidia on same computer)
+ *ftr  Handles a change in the nVidia DirectMode driver regarding HDCP
+  ftr  Added DirectMode check for HTC Vive using vendor name HTC
 0.6.41:
  ISSUE Asynchronous Time Warp is broken (time warp is working)
  ISSUE Multi-GPU support is broken (Intel + nVidia on same computer)
