@@ -134,7 +134,7 @@ static void PredictFuturePose(
     q_mult(newOrientation, fractionRotation, newOrientation);
 
     // Then put it back into OSVR format in the output pose.
-    osvrQuatFromQuatlib(&poseOut.rotation, newOrientation);
+    osvrQuatFromQuatlib(&out.rotation, newOrientation);
   }
 
   // If we have a linear velocity, apply it.
