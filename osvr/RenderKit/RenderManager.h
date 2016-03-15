@@ -714,7 +714,8 @@ namespace renderkit {
 
             /// Prediction settings.
             bool m_clientPredictionEnabled; //< Use client-side prediction?
-            std::vector<float> m_eyeDelaysMS; //< Delay from present to eye start
+            /// Static Delay + Delay from present to eye start
+            std::vector<float> m_eyeDelaysMS;
             bool m_clientPredictionLocalTimeOverride;  //< Override tracker timestamp?
 
             OSVRDisplayConfiguration
