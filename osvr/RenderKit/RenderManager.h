@@ -107,10 +107,10 @@ namespace renderkit {
         OSVR_TimeValue
             hardwareDisplayInterval; //< Time between refresh of display device
         OSVR_TimeValue timeSincelastVerticalRetrace; //< Time since the last
-        // retrace started
+        // retrace ended (the last presentation)
         OSVR_TimeValue timeUntilNextPresentRequired; //< How long until must
-        // present be made to make
-        // next vsync
+        // send images to RenderManager to display before the next frame is
+        // presented.
     } RenderTimingInfo;
 
     /// @brief Describes the parameters for a display callback handler.
@@ -634,6 +634,9 @@ namespace renderkit {
 
                 m_distortionCorrection = false;
 
+                m_clientPredictionEnabled = false;
+                m_clientPredictionLocalTimeOverride = false;
+
                 m_graphicsLibrary = GraphicsLibrary();
             }
             typedef enum {
@@ -708,6 +711,12 @@ namespace renderkit {
             /// Render waits until at most this many ms before vsync to do
             /// timewarp (requires enable)
             float m_maxMSBeforeVsyncTimeWarp;
+
+            /// Prediction settings.
+            bool m_clientPredictionEnabled; //< Use client-side prediction?
+            /// Static Delay + Delay from present to eye start
+            std::vector<float> m_eyeDelaysMS;
+            bool m_clientPredictionLocalTimeOverride;  //< Override tracker timestamp?
 
             OSVRDisplayConfiguration
                 m_displayConfiguration; //< Display configuration

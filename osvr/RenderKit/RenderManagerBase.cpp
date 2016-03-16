@@ -57,6 +57,7 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <osvr/ClientKit/TransformsC.h>
 #include <osvr/Common/IntegerByteSwap.h>
 #include <osvr/ClientKit/ParametersC.h>
+#include <osvr/util/QuatlibInteropC.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
@@ -77,6 +78,84 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <memory>
 #include <map>
 #include <algorithm>
+
+
+// @todo Consider pulling this function into Core.
+/// @brief Predict a future pose based on initial and velocity.
+// Predict the future pose of the head based on the velocity
+// information and how long we should predict.  Check the
+// linear and angular velocity terms to see if we should be
+// using each.  Replace the pose with the predicted pose.
+/// @param[in] poseIn The initial pose used for prediction.
+/// @param[in] vel The pose velocity used to move the pose
+///  forward in time.  This function respects the valid
+///  flags to make sure not to make use of parts of the state
+///  that have not been filled in.
+/// @param[in] predictionIntervalSec How long to integrate
+///  the velocity to move the pose forward in time.
+/// @param[out] poseOut The place to store the predicted
+///  pose.  May be a reference to the same structure as
+///  poseIn.
+static void PredictFuturePose(
+  const OSVR_PoseState &poseIn,
+  const OSVR_VelocityState &vel,
+  double predictionIntervalSec,
+  OSVR_PoseState &poseOut)
+{
+  // Make a copy of the pose state so that we can handle the
+  // case where the out and in pose are the same.
+  OSVR_PoseState out = poseIn;
+
+  // If we have a change in orientation, make it.
+  if (vel.angularVelocityValid) {
+
+    // Start out the new orientation at the original one
+    // from OSVR.
+    q_type newOrientation;
+    osvrQuatToQuatlib(newOrientation, &poseIn.rotation);
+
+    // Rotate it by the amount to rotate once for every integral multiple
+    // of the rotation time we've been asked to go.
+    q_type rotationAmount;
+    osvrQuatToQuatlib(rotationAmount,
+      &vel.angularVelocity.incrementalRotation);
+
+    // @todo
+    double remaining = predictionIntervalSec;
+    while (remaining > vel.angularVelocity.dt) {
+      q_mult(newOrientation, rotationAmount, newOrientation);
+      remaining -= vel.angularVelocity.dt;
+    }
+
+    // Then rotate it by the remaining fractional amount.
+    double fractionTime = remaining / vel.angularVelocity.dt;
+    q_type identity = { 0, 0, 0, 1 };
+    q_type fractionRotation;
+    q_slerp(fractionRotation, identity, rotationAmount, fractionTime);
+    q_mult(newOrientation, fractionRotation, newOrientation);
+
+    // Then put it back into OSVR format in the output pose.
+    osvrQuatFromQuatlib(&out.rotation, newOrientation);
+  }
+
+  // If we have a linear velocity, apply it.
+  if (vel.linearVelocityValid) {
+    out.translation.data[0] += vel.linearVelocity.data[0]
+      * predictionIntervalSec;
+    out.translation.data[1] += vel.linearVelocity.data[1]
+      * predictionIntervalSec;
+    out.translation.data[2] += vel.linearVelocity.data[2]
+      * predictionIntervalSec;
+  }
+
+  // @todo Make sure the above transformation happens in
+  // the correct space, so we're rotating about the object
+  // center and translating in external (not object-local)
+  // space.
+
+  // Copy the resulting pose.
+  poseOut = out;
+}
 
 /// Used to determine if we have three 2D points that are almost
 /// in the same line.  If so, they are not good for use as a
@@ -127,7 +206,9 @@ static double interpolate(double p1X, double p1Y, double val1, double p2X,
     q_vec_type ABC;
     q_vec_cross_product(ABC, v1, v2);
     if (q_vec_magnitude(ABC) == 0) {
-        std::cout << "XXX Zero-length vector" << std::endl;
+      // We can't get a normal, degenerate points, just return the first
+      // value.
+      return val1;
     }
     q_vec_normalize(ABC, ABC);
 
@@ -521,7 +602,7 @@ namespace renderkit {
         }
 
         // Update the transformations so that we have the most-recent
-        // state in them.  Record the time at which we got this state.
+        // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
             std::cerr << "RenderManager::GetRenderInfo(): client context "
                          "update failed."
@@ -529,9 +610,6 @@ namespace renderkit {
             ret.clear();
             return ret;
         }
-
-        /// @todo Use acceleration and velocity to predict viewpoint at the
-        // time we expect to render.
 
         // Determine parameters for each eye, filling in all relevant
         // parameters.
@@ -694,14 +772,6 @@ namespace renderkit {
 
                 ++count;
             } while (!proceed);
-            /*
-            static size_t iter = 0;
-            if (++iter > 60) {
-              std::cout << "XXX Did " << count << " iterations waiting" <<
-            std::endl;
-              iter = 0;
-            }
-            */
         }
 
         // Store the previous matrices we returned to the client and a new set
@@ -1320,12 +1390,72 @@ namespace renderkit {
             /// Use the state interface to read the most-recent
             /// location of the head.  It will have been updated
             /// by the most-recent call to update() on the context.
+            /// DO NOT update the client here, so that we're using the
+            /// same state for all eyes.
             OSVR_TimeValue timestamp;
             if (osvrGetPoseState(m_roomFromHeadInterface, &timestamp,
                                  &m_roomFromHead) == OSVR_RETURN_FAILURE) {
                 // This it not an error -- they may have put in an invalid
                 // state name for the head; we just ignore that case.
             }
+
+            // Do prediction of where this eye will be when it is presented
+            // if client-side prediction is enabled.
+            if (m_params.m_clientPredictionEnabled) {
+              // Get information about how long we have until the next present.
+              // If we can't get timing info, we just set its offset to 0.
+              float msUntilPresent = 0;
+              RenderTimingInfo timing;
+              if (GetTimingInfo(whichEye, timing)) {
+                msUntilPresent +=
+                  (timing.timeUntilNextPresentRequired.seconds * 1e3f) +
+                  (timing.timeUntilNextPresentRequired.microseconds / 1e3f);
+              }
+
+              // Adjust the time at which the most-recent tracking info was
+              // set based on whether we're supposed to override it with "now".
+              // If not, find out how long ago it was.
+              float msSinceTrackerReport = 0;
+              if (!m_params.m_clientPredictionLocalTimeOverride) {
+                OSVR_TimeValue now;
+                osvrTimeValueGetNow(&now);
+                msSinceTrackerReport = static_cast<float>(
+                  osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3
+                  );
+              }
+
+              // The delay before rendering for each
+              // eye will be different because they are at different delays past
+              // the next vsync.  The static delay common to both eyes has
+              // already been added into their offset.
+              float predictionIntervalms = msSinceTrackerReport +
+                msUntilPresent;
+              if (whichEye < m_params.m_eyeDelaysMS.size()) {
+                predictionIntervalms += m_params.m_eyeDelaysMS[whichEye];
+              }
+              float predictionIntervalSec = predictionIntervalms / 1e3f;
+
+              // Find out the pose velocity information, if available.
+              // Set the valid flags to false so that if to call to get
+              // velocity fails, we will not try and use the info.
+              OSVR_VelocityState vel;
+              vel.linearVelocityValid = false;
+              vel.angularVelocityValid = false;
+              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp,
+                  &vel) != OSVR_RETURN_SUCCESS) {
+                // We're okay with failure here, we just use a zero
+                // velocity to predict.
+              }
+
+              // Predict the future pose of the head based on the velocity
+              // information and how long we should predict.  Check the
+              // linear and angular velocity terms to see if we should be
+              // using each.  Replace the pose with the predicted pose.
+              PredictFuturePose(m_roomFromHead, vel,
+                predictionIntervalSec, m_roomFromHead);
+            }
+
+            // Bring the pose into quatlib world.
             q_from_OSVR(q_roomFromHead, m_roomFromHead);
         }
         q_xyz_quat_type q_roomFromEye;
@@ -2355,10 +2485,10 @@ namespace renderkit {
 
         osvr::client::RenderManagerConfigPtr pipelineConfig;
         try {
+            // @todo
             // this should be a temporary workaround to an issue with
-            // RenderManagerConfig API
-            // in osvrClient. I think it's a C++ cross-dll boundary issue, and
-            // making it
+            // RenderManagerConfig APIin osvrClient. I think it's a
+            // C++ cross-dll boundary issue, and making it
             // a header-only lib might fix it, but we're moving the code here
             // for now.
             std::string configString = osvrRenderManagerGetString(context,
@@ -2428,6 +2558,14 @@ namespace renderkit {
         p.m_renderOverfillFactor = pipelineConfig->getRenderOverfillFactor();
         p.m_renderOversampleFactor =
             pipelineConfig->getRenderOversampleFactor();
+        p.m_clientPredictionEnabled =
+          pipelineConfig->getclientPredictionEnabled();
+        p.m_eyeDelaysMS.push_back(pipelineConfig->getStaticDelayMS() +
+          pipelineConfig->getLeftEyeDelayMS());
+        p.m_eyeDelaysMS.push_back(pipelineConfig->getStaticDelayMS() +
+          pipelineConfig->getRightEyeDelayMS());
+        p.m_clientPredictionLocalTimeOverride =
+          pipelineConfig->getclientPredictionLocalTimeOverride();
 
         std::string jsonString;
         try {
