@@ -196,10 +196,8 @@ inline void parseDistortionRGBPointMeshes(
         fs.close();
     }
 
-    std::array<std::string, 3> names;
-    names[0] = "red_point_samples";
-    names[1] = "green_point_samples";
-    names[2] = "blue_point_samples";
+    std::array<std::string, 3> names = {
+        "red_point_samples", "green_point_samples", "blue_point_samples"};
 
     for (size_t clr = 0; clr < 3; clr++) {
         const Json::Value eyeArray = myDistortion[names[clr].c_str()];
