@@ -38,6 +38,7 @@
 
 // Included files that define built-in distortion meshes.
 #include "osvr_display_config_built_in_osvr_hdks.h"
+#include "osvr_display_config_built_in_vive.h"
 
 OSVRDisplayConfiguration::OSVRDisplayConfiguration() {
     // do nothing
@@ -165,6 +166,37 @@ inline void parseDistortionRGBPointMeshes(
     Json::Value const& distortion,
     osvr::renderkit::RGBPointDistortionMeshDescriptions& mesh) {
     Json::Value myDistortion = distortion;
+
+    // Check for a built-in
+    const Json::Value builtIn = distortion["rgb_point_samples_built_in"];
+    if (!builtIn.isNull() && builtIn.isString()) {
+        // Read a Json value from the built-in config, then replace the
+        // distortion mesh with that from the file.
+        std::string builtInString;
+        Json::Value builtInData;
+        if (builtIn.asString() == "HTC_Vive_PRE_V1") {
+            builtInString =
+                osvr_display_config_built_in_vive_pre_rgb_mesh_15_v1_json;
+        } else {
+            std::cerr
+                << "OSVRDisplayConfiguration::parse(): ERROR: Unrecognized "
+                   "rgb_point_samples_built_in value: "
+                << builtIn.asString() << "!\n";
+            throw DisplayConfigurationParseException(
+                "Couldn't open built-in RGB point file.");
+        }
+
+        Json::Reader reader;
+        if (!reader.parse(builtInString, builtInData)) {
+            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
+                         "parse built-in configuration "
+                      << builtIn.asString() << "!\n";
+            std::cerr << "Errors: " << reader.getFormattedErrorMessages();
+            throw DisplayConfigurationParseException(
+                "Couldn't parse built-in RGB point file.");
+        }
+        myDistortion = builtInData["display"]["hmd"]["distortion"];
+    }
 
     // See if we have the name of an external file to parse.  If so, we open it
     // and grab its values to parse.  Otherwise, we parse the ones that they
@@ -442,6 +474,7 @@ void OSVRDisplayConfiguration::parse(const std::string& display_description) {
 
         } else if (m_distortionTypeString == "rgb_point_samples" ||
                    distortion.isMember("rgb_point_samples") ||
+                   distortion.isMember("rgb_point_samples_built_in") ||
                    distortion.isMember("rgb_point_samples_external_file")) {
 
             std::cout << "OSVRDisplayConfiguration::parse(): Using rgb point "
