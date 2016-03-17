@@ -56,32 +56,33 @@ inline void parseDistortionMonoPointMeshes(
     // See if we have the name of a built-in config to parse.  If so, we open it
     // and grab its values to parse, replacing the ones that they sent
     // in.
-    const Json::Value builtIn =
-      distortion["mono_point_samples_built_in"];
+    const Json::Value builtIn = distortion["mono_point_samples_built_in"];
     if ((!builtIn.isNull()) && (builtIn.isString())) {
-      // Read a Json value from the built-in config, then replace the distortion
-      // mesh with that from the file.
-      std::string builtInString;
-      Json::Value builtInData;
-      Json::Reader reader;
-      if (builtIn.asString() == "OSVR_HDK_13_V1") {
-        builtInString = osvr_display_config_built_in_osvr_hdk13_v1;
-      } else {
-        std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Unrecognized "
-          "mono_point_samples_built_in value: "
-          << builtIn.asString() << "!\n";
-        throw DisplayConfigurationParseException(
-          "Couldn't open external mono point file.");
-      }
-      if (!reader.parse(builtInString, builtInData)) {
-        std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
-          "parse built-in configuration "
-          << builtIn.asString() << "!\n";
-        std::cerr << "Errors: " << reader.getFormattedErrorMessages();
-        throw DisplayConfigurationParseException(
-          "Couldn't parse external mono point file.");
-      }
-      myDistortion = builtInData["display"]["hmd"]["distortion"];
+        // Read a Json value from the built-in config, then replace the
+        // distortion mesh with that from the file.
+        std::string builtInString;
+        Json::Value builtInData;
+        if (builtIn.asString() == "OSVR_HDK_13_V1") {
+            builtInString = osvr_display_config_built_in_osvr_hdk13_v1;
+        } else {
+            std::cerr
+                << "OSVRDisplayConfiguration::parse(): ERROR: Unrecognized "
+                   "mono_point_samples_built_in value: "
+                << builtIn.asString() << "!\n";
+            throw DisplayConfigurationParseException(
+                "Couldn't open external mono point file.");
+        }
+
+        Json::Reader reader;
+        if (!reader.parse(builtInString, builtInData)) {
+            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
+                         "parse built-in configuration "
+                      << builtIn.asString() << "!\n";
+            std::cerr << "Errors: " << reader.getFormattedErrorMessages();
+            throw DisplayConfigurationParseException(
+                "Couldn't parse external mono point file.");
+        }
+        myDistortion = builtInData["display"]["hmd"]["distortion"];
     }
 
     // See if we have the name of an external file to parse.  If so, we open it
@@ -430,6 +431,7 @@ void OSVRDisplayConfiguration::parse(const std::string& display_description) {
                                       m_distortionPolynomialBlue);
         } else if (m_distortionTypeString == "mono_point_samples" ||
                    distortion.isMember("mono_point_samples") ||
+                   distortion.isMember("mono_point_samples_built_in") ||
                    distortion.isMember("mono_point_samples_external_file")) {
 
             std::cout << "OSVRDisplayConfiguration::parse(): Using mono point "
