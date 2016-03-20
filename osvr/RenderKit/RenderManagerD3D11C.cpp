@@ -39,13 +39,18 @@ namespace {
 inline void
 ConvertGraphicsLibrary(const OSVR_GraphicsLibraryD3D11& graphicsLibrary,
                        osvr::renderkit::GraphicsLibrary& graphicsLibraryOut) {
-    graphicsLibraryOut.D3D11 = nullptr;
-    graphicsLibraryOut.OpenGL = nullptr;
-    osvr::renderkit::GraphicsLibraryD3D11* gld3d11 =
+    // If we have non-NULL entries for either, then we construct a
+    // place to put them.  Otherwise, we leave the device with its
+    // default NULL pointer so that it will not think the contents
+    // are valid.
+    if (graphicsLibrary.device != nullptr ||
+        graphicsLibrary.context != nullptr) {
+      osvr::renderkit::GraphicsLibraryD3D11* gld3d11 =
         new osvr::renderkit::GraphicsLibraryD3D11();
-    gld3d11->device = graphicsLibrary.device;
-    gld3d11->context = graphicsLibrary.context;
-    graphicsLibraryOut.D3D11 = gld3d11;
+      gld3d11->device = graphicsLibrary.device;
+      gld3d11->context = graphicsLibrary.context;
+      graphicsLibraryOut.D3D11 = gld3d11;
+    }
 }
 
 inline void
