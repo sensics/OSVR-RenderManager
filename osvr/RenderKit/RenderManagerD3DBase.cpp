@@ -182,8 +182,7 @@ namespace renderkit {
       if (m_params.m_graphicsLibrary.D3D11 != nullptr) {
         m_D3D11device = m_params.m_graphicsLibrary.D3D11->device;
         m_D3D11Context = m_params.m_graphicsLibrary.D3D11->context;
-      }
-      else {
+      } else {
         D3D_FEATURE_LEVEL acceptibleAPI = D3D_FEATURE_LEVEL_11_0;
         D3D_FEATURE_LEVEL foundAPI;
 
