@@ -167,11 +167,9 @@ static void myTrackerCallback(void* userdata,
     }
 }
 
-bool SetupRendering(osvr::renderkit::GraphicsLibrary library,
-                    osvr::renderkit::RenderBuffer buffers) {
+bool SetupRendering(osvr::renderkit::GraphicsLibrary library) {
     ID3D11Device* device = library.D3D11->device;
     ID3D11DeviceContext* context = library.D3D11->context;
-    ID3D11RenderTargetView* renderTargetView = buffers.D3D11->colorBufferView;
 
     // Setup vertex shader
     auto hr = device->CreateVertexShader(g_triangle_vs, sizeof(g_triangle_vs),
@@ -336,7 +334,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Set up the rendering state we need.
-    if (!SetupRendering(ret.library, ret.buffers)) {
+    if (!SetupRendering(ret.library)) {
         return 3;
     }
 
