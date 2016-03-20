@@ -148,34 +148,6 @@ namespace renderkit {
         m_library.D3D11 = new GraphicsLibraryD3D11;
         m_buffers.D3D11 = new RenderBufferD3D11;
         m_depthStencilStateForRender = nullptr;
-
-        //======================================================
-        // Create the D3D11 context that is used to draw things into the window
-        // unless these have already been filled in
-        HRESULT hr;
-        if (m_params.m_graphicsLibrary.D3D11 != nullptr) {
-          m_D3D11device = m_params.m_graphicsLibrary.D3D11->device;
-          m_D3D11Context = m_params.m_graphicsLibrary.D3D11->context;
-        } else {
-          D3D_FEATURE_LEVEL acceptibleAPI = D3D_FEATURE_LEVEL_11_0;
-          D3D_FEATURE_LEVEL foundAPI;
-
-          UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-          // If we pass a non-null adapter (like if we're being used by NVIDIA
-          // direct mode), then we need to pass driver type unknown.
-          auto driverType = nullptr == m_adapter ? D3D_DRIVER_TYPE_HARDWARE
-            : D3D_DRIVER_TYPE_UNKNOWN;
-          hr = D3D11CreateDevice(m_adapter.Get(), driverType, nullptr,
-            createDeviceFlags, &acceptibleAPI, 1,
-            D3D11_SDK_VERSION, &m_D3D11device, &foundAPI,
-            &m_D3D11Context);
-          if (FAILED(hr)) {
-            std::cerr << "RenderManagerD3D11Base::RenderManagerD3D11Base: Could not "
-              "create D3D11 device"
-              << std::endl;
-            m_doingOkay = false;
-          }
-        }
     }
 
     RenderManagerD3D11Base::~RenderManagerD3D11Base() {
@@ -200,6 +172,39 @@ namespace renderkit {
 
         delete m_buffers.D3D11;
         delete m_library.D3D11;
+    }
+
+    bool RenderManagerD3D11Base::SetDeviceAndContext() {
+      //======================================================
+      // Create the D3D11 context that is used to draw things into the window
+      // unless these have already been filled in.
+      HRESULT hr;
+      if (m_params.m_graphicsLibrary.D3D11 != nullptr) {
+        m_D3D11device = m_params.m_graphicsLibrary.D3D11->device;
+        m_D3D11Context = m_params.m_graphicsLibrary.D3D11->context;
+      }
+      else {
+        D3D_FEATURE_LEVEL acceptibleAPI = D3D_FEATURE_LEVEL_11_0;
+        D3D_FEATURE_LEVEL foundAPI;
+
+        UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+        // If we pass a non-null adapter (like if we're being used by NVIDIA
+        // direct mode), then we need to pass driver type unknown.
+        auto driverType = nullptr == m_adapter ? D3D_DRIVER_TYPE_HARDWARE
+          : D3D_DRIVER_TYPE_UNKNOWN;
+        hr = D3D11CreateDevice(m_adapter.Get(), driverType, nullptr,
+          createDeviceFlags, &acceptibleAPI, 1,
+          D3D11_SDK_VERSION, &m_D3D11device, &foundAPI,
+          &m_D3D11Context);
+        if (FAILED(hr)) {
+          std::cerr << "RenderManagerD3D11Base::SetDevice: Could not "
+            "create D3D11 device" << std::endl;
+          m_doingOkay = false;
+          return false;
+        }
+      }
+
+      return true;
     }
 
     bool RenderManagerD3D11Base::constructRenderBuffers() {
@@ -391,6 +396,12 @@ namespace renderkit {
         if (!doingOkay()) {
             ret.status = FAILURE;
             return ret;
+        }
+
+        // Create or set the D3D11 device we're going to use.
+        if (!SetDeviceAndContext()) {
+          ret.status = FAILURE;
+          return ret;
         }
 
         //==================================================================

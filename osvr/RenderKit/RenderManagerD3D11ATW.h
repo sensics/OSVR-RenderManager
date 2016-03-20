@@ -97,9 +97,26 @@ namespace osvr {
             OpenResults OpenDisplay() override {
                 std::lock_guard<std::mutex> lock(mLock);
 
+                OpenResults ret;
+
+                // Set the device and context we're going to use
+                // but don't open an additional display -- we're
+                // going to pass all display-related things down to
+                // our render thread.
+                // @todo Consider whether we want to just return
+                // the device and context of our render-thread's
+                // RenderManager
+                if (!SetDeviceAndContext()) {
+                  std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
+                    "create device and context"
+                    << std::endl;
+                  ret.status = OpenStatus::FAILURE;
+                  return ret;
+                }
+
                 // Try to open the display in the harnessed
                 // RenderManager.  Return false if it fails.
-                OpenResults ret = mRenderManager->OpenDisplay();
+                ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
                   std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                     "open display in harnessed RenderManager"
