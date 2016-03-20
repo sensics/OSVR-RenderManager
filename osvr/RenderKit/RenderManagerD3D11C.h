@@ -61,7 +61,6 @@ typedef struct OSVR_RenderBufferD3D11 {
 typedef struct OSVR_OpenResultsD3D11 {
     OSVR_OpenStatus status;
     OSVR_GraphicsLibraryD3D11 library;
-    OSVR_RenderBufferD3D11 buffers;
 } OSVR_OpenResultsD3D11;
 
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrCreateRenderManagerD3D11(
