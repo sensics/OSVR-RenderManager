@@ -391,7 +391,6 @@ namespace renderkit {
       
         OpenResults ret;
         ret.library = m_library;
-        ret.buffers = m_buffers;
         ret.status = COMPLETE; // Until we hear otherwise
         if (!doingOkay()) {
             ret.status = FAILURE;

@@ -134,14 +134,9 @@ namespace osvr {
                 m_library.D3D11->device = m_D3D11device;
                 m_library.D3D11->context = m_D3D11Context;
 
-                // Fill in our library and buffers, rather than those of
-                // the harnessed RenderManager, since these are the ones
+                // Fill in our library, rather than that of
+                // the harnessed RenderManager, since this is the one
                 // that the client will deal with.
-                // @todo Figure out what to do about the buffers
-                // (They may only be needed in the callback path, so we
-                // should consider pulling them out of the present path
-                // and not returning them here.)
-                ret.buffers = m_buffers;
                 ret.library = m_library;
                 return ret;
             }

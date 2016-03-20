@@ -231,7 +231,6 @@ namespace renderkit {
         // Done, we now have an open window to use.
         m_displayOpen = true;
         ret.library = m_library;
-        ret.buffers = m_buffers;
         return ret;
     }
 

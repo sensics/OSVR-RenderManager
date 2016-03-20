@@ -169,7 +169,6 @@ namespace renderkit {
         // Fill in our library with the things the application may need to
         // use to do its graphics state set-up.
         ret.library = m_library;
-        ret.buffers = m_buffers;
         m_displayOpen = true;
         return ret;
     }
