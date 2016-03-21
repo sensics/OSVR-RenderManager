@@ -97,9 +97,26 @@ namespace osvr {
             OpenResults OpenDisplay() override {
                 std::lock_guard<std::mutex> lock(mLock);
 
+                OpenResults ret;
+
+                // Set the device and context we're going to use
+                // but don't open an additional display -- we're
+                // going to pass all display-related things down to
+                // our render thread.
+                // @todo Consider whether we want to just return
+                // the device and context of our render-thread's
+                // RenderManager
+                if (!SetDeviceAndContext()) {
+                  std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
+                    "create device and context"
+                    << std::endl;
+                  ret.status = OpenStatus::FAILURE;
+                  return ret;
+                }
+
                 // Try to open the display in the harnessed
                 // RenderManager.  Return false if it fails.
-                OpenResults ret = mRenderManager->OpenDisplay();
+                ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
                   std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                     "open display in harnessed RenderManager"
@@ -117,14 +134,9 @@ namespace osvr {
                 m_library.D3D11->device = m_D3D11device;
                 m_library.D3D11->context = m_D3D11Context;
 
-                // Fill in our library and buffers, rather than those of
-                // the harnessed RenderManager, since these are the ones
+                // Fill in our library, rather than that of
+                // the harnessed RenderManager, since this is the one
                 // that the client will deal with.
-                // @todo Figure out what to do about the buffers
-                // (They may only be needed in the callback path, so we
-                // should consider pulling them out of the present path
-                // and not returning them here.)
-                ret.buffers = m_buffers;
                 ret.library = m_library;
                 return ret;
             }

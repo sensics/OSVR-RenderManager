@@ -353,7 +353,6 @@ namespace renderkit {
 
         OpenResults ret;
         ret.library = m_library;
-        ret.buffers = m_buffers;
         ret.status = COMPLETE; // Until we hear otherwise
         if (!doingOkay()) {
             ret.status = FAILURE;
@@ -520,7 +519,6 @@ namespace renderkit {
         // Fill in our library with the things the application may need to
         // use to do its graphics state set-up.
         ret.library = m_library;
-        ret.buffers = m_buffers;
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay end");
 

@@ -160,7 +160,6 @@ osvrRenderManagerOpenDisplayImpl(OSVR_RenderManagerType renderManager,
             break;
         }
         ConvertGraphicsLibrary(results.library, _openResultsOut.library);
-        ConvertRenderBuffer(results.buffers, _openResultsOut.buffers);
     }
     return results.status == osvr::renderkit::RenderManager::FAILURE
                ? OSVR_RETURN_FAILURE

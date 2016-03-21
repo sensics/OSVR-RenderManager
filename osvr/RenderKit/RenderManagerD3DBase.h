@@ -48,6 +48,11 @@ namespace renderkit {
         // Is the renderer currently working?
         bool doingOkay() override { return m_doingOkay; }
 
+        // Creates the D3D11 device and context to be used
+        // to draw things into our window unless they have
+        // already been filled in.
+        virtual bool SetDeviceAndContext();
+
         // Opens the D3D renderer we're going to use.
         OpenResults OpenDisplay() override;
 

@@ -241,7 +241,6 @@ namespace renderkit {
         typedef struct {
             OpenStatus status;       //< How did the opening go?
             GraphicsLibrary library; //< Graphics library pointers
-            RenderBuffer buffers;    //< Render buffer pointers
         } OpenResults;
 
         /// @brief Opens the window or display to be used for rendering.
