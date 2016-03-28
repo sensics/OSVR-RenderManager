@@ -46,7 +46,8 @@ find_package(OpenGLES2)
 find_package(GLEW)
 find_package(SDL2)
 if(WIN32)
-	find_package(WindowsSDK REQUIRED)
+	# Well, redistributables technically, not tools, but close enough.
+	find_package(WindowsSDK REQUIRED COMPONENTS tools)
 	# Find redistributable version of d3dcompiler_47 which is required for pre-Win8 systems.
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(ARCH_DIR x64)
