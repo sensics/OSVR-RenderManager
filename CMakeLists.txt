@@ -45,6 +45,19 @@ find_package(OpenGL)
 find_package(OpenGLES2)
 find_package(GLEW)
 find_package(SDL2)
+if(WIN32)
+	find_package(WindowsSDK REQUIRED)
+	# Find redistributable version of d3dcompiler_47 which is required for pre-Win8 systems.
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		set(ARCH_DIR x64)
+	else()
+		set(ARCH_DIR x86)
+	endif()
+	find_file(DIRECT3D_COMPILER_REDISTRIBUTABLE d3dcompiler_47.dll
+		PATH_SUFFIXES Redist/D3D/${ARCH_DIR}
+		PATHS ${WINDOWSSDK_DIRS}
+		NO_DEFAULT_PATH)
+endif()
 
 # Finally, vendored dependencies
 add_subdirectory(vendor)
@@ -291,6 +304,13 @@ target_link_libraries(osvrRenderManagerCpp INTERFACE osvrRenderManager osvr::osv
 # Alias targets, so the examples can be used as-is.
 add_library(osvrRM::osvrRenderManager ALIAS osvrRenderManager)
 add_library(osvrRM::osvrRenderManagerCpp ALIAS osvrRenderManagerCpp)
+
+
+if(WIN32)
+	# Install d3dcompiler_47
+	install(FILES ${DIRECT3D_COMPILER_REDISTRIBUTABLE}
+		DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 
 # The goal with this variable is so that the same CMakeLists file that is used to build
 # the examples in-tree can be shipped to build the examples out-of-tree.
