@@ -57,7 +57,7 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <osvr/ClientKit/TransformsC.h>
 #include <osvr/Common/IntegerByteSwap.h>
 #include <osvr/ClientKit/ParametersC.h>
-#include <osvr/util/QuatlibInteropC.h>
+#include <osvr/Util/QuatlibInteropC.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
