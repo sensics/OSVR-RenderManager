@@ -280,7 +280,8 @@ int main(int argc, char* argv[]) {
         colorBuffers.push_back(rb);
 
         // "Bind" the newly created texture : all future texture
-        // functions will modify this texture glActiveTexture(GL_TEXTURE0);
+        // functions will modify this texture
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorBufferName);
 
         // Determine the appropriate size for the frame buffer to be used for
