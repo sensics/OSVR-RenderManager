@@ -98,8 +98,7 @@ void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
 }
 
 bool SetupRendering(osvr::renderkit::GraphicsLibrary library) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr << "SetupRendering: No D3D11 GraphicsLibrary, this should "
                      "not happen"
@@ -181,8 +180,7 @@ void SetupDisplay(
     ,
     osvr::renderkit::RenderBuffer buffers //< Buffers to use
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "SetupDisplay: No D3D11 GraphicsLibrary, this should not happen"
@@ -226,8 +224,7 @@ void DrawWorld(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "DrawWorld: No D3D11 GraphicsLibrary, this should not happen"
