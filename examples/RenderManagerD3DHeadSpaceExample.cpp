@@ -106,8 +106,7 @@ void SetupDisplay(
     ,
     osvr::renderkit::RenderBuffer buffers //< Buffers to use
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr << "SetupDisplay: No D3D11 GraphicsLibrary" << std::endl;
         return;
@@ -152,8 +151,7 @@ void SetupEye(
     ,
     size_t whichEye //< Which eye are we setting up for?
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "SetupEye: No D3D11 GraphicsLibrary, this should not happen"
@@ -190,8 +188,7 @@ void DrawWorld(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "DrawWorld: No D3D11 GraphicsLibrary, this should not happen"
@@ -237,8 +234,7 @@ void DrawHeadSpace(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "DrawHeadSpace: No D3D11 GraphicsLibrary, this should not happen"
@@ -304,8 +300,7 @@ void DrawLeftHand(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "DrawLeftHand: No D3D11 GraphicsLibrary, this should not happen"
@@ -353,8 +348,7 @@ void DrawRightHand(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.D3D11 == nullptr) {
         std::cerr
             << "DrawRightHand: No D3D11 GraphicsLibrary, this should not happen"
