@@ -114,8 +114,7 @@ void RenderView(
     GLuint colorBuffer, //< Color buffer to render into
     GLuint depthBuffer  //< Depth buffer to render into
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (renderInfo.library.OpenGL == nullptr) {
         std::cerr
             << "RenderView: No OpenGL GraphicsLibrary, this should not happen"
