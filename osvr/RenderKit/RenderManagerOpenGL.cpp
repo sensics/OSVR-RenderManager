@@ -893,38 +893,26 @@ namespace renderkit {
         // Disable face culling (in case client switched
         // front-face).
 
-        GLboolean depthTest, cullFace;
+        GLboolean depthTest, cullFace, texture2D;
         glGetBooleanv(GL_DEPTH_TEST, &depthTest);
         glGetBooleanv(GL_CULL_FACE, &cullFace);
+        glGetBooleanv(GL_TEXTURE_2D, &texture2D);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
+        glEnable(GL_TEXTURE_2D);
 
         if (checkForGLError(
-                "RenderManagerOpenGL::PresentEye after environment setting")) {
-            return false;
+          "RenderManagerOpenGL::PresentEye after environment setting")) {
+          return false;
         }
-
-        // Render to the 0th frame buffer, which is the screen.
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // @todo save and later restore the state telling which texture is bound
         // and which vertex attributes are set
 
-        // Bind our texture in Texture Unit 0
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, params.m_buffer.OpenGL->colorBufferName);
-
         if (checkForGLError(
-                "RenderManagerOpenGL::PresentEye after texture bind")) {
-            return false;
+          "RenderManagerOpenGL::PresentEye after texture bind")) {
+          return false;
         }
-
-        // Bilinear filtering and clamp to the edge of the texture.  Set this
-        // after we've bound our texture.
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         char* base = nullptr;
         size_t vertBase = 0;
@@ -960,6 +948,13 @@ namespace renderkit {
           glEnable(GL_CULL_FACE);
         } else {
           glDisable(GL_CULL_FACE);
+        }
+
+        if (texture2D) {
+          glEnable(GL_TEXTURE_2D);
+        }
+        else {
+          glDisable(GL_TEXTURE_2D);
         }
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
