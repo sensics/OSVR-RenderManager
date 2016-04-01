@@ -203,15 +203,10 @@ namespace renderkit {
             rb.OpenGL = new RenderBufferOpenGL;
             rb.OpenGL->colorBufferName = colorBufferName;
             m_colorBuffers.push_back(rb);
-
-            // "Bind" the newly created texture : all future texture functions
-            // will modify this texture
-            // glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorBufferName);
 
             // Determine the appropriate size for the frame buffer to be used
-            // for
-            // this eye.
+            // for this eye.
             OSVR_ViewportDescription v;
             ConstructViewportForRender(i, v);
             int width = static_cast<int>(v.width);
@@ -308,8 +303,7 @@ namespace renderkit {
         } else {
             // Replace the current context
             // @todo When the user passes in the request to use the same
-            // context,
-            // we should also share the context here.
+            // context, we should also share the context here.
             SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
         }
         m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
@@ -492,7 +486,6 @@ namespace renderkit {
             ret.status = FAILURE;
             return ret;
         }
-
         checkForGLError("RenderManagerOpenGL::OpenDisplay after program link");
 
         m_projectionUniformId =
@@ -783,14 +776,13 @@ namespace renderkit {
                    static_cast<GLsizei>(viewportDesc.width),
                    static_cast<GLsizei>(viewportDesc.height));
         if (checkForGLError(
-                "RenderManagerOpenGL::PresentEye after glViewport")) {
-            return false;
+          "RenderManagerOpenGL::PresentEye after glViewport")) {
+          return false;
         }
 
         // Figure out which display we're rendering to for this eye.
         /// @todo This will need to be generalized when we have multiple
-        /// displays
-        /// per eye.
+        /// displays per eye.
         size_t display = GetDisplayUsedByEye(params.m_index);
 
         /// Switch to our vertex/shader programs
@@ -801,8 +793,8 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::PresentEye after get user program");
         glUseProgram(m_programId);
         if (checkForGLError(
-                "RenderManagerOpenGL::PresentEye after use program")) {
-            return false;
+          "RenderManagerOpenGL::PresentEye after use program")) {
+          return false;
         }
 
         // Set up a Projection matrix that undoes the scale factor applied
@@ -811,12 +803,12 @@ namespace renderkit {
         // @todo think about how we get square pixels, to properly handle
         // distortion correction.
         GLfloat myScale = m_params.m_renderOverfillFactor;
-        GLfloat scaleProj[16] = {myScale, 0, 0, 0, 0, myScale, 0, 0,
-                                 0,       0, 1, 0, 0, 0,       0, 1};
+        GLfloat scaleProj[16] = { myScale, 0, 0, 0, 0, myScale, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 1 };
         glUniformMatrix4fv(m_projectionUniformId, 1, GL_FALSE, scaleProj);
         if (checkForGLError("RenderManagerOpenGL::PresentEye after projection "
-                            "matrix setting")) {
-            return false;
+          "matrix setting")) {
+          return false;
         }
 
         // Set up a ModelView matrix that handles rotating and flipping the
@@ -828,28 +820,28 @@ namespace renderkit {
         // distortion correction.
         matrix16 modelView;
         if (!ComputeDisplayOrientationMatrix(
-                static_cast<float>(params.m_rotateDegrees), params.m_flipInY,
-                modelView)) {
-            std::cerr << "RenderManagerOpenGL::PresentEye(): "
-                         "ComputeDisplayOrientationMatrix failed"
-                      << std::endl;
-            return false;
+          static_cast<float>(params.m_rotateDegrees), params.m_flipInY,
+          modelView)) {
+          std::cerr << "RenderManagerOpenGL::PresentEye(): "
+            "ComputeDisplayOrientationMatrix failed"
+            << std::endl;
+          return false;
         }
         glUniformMatrix4fv(m_modelViewUniformId, 1, GL_FALSE, modelView.data);
         if (checkForGLError("RenderManagerOpenGL::PresentEye after modelView "
-                            "matrix setting")) {
-            return false;
+          "matrix setting")) {
+          return false;
         }
 
         //=========================================================
         // Asynchronous Time Warp.
         // Set up the texture matrix to handle asynchronous time warp
 
-        float textureMat[] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        float textureMat[] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
         if (params.m_ATW != nullptr) {
-            // Because the matrix was built in compliance with the OpenGL
-            // spec, we can just directly use it.
-            memcpy(textureMat, params.m_ATW->data, 15 * sizeof(float));
+          // Because the matrix was built in compliance with the OpenGL
+          // spec, we can just directly use it.
+          memcpy(textureMat, params.m_ATW->data, 15 * sizeof(float));
         }
 
         // We now crop to a subregion of the texture.  This is used to handle
