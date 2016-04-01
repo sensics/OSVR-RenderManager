@@ -38,6 +38,7 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 // Standard includes
 #include <iostream>
 #include <string>
+#include <chrono>
 #include <stdlib.h> // For exit()
 
 // This must come after we include <d3d11.h> so its pointer types are defined.
@@ -131,8 +132,8 @@ void RenderView(
 }
 
 void Usage(std::string name) {
-    std::cerr << "Usage: " << name << std::endl;
-    exit(-1);
+  std::cerr << "Usage: " << name << " [millsecondRenderinDelay]" << std::endl;
+  exit(-1);
 }
 
 struct FrameInfo {
@@ -145,6 +146,7 @@ struct FrameInfo {
 
 int main(int argc, char* argv[]) {
     // Parse the command line
+    int delayMilliSeconds = 500;
     int realParams = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -152,14 +154,16 @@ int main(int argc, char* argv[]) {
         } else {
             switch (++realParams) {
             case 1:
+              delayMilliSeconds = atoi(argv[i]);
+              break;
             default:
                 Usage(argv[0]);
             }
         }
     }
-        if (realParams != 0) {
-            Usage(argv[0]);
-        }
+    if (realParams > 1) {
+        Usage(argv[0]);
+    }
 
     // Get an OSVR client context to use to access the devices
     // that we need.
@@ -433,9 +437,13 @@ int main(int argc, char* argv[]) {
         // Send the rendered results to the screen
         render->PresentRenderBuffers(frameInfo[frame].renderBuffers, renderInfo);
 
-        // Sleep for half a second to simulate a very long rendering time.
-        // This will make it possible to see the impact of ATW on the rendering.
-        Sleep(500);
+        // Delay the requested length of time to simulate a long render time.
+        // Busy-wait so we don't get swapped out longer than we wanted.
+        auto end =
+          std::chrono::high_resolution_clock::now() +
+          std::chrono::milliseconds(delayMilliSeconds);
+        do {
+        } while (std::chrono::high_resolution_clock::now() < end);
         iteration++;
     }
 
