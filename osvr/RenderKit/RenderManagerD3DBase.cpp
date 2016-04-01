@@ -1149,9 +1149,14 @@ namespace renderkit {
         m_D3D11Context->RSSetState(m_rasterizerState.Get());
 
         //====================================================================
-        // Set the sample to use and then draw the quad with the texture
-        // on it.
-        m_D3D11Context->PSSetSamplers(0, 1, &m_renderTextureSamplerState);
+        // Set the sampler to use and then draw the quad with the texture
+        // on it.  Note that we need to make the array here so that we have
+        // the correct type of handle, as opposed to just sending the
+        // m_renderTextureSamplerState pointer directly, which causes it to
+        // be ignored.
+        typedef ID3D11SamplerState *SamplerConstPtr;
+        SamplerConstPtr states[] {m_renderTextureSamplerState.Get()};
+        m_D3D11Context->PSSetSamplers(0, 1, states);
         m_D3D11Context->Draw(m_quadVertexCount[params.m_index], 0);
 
         // Clean up after ourselves.
