@@ -491,14 +491,18 @@ namespace renderkit {
 
         // Sampler state
         D3D11_SAMPLER_DESC samplerDescription = {};
-        samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-        samplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-        samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDescription.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+        samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+        samplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+        samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
         samplerDescription.MipLODBias = 0;
         samplerDescription.ComparisonFunc = D3D11_COMPARISON_NEVER;
-        samplerDescription.MinLOD = 0;
+        samplerDescription.MinLOD = 0.0f;
         samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
+        samplerDescription.BorderColor[0] = 0;
+        samplerDescription.BorderColor[1] = 0;
+        samplerDescription.BorderColor[2] = 0;
+        samplerDescription.BorderColor[3] = 0;
         hr = m_D3D11device->CreateSamplerState(&samplerDescription,
                                                &m_renderTextureSamplerState);
         if (FAILED(hr)) {
