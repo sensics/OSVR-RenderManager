@@ -866,7 +866,7 @@ namespace renderkit {
         // We read in, multiply, and write out textureMat.
         matrix16 crop;
         ComputeRenderBufferCropMatrix(params.m_normalizedCroppingViewport,
-                                      crop);
+          crop);
         Eigen::Map<Eigen::MatrixXf> textureEigen(textureMat, 4, 4);
         Eigen::Map<Eigen::MatrixXf> cropEigen(crop.data, 4, 4);
         Eigen::MatrixXf full(4, 4);
@@ -875,12 +875,28 @@ namespace renderkit {
 
         glUniformMatrix4fv(m_textureUniformId, 1, GL_FALSE, textureMat);
         if (checkForGLError("RenderManagerOpenGL::PresentEye after texture "
-                            "matrix setting")) {
-            return false;
+          "matrix setting")) {
+          return false;
         }
 
         // Render the geometry to fill the viewport, with the texture
         // mapped onto it.
+
+        // Render to the 0th frame buffer, which is the screen.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // Bind the texture that we're going to use to render into the
+        // frame buffer.
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, params.m_buffer.OpenGL->colorBufferName);
+
+        // Bilinear filtering and clamp to the edge of the texture.
+        const GLfloat border[] = { 0, 0, 0, 0 };
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
         // NOTE: No need to clear the buffer in color or depth; we're
         // always overwriting the whole thing.  We do need to store the
