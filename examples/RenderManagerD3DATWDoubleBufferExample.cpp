@@ -407,14 +407,22 @@ int main(int argc, char* argv[]) {
         return -3;
     }
 
+    // Register all of our constructed buffers so that we can use them for
+    // presentation, and promise not to re-use a buffer for rendering until
+    // we're not presenting it.
+    std::vector<osvr::renderkit::RenderBuffer> allBuffers;
     // Register our constructed buffers so that we can use them for
     // presentation.
     for (size_t frame = 0; frame < frameInfo.size(); frame++) {
-        if (!render->RegisterRenderBuffers(frameInfo[frame].renderBuffers)) {
-            std::cerr << "RegisterRenderBuffers() returned false, cannot continue" << std::endl;
-            quit = true;
-        }
+      for (size_t buf = 0; buf < frameInfo[frame].renderBuffers.size(); buf++) {
+        allBuffers.push_back(frameInfo[frame].renderBuffers[buf]);
+      }
     }
+    if (!render->RegisterRenderBuffers(allBuffers, true)) {
+      std::cerr << "RegisterRenderBuffers() returned false, cannot continue" << std::endl;
+      quit = true;
+    }
+    allBuffers.clear();
 
     size_t iteration = 0;
     // Continue rendering until it is time to quit.
