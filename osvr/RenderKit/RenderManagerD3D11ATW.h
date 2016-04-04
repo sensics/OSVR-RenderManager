@@ -385,12 +385,17 @@ namespace osvr {
                       << numRenderInfos << std::endl;
                     return false;
                   }
-                }
 
-                // @todo If not promising to not overwrite, we need to
-                // construct a set of copy buffers that we'll pull the
-                // data into and render from.  We make these buffers be
-                // lockable so we can share them with the ATW thread.
+                  // @todo If not promising to not overwrite, we need to
+                  // construct a set of copy buffers that we'll pull the
+                  // data into and render from.  We make these buffers be
+                  // lockable so we can share them with the ATW thread.
+                  std::cerr << "RenderManagerD3D11ATW::"
+                    << "RegisterRenderBuffersInternal: Code path for"
+                    << " appWillNotOverwriteBeforeNewPresent == false"
+                    << " not yet implemented." << std::endl;
+                  return false;
+                }
 
                 HRESULT hr;
 
