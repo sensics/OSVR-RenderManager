@@ -293,6 +293,22 @@ int main(int argc, char* argv[]) {
                 return -1;
             }
 
+            // Grab and lock the mutex, so that we will be able to render
+            // to it whether or not RenderManager locks it on our behalf.
+            // it will not be auto-locked when we're in the non-ATW case.
+            IDXGIKeyedMutex* myMutex = nullptr;
+            hr = D3DTexture->QueryInterface(
+              __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
+            if (FAILED(hr) || myMutex == nullptr) {
+              std::cerr << "Could not get mutex pointer" << std::endl;
+              return -2;
+            }
+            hr = myMutex->AcquireSync(0, INFINITE);
+            if (FAILED(hr)) {
+              std::cerr << "Could not acquire mutex" << std::endl;
+              return -3;
+            }
+
             // Fill in the resource view for your render texture buffer here
             D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
             memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));

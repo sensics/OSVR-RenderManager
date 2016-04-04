@@ -428,22 +428,14 @@ namespace osvr {
                     dxgiResource->Release(); // we don't need this anymore
                   }
 
-                  // now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
+                  // Now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
+                  // The application should have already locked these mutexes, so we
+                  // don't attempt to lock them here.
                   hr = buffers[i].D3D11->colorBuffer->QueryInterface(
                     __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
                   if (FAILED(hr) || newInfo.rtMutex == nullptr) {
                     std::cerr << "RenderManagerD3D11ATW::"
                       << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the texture resource." << std::endl;
-                    m_doingOkay = false;
-                    return false;
-                  }
-
-                  // Start with all render thread's IDXGIKeyedMutex locked
-                  //std::cerr << "Locking buffer " << (size_t)buffers[i].D3D11 << " for the render thread." << std::endl;
-                  hr = newInfo.rtMutex->AcquireSync(rtAcqKey, INFINITE);
-                  if (FAILED(hr)) {
-                    std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Could not AcquireSync on a game render target's IDXGIKeyedMutex during registration." << std::endl;
                     m_doingOkay = false;
                     return false;
                   }
