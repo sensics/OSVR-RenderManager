@@ -366,20 +366,31 @@ namespace osvr {
                 // If they are promising to not present the same buffers
                 // each frame, make sure they have registered twice as
                 // many as there are viewports for them to render.
+                size_t numRenderInfos = LatchRenderInfoInternal();
                 if (appWillNotOverwriteBeforeNewPresent) {
-                  if (buffers.size() != LatchRenderInfo() * 2) {
+                  if (buffers.size() !=  numRenderInfos * 2) {
                     std::cerr << "RenderManagerD3D11ATW::"
                       << "RegisterRenderBuffersInternal: Promised"
                       << " not to re-use buffers, but number registered ("
                       << buffers.size() << " != twice number of viewports ("
-                      << LatchRenderInfo() << std::endl;
+                      << numRenderInfos * 2 << std::endl;
+                    return false;
+                  }
+                } else {
+                  if (buffers.size() != numRenderInfos) {
+                    std::cerr << "RenderManagerD3D11ATW::"
+                      << "RegisterRenderBuffersInternal: Did not promise"
+                      << " not to re-use buffers, but number registered ("
+                      << buffers.size() << " != number of viewports ("
+                      << numRenderInfos << std::endl;
                     return false;
                   }
                 }
 
                 // @todo If not promising to not overwrite, we need to
                 // construct a set of copy buffers that we'll pull the
-                // data into and render from.
+                // data into and render from.  We make these buffers be
+                // lockable so we can share them with the ATW thread.
 
                 HRESULT hr;
 
@@ -442,8 +453,11 @@ namespace osvr {
                   //
 
                   // OK, now we need to open the shared resource on the ATW thread's ID3D11Device.
+                  // We assume that the buffers for the eyes repeat, so that we modulo the number
+                  // of buffers to find the correct index.
+                  // @todo Specify this requirement in the API
                     {
-                      auto atwDevice = renderInfo[i].library.D3D11->device;
+                      auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
                       ID3D11Texture2D *texture2D = nullptr;
                       hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
                         (LPVOID*)&texture2D);
