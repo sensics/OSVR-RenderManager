@@ -571,8 +571,12 @@ namespace renderkit {
         // by a mutex.
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        m_latchedRenderInfo = GetRenderInfoInternal(params);
-        return m_latchedRenderInfo.size();
+        return LatchRenderInfoInternal(params);
+    }
+
+    size_t RenderManager::LatchRenderInfoInternal(const RenderParams& params) {
+      m_latchedRenderInfo = GetRenderInfoInternal(params);
+      return m_latchedRenderInfo.size();
     }
 
     RenderInfo RenderManager::GetRenderInfo(size_t index) {

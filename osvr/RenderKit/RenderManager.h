@@ -412,7 +412,10 @@ namespace renderkit {
         /// not to write to a presented buffer until another buffer has been
         /// presented in its place.  This enables the optimization of
         /// RenderManager not making a copy of the buffers during Asynchronous
-        /// Time Warp.
+        /// Time Warp.  NOTE: If this flag is set to true, the buffers must
+        /// be presented as two groups, the first half being the buffers for
+        /// all eyes in a single frame and the second half being the buffers
+        /// to be used for all eyes in the next frame.
         ///
         /// @todo Make use of this when ATW is fully implemented.
         ///
@@ -823,6 +826,8 @@ namespace renderkit {
 
         std::vector<RenderInfo>
             m_latchedRenderInfo; //< Stores vector of latched RenderInfo
+        virtual size_t
+          LatchRenderInfoInternal(const RenderParams& params = RenderParams());
 
         /// OSVR context to use.
         OSVR_ClientContext m_context;
