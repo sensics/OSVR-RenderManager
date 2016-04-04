@@ -2791,20 +2791,11 @@ namespace renderkit {
               // to harness.  @todo This should be doable on top of a non-
               // DirectMode interface as well.
               if (p.m_asynchronousTimeWarp) {
-                // @todo See about making this fall-back not be required.
-                if (p.m_graphicsLibrary.D3D11 == nullptr) {
-                  std::cerr << "Async timewarp enabled, but D3D11 graphics"
-                    << " library not passed in. Falling back to"
-                    << " synchronous timewarp." << std::endl;
-                  ret.reset(openRenderManagerDirectMode(context, p));
-                } else {
-                  // the wrapped RenderManager should create its own graphics device
-                  RenderManager::ConstructorParameters pTemp = p;
-                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                  auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
-                  auto atwRm = new RenderManagerD3D11ATW(context, p, wrappedRm);
-                  ret.reset(atwRm);
-                }
+                RenderManager::ConstructorParameters pTemp = p;
+                pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
+                auto atwRm = new RenderManagerD3D11ATW(context, p, wrappedRm);
+                ret.reset(atwRm);
               } else {
                 // Try each available DirectRender library to see if we can
                 // get a pointer to a RenderManager that has access to the
