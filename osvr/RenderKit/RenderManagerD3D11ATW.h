@@ -372,17 +372,6 @@ namespace osvr {
                 // per eye, so we can't check the number of buffers.  Also,
                 // we should support letting them register the render buffers
                 // in batches, not all at once.
-                if (!appWillNotOverwriteBeforeNewPresent) {
-                  // @todo If not promising to not overwrite, we need to
-                  // construct a set of copy buffers that we'll pull the
-                  // data into and render from.  We make these buffers be
-                  // lockable so we can share them with the ATW thread.
-                  std::cerr << "RenderManagerD3D11ATW::"
-                    << "RegisterRenderBuffersInternal: Code path for"
-                    << " appWillNotOverwriteBeforeNewPresent == false"
-                    << " not yet implemented." << std::endl;
-                  return false;
-                }
 
                 HRESULT hr;
 
