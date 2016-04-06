@@ -432,58 +432,58 @@ namespace osvr {
                   // We assume that the buffers for the eyes repeat, so that we modulo the number
                   // of buffers to find the correct index.
                   // @todo Specify this requirement in the API
-                    {
-                      auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
-                      ID3D11Texture2D *texture2D = nullptr;
-                      hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
-                        (LPVOID*)&texture2D);
-                      if (FAILED(hr)) {
-                        std::cerr << "RenderManagerD3D11ATW::"
-                          << "RegisterRenderBuffersInternal: - failed to open shared resource." << std::endl;
-                        m_doingOkay = false;
-                        return false;
-                      }
-
-                      // And get the IDXGIKeyedMutex for the ATW thread's ID3D11Texture2D
-                      hr = texture2D->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.atwMutex);
-                      if (FAILED(hr) || newInfo.atwMutex == nullptr) {
-                        std::cerr << "RenderManagerD3D11ATW::"
-                          << "RegisterRenderBuffersInternal: - failed to create keyed mutex." << std::endl;
-                        m_doingOkay = false;
-                        return false;
-                      }
-
-                      // We can't use the render thread's ID3D11RenderTargetView. Create one from
-                      // the ATW's ID3D11Texture2D handle.
-
-                      // Fill in the resource view for your render texture buffer here
-                      D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-                      memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
-                      // This must match what was created in the texture to be rendered
-                      // @todo Figure this out by introspection on the texture?
-                      //renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-                      renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                      renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-                      renderTargetViewDesc.Texture2D.MipSlice = 0;
-
-                      // Create the render target view.
-                      ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
-                      hr = atwDevice->CreateRenderTargetView(texture2D, &renderTargetViewDesc, &renderTargetView);
-                      if (FAILED(hr)) {
-                        std::cerr << "RenderManagerD3D11ATW::"
-                          << "RegisterRenderBuffersInternal: Could not create render target for eye " << i
-                          << std::endl;
-                        m_doingOkay = false;
-                        return false;
-                      }
-
-                      newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
-                      newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
-                      newInfo.atwBuffer.D3D11->colorBufferView = renderTargetView;
-                      renderBuffers.push_back(newInfo.atwBuffer);
+                  {
+                    auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
+                    ID3D11Texture2D *texture2D = nullptr;
+                    hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
+                      (LPVOID*)&texture2D);
+                    if (FAILED(hr)) {
+                      std::cerr << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: - failed to open shared resource." << std::endl;
+                      m_doingOkay = false;
+                      return false;
                     }
 
-                    mBufferMap[buffers[i].D3D11] = newInfo;
+                    // And get the IDXGIKeyedMutex for the ATW thread's ID3D11Texture2D
+                    hr = texture2D->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.atwMutex);
+                    if (FAILED(hr) || newInfo.atwMutex == nullptr) {
+                      std::cerr << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: - failed to create keyed mutex." << std::endl;
+                      m_doingOkay = false;
+                      return false;
+                    }
+
+                    // We can't use the render thread's ID3D11RenderTargetView. Create one from
+                    // the ATW's ID3D11Texture2D handle.
+
+                    // Fill in the resource view for your render texture buffer here
+                    D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+                    memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
+                    // This must match what was created in the texture to be rendered
+                    // @todo Figure this out by introspection on the texture?
+                    //renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+                    renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                    renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+                    renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+                    // Create the render target view.
+                    ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
+                    hr = atwDevice->CreateRenderTargetView(texture2D, &renderTargetViewDesc, &renderTargetView);
+                    if (FAILED(hr)) {
+                      std::cerr << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: Could not create render target for eye " << i
+                        << std::endl;
+                      m_doingOkay = false;
+                      return false;
+                    }
+
+                    newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
+                    newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
+                    newInfo.atwBuffer.D3D11->colorBufferView = renderTargetView;
+                    renderBuffers.push_back(newInfo.atwBuffer);
+                  }
+
+                  mBufferMap[buffers[i].D3D11] = newInfo;
                 }
 
                 if (!mRenderManager->RegisterRenderBuffers(renderBuffers,
