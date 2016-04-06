@@ -269,8 +269,7 @@ int main(int argc, char* argv[]) {
             unsigned height = static_cast<int>(renderInfo[i].viewport.height);
 
             // Initialize a new render target texture description.
-            D3D11_TEXTURE2D_DESC textureDesc;
-            memset(&textureDesc, 0, sizeof(textureDesc));
+            D3D11_TEXTURE2D_DESC textureDesc = {};
             textureDesc.Width = width;
             textureDesc.Height = height;
             textureDesc.MipLevels = 1;
