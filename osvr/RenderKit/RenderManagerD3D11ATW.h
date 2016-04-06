@@ -57,6 +57,7 @@ namespace osvr {
                 IDXGIKeyedMutex* rtMutex;
                 IDXGIKeyedMutex* atwMutex;
                 HANDLE sharedResourceHandle;
+                bool weAllocatedCopyBuffer;    //< True if we maintain a copy buffer
             } RenderBufferATWInfo;
             std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo> mBufferMap;
 
@@ -98,6 +99,14 @@ namespace osvr {
                 if (mThread) {
                     stop();
                     mThread->join();
+                }
+                // Delete any textures and all views that we allocated
+                std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo>::iterator i;
+                for (i = mBufferMap.begin(); i != mBufferMap.end(); i++) {
+                  if (i->second.weAllocatedCopyBuffer) {
+                    i->second.atwBuffer.D3D11->colorBuffer->Release();
+                  }
+                  i->second.atwBuffer.D3D11->colorBufferView->Release();
                 }
             }
 
@@ -434,6 +443,7 @@ namespace osvr {
                   {
                     auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
                     ID3D11Texture2D *texture2D = nullptr;
+                    newInfo.weAllocatedCopyBuffer = false;
                     hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
                       (LPVOID*)&texture2D);
                     if (FAILED(hr)) {
