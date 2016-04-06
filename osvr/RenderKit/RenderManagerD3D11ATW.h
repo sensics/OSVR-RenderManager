@@ -52,7 +52,6 @@ namespace osvr {
             /// buffers and also the copying of buffers in the case where we have
             /// our own internal copy.
             typedef struct {
-                osvr::renderkit::RenderBuffer rtBuffer;
                 osvr::renderkit::RenderBuffer atwBuffer;
                 IDXGIKeyedMutex* rtMutex;
                 IDXGIKeyedMutex* atwMutex;
@@ -226,7 +225,7 @@ namespace osvr {
                           m_doingOkay = false;
                           return false;
                       }
-                      mNextFrameInfo.renderBuffers.push_back(bufferInfoItr->second.rtBuffer);
+                      mNextFrameInfo.renderBuffers.push_back(renderBuffers[i]);
                   }
                   mFirstFramePresented = true;
                   mNextFrameInfo.renderInfo = renderInfoUsed;
@@ -393,9 +392,6 @@ namespace osvr {
 
                 for (size_t i = 0; i < buffers.size(); i++) {
                   RenderBufferATWInfo newInfo;
-
-                  // Let's start by getting some resources from the render thread's ID3D11Device
-                  newInfo.rtBuffer = buffers[i];
 
                   // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
                   // get that, we need to get the IDXGIResource* first
