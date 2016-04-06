@@ -100,12 +100,10 @@ namespace osvr {
                     stop();
                     mThread->join();
                 }
-                // Delete any textures and all views that we allocated
+                // Delete textures and views that we allocated or otherwise opened
                 std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo>::iterator i;
                 for (i = mBufferMap.begin(); i != mBufferMap.end(); i++) {
-                  if (i->second.weAllocatedCopyBuffer) {
-                    i->second.atwBuffer.D3D11->colorBuffer->Release();
-                  }
+                  i->second.atwBuffer.D3D11->colorBuffer->Release();
                   i->second.atwBuffer.D3D11->colorBufferView->Release();
                 }
             }
