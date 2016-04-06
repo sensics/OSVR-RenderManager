@@ -363,29 +363,11 @@ namespace osvr {
                 const std::vector<RenderBuffer>& buffers,
                 bool appWillNotOverwriteBeforeNewPresent = false) override {
 
-                // If they are promising to not present the same buffers
-                // each frame, make sure they have registered twice as
-                // many as there are viewports for them to render.
-                size_t numRenderInfos = LatchRenderInfoInternal();
-                if (appWillNotOverwriteBeforeNewPresent) {
-                  if (buffers.size() !=  numRenderInfos * 2) {
-                    std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Promised"
-                      << " not to re-use buffers, but number registered ("
-                      << buffers.size() << " != twice number of viewports ("
-                      << numRenderInfos * 2 << std::endl;
-                    return false;
-                  }
-                } else {
-                  if (buffers.size() != numRenderInfos) {
-                    std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Did not promise"
-                      << " not to re-use buffers, but number registered ("
-                      << buffers.size() << " != number of viewports ("
-                      << numRenderInfos << std::endl;
-                    return false;
-                  }
-
+                // They may be using one buffer for two eyes or one buffer
+                // per eye, so we can't check the number of buffers.  Also,
+                // we should support letting them register the render buffers
+                // in batches, not all at once.
+                if (!appWillNotOverwriteBeforeNewPresent) {
                   // @todo If not promising to not overwrite, we need to
                   // construct a set of copy buffers that we'll pull the
                   // data into and render from.  We make these buffers be
@@ -402,12 +384,11 @@ namespace osvr {
                 std::vector<osvr::renderkit::RenderInfo> renderInfo = mRenderManager->GetRenderInfo();
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
 
+                size_t numRenderInfos = LatchRenderInfoInternal();
                 for (size_t i = 0; i < buffers.size(); i++) {
                   RenderBufferATWInfo newInfo;
 
-                  //
                   // Let's start by getting some resources from the render thread's ID3D11Device
-                  //
                   newInfo.rtBuffer = buffers[i];
 
                   // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
@@ -445,9 +426,7 @@ namespace osvr {
                     return false;
                   }
 
-                  //
                   // Next, some resources for the ATW thread's ID3D11Device
-                  //
 
                   // OK, now we need to open the shared resource on the ATW thread's ID3D11Device.
                   // We assume that the buffers for the eyes repeat, so that we modulo the number
