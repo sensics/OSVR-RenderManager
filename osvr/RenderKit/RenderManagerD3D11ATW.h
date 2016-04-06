@@ -235,6 +235,7 @@ namespace osvr {
                 } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
                 }
+                mStarted = true;
             }
 
             void stop() {
