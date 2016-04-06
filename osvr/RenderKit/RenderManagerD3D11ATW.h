@@ -383,8 +383,8 @@ namespace osvr {
 
                 std::vector<osvr::renderkit::RenderInfo> renderInfo = mRenderManager->GetRenderInfo();
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
+                size_t numRenderInfos = renderInfo.size();
 
-                size_t numRenderInfos = LatchRenderInfoInternal();
                 for (size_t i = 0; i < buffers.size(); i++) {
                   RenderBufferATWInfo newInfo;
 
