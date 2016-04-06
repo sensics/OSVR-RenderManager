@@ -48,6 +48,9 @@ namespace osvr {
             const UINT acqKey = 1;
             const UINT relKey = 0;
 
+            /// Holds the information needed to handle locking and unlocking of
+            /// buffers and also the copying of buffers in the case where we have
+            /// our own internal copy.
             typedef struct {
                 osvr::renderkit::RenderBuffer rtBuffer;
                 osvr::renderkit::RenderBuffer atwBuffer;
@@ -55,12 +58,16 @@ namespace osvr {
                 IDXGIKeyedMutex* atwMutex;
                 HANDLE sharedResourceHandle;
             } RenderBufferATWInfo;
+            std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo> mBufferMap;
 
             std::mutex mLock;
             std::shared_ptr<std::thread> mThread = nullptr;
-            std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo> mBufferMap;
             GraphicsLibraryD3D11* mRTGraphicsLibrary;
 
+            /// Holds information about the buffers to be used by the next rendering
+            /// pass.  This is filled in by PresentRenderBuffersInternal() and used
+            /// by the ATW thread.  Access should be guarded using the mLock to prevent
+            /// simultaneous use in both threads.
             struct {
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
                 std::vector<osvr::renderkit::RenderInfo> renderInfo;
@@ -151,6 +158,7 @@ namespace osvr {
                   std::vector<OSVR_ViewportDescription>(),
                 bool flipInY = false) override {
 
+                  // Lock our mutex so we don't adjust the buffers while rendering is happening.
                   std::lock_guard<std::mutex> lock(mLock);
                   HRESULT hr;
 
@@ -221,18 +229,6 @@ namespace osvr {
                   return true;
             }
 
-            ///**
-            // * Construct an D3D ATW wrapper around an existing D3D render
-            // * manager. Takes ownership of the passed in render manager
-            // * and deletes it when the wrapper is deleted.
-            // */
-            //RenderManagerD3D11ATW(
-            //    OSVR_ClientContext context,
-            //    ConstructorParameters p, std::unique_ptr<RenderManagerD3D11Base> && D3DToHarness)
-            //    : RenderManager(context, p) {
-            //    mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
-            //}
-
             void start() {
                 if (mStarted) {
                     std::cerr << "RenderManagerThread::start() - thread loop already started." << std::endl;
@@ -292,6 +288,8 @@ namespace osvr {
                     }
 
                     if (timeToPresent) {
+                        // Lock our mutex so that we're not rendering while new buffers are
+                        // being presented.
                         std::lock_guard<std::mutex> lock(mLock);
                         if (mFirstFramePresented) {
                             // Update the context so we get our callbacks called and
