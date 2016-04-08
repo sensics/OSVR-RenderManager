@@ -91,8 +91,7 @@ void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
 }
 
 bool SetupRendering(osvr::renderkit::GraphicsLibrary library) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.OpenGL == nullptr) {
         std::cerr << "SetupRendering: No OpenGL GraphicsLibrary, this should "
                      "not happen"
@@ -115,8 +114,7 @@ void RenderView(
     GLuint colorBuffer, //< Color buffer to render into
     GLuint depthBuffer  //< Depth buffer to render into
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (renderInfo.library.OpenGL == nullptr) {
         std::cerr
             << "RenderView: No OpenGL GraphicsLibrary, this should not happen"
@@ -281,7 +279,8 @@ int main(int argc, char* argv[]) {
         colorBuffers.push_back(rb);
 
         // "Bind" the newly created texture : all future texture
-        // functions will modify this texture glActiveTexture(GL_TEXTURE0);
+        // functions will modify this texture
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorBufferName);
 
         // Determine the appropriate size for the frame buffer to be used for
@@ -292,12 +291,6 @@ int main(int argc, char* argv[]) {
         // Give an empty image to OpenGL ( the last "0" means "empty" )
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, 0);
-
-        // Bilinear filtering
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         // The depth buffer
         GLuint depthrenderbuffer;
