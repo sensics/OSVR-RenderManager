@@ -1,5 +1,7 @@
 # OSVR-RenderManager
 
+[![Join the chat at https://gitter.im/sensics/OSVR-RenderManager](https://badges.gitter.im/sensics/OSVR-RenderManager.svg)](https://gitter.im/sensics/OSVR-RenderManager?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This repository holds the open-source code for the OSVR RenderManager developed by
 Sensics.  It is licensed under the Apache-2 license.  It has a set of submodules
 that point to sets of non-open source code to build
