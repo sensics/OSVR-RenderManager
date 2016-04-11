@@ -27,6 +27,7 @@ Sensics, Inc.
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManagerD3DBase.h"
 #include "RenderManagerOpenGL.h"
+#include "GraphicsLibraryD3D11.h"
 
 #include <vector>
 #include <string>
@@ -110,6 +111,14 @@ namespace renderkit {
                                                                    distort);
         }
 
+        // We need to flip the projection information so that our output
+        // images match those used by Direct3D, so we don't need to (1)
+        // flip the textures and (2) Modify the time warp calculations.
+        // We flip this back again inside PresentRenderBuffers() so that
+        // time warp is not confused by changing motion.
+        virtual std::vector<RenderInfo>
+          GetRenderInfoInternal(const RenderParams& params = RenderParams());
+
         // We use the render-buffer registration to construct
         // D3D buffers to be used for PresentMode, which we then map
         // our buffers to.
@@ -121,7 +130,12 @@ namespace renderkit {
         bool PresentDisplayFinalize(size_t display) override;
         bool PresentFrameInitialize() override;
         bool PresentFrameFinalize() override;
-        bool PresentEye(PresentEyeParameters params) override;
+        bool PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
+          const std::vector<RenderInfo>& renderInfoUsed,
+          const RenderParams& renderParams = RenderParams(),
+          const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports =
+          std::vector<OSVR_ViewportDescription>(),
+          bool flipInY = false) override;
 
         friend RenderManager OSVR_RENDERMANAGER_EXPORT*
         createRenderManager(OSVR_ClientContext context,
