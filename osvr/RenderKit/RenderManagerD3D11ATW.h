@@ -62,7 +62,6 @@ namespace osvr {
 
             std::mutex mLock;
             std::shared_ptr<std::thread> mThread = nullptr;
-            GraphicsLibraryD3D11* mRTGraphicsLibrary;
 
             /// Holds information about the buffers to be used by the next rendering
             /// pass.  This is filled in by PresentRenderBuffersInternal() and used
@@ -90,7 +89,6 @@ namespace osvr {
                 OSVR_ClientContext context,
                 ConstructorParameters p, RenderManagerD3D11Base* D3DToHarness)
                 : RenderManagerD3D11Base(context, p) {
-                mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
                 mRenderManager.reset(D3DToHarness);
             }
 
