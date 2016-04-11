@@ -203,6 +203,9 @@ namespace renderkit {
             rb.OpenGL = new RenderBufferOpenGL;
             rb.OpenGL->colorBufferName = colorBufferName;
             m_colorBuffers.push_back(rb);
+
+            // "Bind" the newly created texture : all future texture functions
+            // will modify this texture glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorBufferName);
 
             // Determine the appropriate size for the frame buffer to be used
