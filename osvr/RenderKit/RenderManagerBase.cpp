@@ -798,8 +798,7 @@ namespace renderkit {
         }
 
         // Render into each display, setting up the display beforehand and
-        // finalizing
-        // it after.
+        // finalizing it after.
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
             // Set up the appropriate display before setting up its eye(s).
@@ -2690,7 +2689,6 @@ namespace renderkit {
         // Construct the distortion parameters based on the local display
         // class.
         // @todo Remove once we get a general polynomial from Core.
-
         RenderManager::DistortionParameters distortion;
         distortion.m_desiredTriangles = 200 * 64;
 
