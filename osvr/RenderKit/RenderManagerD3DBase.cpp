@@ -760,11 +760,9 @@ namespace renderkit {
                 preProjectionTranslate * preScale * preTranslation;
 
             // Store transpose of the result, because Direct3D stores matrices
-            // in
-            // the opposite order from OpenGL.
+            // in the opposite order from OpenGL.
             // @todo Figure out how to handle the transpose or the handedness
-            // change
-            // in Eigen with a method or declaration.
+            // change in Eigen with a method or declaration.
             matrix16 ATW;
             for (size_t r = 0; r < 4; r++) {
                 for (size_t c = 0; c < 4; c++) {
@@ -861,7 +859,7 @@ namespace renderkit {
                 ComputeDistortionMesh(eye, type, distort[eye]);
             m_numTriangles[eye] = mesh.size() / 3;
             if (m_numTriangles[eye] == 0) {
-                std::cerr << "RenderManagerD3D11Base::OpenDisplay: Could not "
+                std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
                              "create mesh "
                           << "for eye " << eye << std::endl;
                 return false;
@@ -908,7 +906,7 @@ namespace renderkit {
             hr = m_D3D11device->CreateBuffer(&bufferDesc, &subResData,
                                              &quadVertexBuffer);
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11Base::OpenDisplay: Could not "
+                std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
                              "create vertex buffer"
                           << std::endl;
                 std::cerr << "  Direct3D error type: " << StringFromD3DError(hr)
@@ -1005,8 +1003,7 @@ namespace renderkit {
         }
 
         // @todo Record all state we change and re-set it to what it was
-        // originally so
-        // we don't mess with client rendering.
+        // originally so we don't mess with client rendering.
 
         // Get the viewport.  This returns a viewport for OpenGL.  To get one
         // for D3D in the case that we have a display that is rotated by 90 or
