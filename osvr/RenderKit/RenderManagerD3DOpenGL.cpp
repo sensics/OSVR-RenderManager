@@ -143,24 +143,13 @@ namespace renderkit {
 
         //======================================================
         // Construct the present buffers we're going to use when in Render()
-        // mode, to
-        // wrap the PresenMode interface.
+        // mode, to wrap the PresenMode interface.  This will also
+        // register our presentation buffers, which will cause them
+        // to be associated with newly-constructed D3D buffers.
         if (!constructRenderBuffers()) {
             removeOpenGLContexts();
             std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct present buffers to wrap Render() path"
-                      << std::endl;
-            ret.status = FAILURE;
-            return ret;
-        }
-
-        //======================================================
-        // Register the presentation buffers, which will cause them to
-        // be associated with newly-constructed D3D buffers.
-        if (!RegisterRenderBuffersInternal(m_colorBuffers)) {
-            removeOpenGLContexts();
-            std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not regsiter "
-                         "present buffers to wrap Render() path"
                       << std::endl;
             ret.status = FAILURE;
             return ret;
