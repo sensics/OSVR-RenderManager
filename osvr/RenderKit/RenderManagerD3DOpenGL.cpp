@@ -40,6 +40,7 @@ namespace renderkit {
         std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness)
         : RenderManagerOpenGL(context, p),
           m_D3D11Renderer(std::move(D3DToHarness)) {
+
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.
@@ -459,7 +460,6 @@ namespace renderkit {
       const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports,
       bool flipInY) {
 
-
       // We need to flip the projection information back to normal so that
       // when the time warp calculations are running they are using the
       // expected projection matrix, rather than the one we modified to give
@@ -473,7 +473,10 @@ namespace renderkit {
         adjustedRenderInfo[i].projection.top = temp;
       }
 
-      // Verify that we have registered all of these buffers and unlock all of them.
+      // Verify that we have registered all of these buffers.
+      // Also add each to the vector we will send to the wrapped
+      // RenderManager.
+      std::vector<RenderBuffer> myD3DBuffers;
       for (size_t b = 0; b < renderBuffers.size(); b++) {
         OglToD3DTexture* oglMap = nullptr;
         for (size_t i = 0; i < m_oglToD3D.size(); i++) {
@@ -497,9 +500,14 @@ namespace renderkit {
             << std::endl;
           return false;
         }
+        RenderBuffer rb;
+        rb.D3D11 = &(oglMap->D3DBuffer);
+        myD3DBuffers.push_back(rb);
+      }
 
-        // Unlock the render target to enable Direct3D access
-        if (!wglDXUnlockObjectsNV(m_glD3DHandle, 1, &oglMap->glColorHandle)) {
+      // Unlock all of the render buffers we know about.
+      for (size_t i = 0; i < m_oglToD3D.size(); i++) {
+        if (!wglDXUnlockObjectsNV(m_glD3DHandle, 1, &m_oglToD3D[i].glColorHandle)) {
           std::cerr << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal: Can't unlock "
             "Color buffer"
             << std::endl;
@@ -508,12 +516,6 @@ namespace renderkit {
       }
 
       // Present the buffers using our wrapped renderer.
-      std::vector<RenderBuffer> myD3DBuffers;
-      for (size_t i = 0; i < m_oglToD3D.size(); i++) {
-        RenderBuffer rb;
-        rb.D3D11 = &m_oglToD3D[i].D3DBuffer;
-        myD3DBuffers.push_back(rb);
-      }
       bool ret = m_D3D11Renderer->PresentRenderBuffers(
         myD3DBuffers, adjustedRenderInfo, renderParams,
         normalizedCroppingViewports, flipInY);
