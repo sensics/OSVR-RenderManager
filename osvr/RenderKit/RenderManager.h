@@ -1282,6 +1282,7 @@ namespace renderkit {
         //  NOTE: The calls are guaranteed to be nested as follows, with
         // the potential for multiple calls of any of the inner nesting
         // levels for a particular rendering recipe:
+        //  RenderPathSetup
         //  RenderFrameInitialize
         //      RenderDisplayInitialize
         //          RenderEyeInitialize
@@ -1289,6 +1290,10 @@ namespace renderkit {
         //          RenderEyeFinalize
         //      RenderDisplayFinalize
         //  RenderFrameFinalize
+
+        /// @brief Called at the beginning of the first Render() call.
+        virtual bool RenderPathSetup() = 0;
+        bool m_renderPathSetupDone = false;
 
         /// @brief Initialize rendering for a new frame
         virtual bool RenderFrameInitialize() = 0;

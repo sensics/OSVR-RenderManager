@@ -188,6 +188,7 @@ namespace renderkit {
 
         //===================================================================
         // Overloaded render functions from the base class.
+        bool RenderPathSetup() override;
         bool RenderFrameInitialize() override;
         bool RenderDisplayInitialize(size_t display) override;
         bool RenderEyeInitialize(size_t eye) override;

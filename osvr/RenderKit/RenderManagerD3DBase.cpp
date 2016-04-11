@@ -593,19 +593,20 @@ namespace renderkit {
             return ret;
         }
 
-        //======================================================
-        // Construct the present buffers we're going to use when in Render()
-        // mode, to
-        // wrap the PresentMode interface.
-        if (!constructRenderBuffers()) {
-            std::cerr << "RenderManagerD3D11Base::OpenDisplay: Could not "
-                         "construct present buffers to wrap Render() path"
-                      << std::endl;
-            ret.status = FAILURE;
-            return ret;
-        }
-
         return ret;
+    }
+
+    bool RenderManagerD3D11Base::RenderPathSetup() {
+      //======================================================
+      // Construct the present buffers we're going to use when in Render()
+      // mode, to wrap the PresentMode interface.
+      if (!constructRenderBuffers()) {
+        std::cerr << "RenderManagerD3D11Base::RenderPathSetup: Could not "
+          "construct present buffers to wrap Render() path"
+          << std::endl;
+        return false;
+      }
+      return true;
     }
 
     bool RenderManagerD3D11Base::ComputeAsynchronousTimeWarps(

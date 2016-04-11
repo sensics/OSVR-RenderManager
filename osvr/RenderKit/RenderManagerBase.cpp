@@ -443,6 +443,16 @@ namespace renderkit {
             return false;
         }
 
+        // Make sure we've set up for the Render() path.
+        if (!m_renderPathSetupDone) {
+          if (!RenderPathSetup()) {
+            std::cerr << "RenderManager::Render(): RenderPathSetup() failed."
+              << std::endl;
+            return false;
+          }
+          m_renderPathSetupDone = true;
+        }
+
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {

@@ -171,6 +171,7 @@ namespace renderkit {
         // Overloaded render functions from the base class.  Not all of the
         // ones that need overloading are here; derived classes must decide
         // what to do for those.
+        bool RenderPathSetup() override;
         bool RenderEyeInitialize(size_t eye) override;
         bool RenderSpace(size_t whichSpace //< Index into m_callbacks vector
                          ,

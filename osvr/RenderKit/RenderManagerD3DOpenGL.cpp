@@ -142,20 +142,6 @@ namespace renderkit {
             return ret;
         }
 
-        //======================================================
-        // Construct the present buffers we're going to use when in Render()
-        // mode, to wrap the PresenMode interface.  This will also
-        // register our presentation buffers, which will cause them
-        // to be associated with newly-constructed D3D buffers.
-        if (!constructRenderBuffers()) {
-            removeOpenGLContexts();
-            std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
-                         "construct present buffers to wrap Render() path"
-                      << std::endl;
-            ret.status = FAILURE;
-            return ret;
-        }
-
         // Fill in our library with the things the application may need to
         // use to do its graphics state set-up.
         ret.library = m_library;
