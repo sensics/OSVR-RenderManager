@@ -2752,7 +2752,6 @@ namespace renderkit {
                       << p.m_displayConfiguration.getDistortionTypeString()
                       << ") in display config file" << std::endl;
         }
-
 #endif
 
         // @todo Read the info we need from Core.
@@ -2863,8 +2862,23 @@ namespace renderkit {
                     p2.m_distortionParameters[eye].m_distortionCOP[1] = scaled;
                 }
 
+                // If we've been asked for asynchronous time warp, we layer
+                // the request on top of a request for a DirectRender instance
+                // to harness.  @todo This should be doable on top of a non-
+                // DirectMode interface as well.
                 std::unique_ptr<RenderManagerD3D11Base> host = nullptr;
-                host.reset(openRenderManagerDirectMode(context, p2));
+                if (p.m_asynchronousTimeWarp) {
+                  RenderManager::ConstructorParameters pTemp = p2;
+                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                  auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
+                  auto atwRm = new RenderManagerD3D11ATW(context, p2, wrappedRm);
+                  host.reset(atwRm);
+                } else {
+                  // Try each available DirectRender library to see if we can
+                  // get a pointer to a RenderManager that has access to the
+                  // DirectMode display we want to use.
+                  host.reset(openRenderManagerDirectMode(context, p2));
+                }
                 if (host == nullptr) {
                   std::cerr << "createRenderManager: Could not open the"
                     << " requested harnessed DirectMode display" << std::endl;
