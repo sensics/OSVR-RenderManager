@@ -117,9 +117,6 @@ namespace osvr {
                 // but don't open an additional display -- we're
                 // going to pass all display-related things down to
                 // our render thread.
-                // @todo Consider whether we want to just return
-                // the device and context of our render-thread's
-                // RenderManager
                 if (!SetDeviceAndContext()) {
                   std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                     "create device and context"
@@ -157,7 +154,7 @@ namespace osvr {
 
         protected:
 
-          bool OSVR_RENDERMANAGER_EXPORT
+          bool
             PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
@@ -177,7 +174,8 @@ namespace osvr {
                     auto key = mNextFrameInfo.renderBuffers[i].D3D11;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
-                      std::cerr << "No Buffer info for key " << (size_t)key << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "No Buffer info for key " << (size_t)key << std::endl;
                       m_doingOkay = false;
                       mQuit = true;
                     }
@@ -185,14 +183,16 @@ namespace osvr {
                     //std::cerr << "releasing atwMutex " << (size_t)key << std::endl;
                     hr = bufferInfoItr->second.atwMutex->ReleaseSync(relKey);
                     if (FAILED(hr)) {
-                      std::cerr << "Could not ReleaseSync in the render manager thread." << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not ReleaseSync in the render manager thread." << std::endl;
                       m_doingOkay = false;
                       mQuit = true;
                     }
                     //std::cerr << "acquiring rtMutex " << (size_t)key << std::endl;
                     hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
                     if (FAILED(hr)) {
-                      std::cerr << "Could not lock the render thread's mutex" << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not lock the render thread's mutex" << std::endl;
                       m_doingOkay = false;
                       mQuit = true;
                     }
@@ -207,7 +207,9 @@ namespace osvr {
                     auto key = renderBuffers[i].D3D11;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
-                      std::cerr << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                      std::cerr << "  (Be sure to register buffers before presenting them)" << std::endl;
                       m_doingOkay = false;
                       return false;
                     }
@@ -227,13 +229,16 @@ namespace osvr {
                       //std::cerr << "releasing rtMutex " << (size_t)key << std::endl;
                       auto bufferInfoItr = mBufferMap.find(key);
                       if (bufferInfoItr == mBufferMap.end()) {
-                          std::cerr << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                          std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                            << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                          std::cerr << "  (Be sure to register buffers before presenting them)" << std::endl;
                           m_doingOkay = false;
                           return false;
                       }
                       hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
                       if (FAILED(hr)) {
-                          std::cerr << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
+                          std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                            << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
                           m_doingOkay = false;
                           return false;
                       }
@@ -241,7 +246,8 @@ namespace osvr {
                       //std::cerr << "locking atwMutex " << (size_t)key << std::endl;
                       hr = bufferInfoItr->second.atwMutex->AcquireSync(rtRelKey, INFINITE);
                       if (FAILED(hr)) {
-                          std::cerr << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
+                          std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                            << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
                           m_doingOkay = false;
                           return false;
                       }
