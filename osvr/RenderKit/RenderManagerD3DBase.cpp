@@ -1122,8 +1122,6 @@ namespace renderkit {
 
         //====================================================================
         // Create the shader resource view.
-
-        /// @todo Is this going to chew up resources?
         D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
         shaderResourceViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -1136,7 +1134,7 @@ namespace renderkit {
             &renderTextureResourceView);
         if (FAILED(hr)) {
             std::cerr << "RenderManagerD3D11Base::PresentEye(): Could not "
-                         "create resource view"
+                         "create resource view for eye " << params.m_index
                       << std::endl;
             std::cerr << "  Direct3D error type: " << StringFromD3DError(hr)
                       << std::endl;
