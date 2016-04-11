@@ -275,8 +275,8 @@ namespace renderkit {
         // Delete any previously-registered buffers.
         for (size_t i = 0; i < m_oglToD3D.size(); i++) {
             wglDXUnregisterObjectNV(m_glD3DHandle, m_oglToD3D[i].glColorHandle);
-            m_oglToD3D[i].D3DrenderTargetView->Release();
-            m_oglToD3D[i].D3DTexture->Release();
+            m_oglToD3D[i].D3DBuffer.colorBufferView->Release();
+            m_oglToD3D[i].D3DBuffer.colorBuffer->Release();
         }
         m_oglToD3D.clear();
 
@@ -420,8 +420,8 @@ namespace renderkit {
             OglToD3DTexture map;
             map.OpenGLTexture = buffers[i].OpenGL->colorBufferName;
             map.glColorHandle = glColorHandle;
-            map.D3DTexture = D3DTexture;
-            map.D3DrenderTargetView = renderTargetView;
+            map.D3DBuffer.colorBuffer = D3DTexture;
+            map.D3DBuffer.colorBufferView = renderTargetView;
             m_oglToD3D.push_back(map);
 
             // Lock the render target for OpenGL access
@@ -450,10 +450,10 @@ namespace renderkit {
         // Verify that we have registered this buffer.
         OglToD3DTexture* oglMap = nullptr;
         for (size_t i = 0; i < m_oglToD3D.size(); i++) {
-            if (m_oglToD3D[i].OpenGLTexture ==
-                params.m_buffer.OpenGL->colorBufferName) {
-                oglMap = &m_oglToD3D[i];
-            }
+          if (m_oglToD3D[i].OpenGLTexture ==
+            renderBuffers[b].OpenGL->colorBufferName) {
+            oglMap = &m_oglToD3D[i];
+          }
         }
         if (oglMap == nullptr) {
             std::cerr

@@ -84,8 +84,7 @@ namespace renderkit {
         typedef struct {
             GLuint OpenGLTexture;
             HANDLE glColorHandle;
-            ID3D11Texture2D* D3DTexture;
-            ID3D11RenderTargetView* D3DrenderTargetView;
+            RenderBufferD3D11 D3DBuffer;
         } OglToD3DTexture;
         std::vector<OglToD3DTexture> m_oglToD3D;
 
