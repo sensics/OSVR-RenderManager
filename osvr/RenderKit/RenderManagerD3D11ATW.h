@@ -136,14 +136,14 @@ namespace osvr {
                 }
 
                 //======================================================
-                // Start our ATW sub-thread.
-                start();
-
-                //======================================================
                 // Fill in our library with the things the application may need to
                 // use to do its graphics state set-up.
                 m_library.D3D11->device = m_D3D11device;
                 m_library.D3D11->context = m_D3D11Context;
+
+                //======================================================
+                // Start our ATW sub-thread.
+                start();
 
                 // Fill in our library, rather than that of
                 // the harnessed RenderManager, since this is the one
