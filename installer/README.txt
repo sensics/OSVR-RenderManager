@@ -39,6 +39,15 @@ Source code for RenderManager, including example programs, is available at:
   https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.43:
+ *ftr Asynchronous time warp is working on all DirectRender configurations
+ *ftr Client-side per-eye prediction added to reduce judder and latency
+ *bug Multi-GPU support fixed (Intel + nVidia, with HDMI on nVidia)
+  ftr Smaller GPU memory use when not using Render() path, and OpenGL/D3D
+  ftr Now get black borders during time warp rather than texture clamping
+  ftr Added juddered-rendering example program to test time warp
+  ftr Added example program that does double-buffered ATW to reduce copies.
+  bug Removed unused (and un-filled) return structure from D3D open
 0.6.42:
  ISSUE Asynchronous Time Warp is broken (time warp is working)
  ISSUE Multi-GPU support is broken (Intel + nVidia on same computer)
