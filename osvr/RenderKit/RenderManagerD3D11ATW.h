@@ -467,16 +467,22 @@ namespace osvr {
                       // need to make a copy of this texture when it is presented.  Here
                       // we allocate a place to put it.  We have to allocate a shared
                       // resource, so it can be used by both threads.  It is allocated on
-                      // the render thread's device.
+                      // the render thread's device.  We need to introspect the texture
+                      // to find its size and we need to make sure that we don't make
+                      // two copies of the same buffer.
+                      // @todo Handle the case where the client sends us the same buffer
+                      // twice or more, with multiple eyes packed into the same one.  We
+                      // don't want to duplicate that buffer more than once.
+
+                      D3D11_TEXTURE2D_DESC info;
+                      buffers[i].D3D11->colorBuffer->GetDesc(&info);
 
                       D3D11_TEXTURE2D_DESC textureDesc = {};
-                      textureDesc.Width = static_cast<int>(
-                        renderInfo[i % numRenderInfos].viewport.width);
-                      textureDesc.Height = static_cast<int>(
-                        renderInfo[i % numRenderInfos].viewport.height);
+                      textureDesc.Width = info.Width;
+                      textureDesc.Height = info.Height;
                       textureDesc.MipLevels = 1;
                       textureDesc.ArraySize = 1;
-                      textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                      textureDesc.Format = info.Format;
                       textureDesc.SampleDesc.Count = 1;
                       textureDesc.SampleDesc.Quality = 0;
                       textureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -549,13 +555,15 @@ namespace osvr {
                     // We can't use the render thread's ID3D11RenderTargetView. Create one from
                     // the ATW's ID3D11Texture2D handle.
 
+                    // Find out the format of the texture by looking at its info.
+                    D3D11_TEXTURE2D_DESC info;
+                    texture2D->GetDesc(&info);
+
                     // Fill in the resource view for your render texture buffer here
                     D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
                     memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
                     // This must match what was created in the texture to be rendered
-                    // @todo Figure this out by introspection on the texture?
-                    //renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-                    renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                    renderTargetViewDesc.Format = info.Format;
                     renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
                     renderTargetViewDesc.Texture2D.MipSlice = 0;
 
