@@ -2801,8 +2801,7 @@ namespace renderkit {
                 RenderManager::ConstructorParameters pTemp = p;
                 pTemp.m_graphicsLibrary.D3D11 = nullptr;
                 auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
-                auto atwRm = new RenderManagerD3D11ATW(context, p, wrappedRm);
-                ret.reset(atwRm);
+                ret.reset(new RenderManagerD3D11ATW(context, p, wrappedRm));
               } else {
                 // Try each available DirectRender library to see if we can
                 // get a pointer to a RenderManager that has access to the
@@ -2881,8 +2880,7 @@ namespace renderkit {
                   RenderManager::ConstructorParameters pTemp = p2;
                   pTemp.m_graphicsLibrary.D3D11 = nullptr;
                   auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
-                  auto atwRm = new RenderManagerD3D11ATW(context, p2, wrappedRm);
-                  host.reset(atwRm);
+                  host.reset(new RenderManagerD3D11ATW(context, p2, wrappedRm));
                 } else {
                   // Try each available DirectRender library to see if we can
                   // get a pointer to a RenderManager that has access to the
