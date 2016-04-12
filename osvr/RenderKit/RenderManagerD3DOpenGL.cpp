@@ -30,6 +30,7 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include "GraphicsLibraryD3D11.h"
 #include "GraphicsLibraryOpenGL.h"
 #include <iostream>
+#include <utility>
 
 namespace osvr {
 namespace renderkit {
@@ -453,10 +454,8 @@ namespace renderkit {
       // projection inversion.
       std::vector<RenderInfo> adjustedRenderInfo = renderInfoUsed;
       for (size_t i = 0; i < adjustedRenderInfo.size(); i++) {
-        double temp;
-        temp = adjustedRenderInfo[i].projection.bottom;
-        adjustedRenderInfo[i].projection.bottom = adjustedRenderInfo[i].projection.top;
-        adjustedRenderInfo[i].projection.top = temp;
+        std::swap(adjustedRenderInfo[i].projection.bottom,
+          adjustedRenderInfo[i].projection.top);
       }
 
       // Verify that we have registered all of these buffers.
