@@ -39,7 +39,6 @@ Russ Taylor working through ReliaSolve.com for Sensics, Inc.
 #include <iostream>
 #include <string>
 #include <chrono>
-#include <mutex>
 #include <stdlib.h> // For exit()
 
 // This must come after we include <d3d11.h> so its pointer types are defined.
