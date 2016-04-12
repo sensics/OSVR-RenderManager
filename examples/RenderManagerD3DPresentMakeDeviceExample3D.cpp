@@ -293,9 +293,7 @@ int main(int argc, char* argv[]) {
         // Fill in the resource view for your render texture buffer here
         D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
         // This must match what was created in the texture to be rendered
-        // @todo Figure this out by introspection on the texture?
-        // renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        renderTargetViewDesc.Format = textureDesc.Format;
         renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
         renderTargetViewDesc.Texture2D.MipSlice = 0;
 

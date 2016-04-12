@@ -178,6 +178,19 @@ namespace renderkit {
         SDL_Quit();
     }
 
+    bool RenderManagerOpenGL::RenderPathSetup() {
+      //======================================================
+      // Construct the present buffers we're going to use when in Render()
+      // mode, to wrap the PresentMode interface.
+      if (!constructRenderBuffers()) {
+        std::cerr << "RenderManagerOpenGL::RenderPathSetup: Could not "
+          "construct present buffers to wrap Render() path"
+          << std::endl;
+        return false;
+      }
+      return true;
+    }
+
     bool RenderManagerOpenGL::constructRenderBuffers() {
         //======================================================
         // Create the framebuffer which regroups 0, 1,
@@ -203,6 +216,9 @@ namespace renderkit {
             rb.OpenGL = new RenderBufferOpenGL;
             rb.OpenGL->colorBufferName = colorBufferName;
             m_colorBuffers.push_back(rb);
+
+            // "Bind" the newly created texture : all future texture functions
+            // will modify this texture glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, colorBufferName);
 
             // Determine the appropriate size for the frame buffer to be used
@@ -426,21 +442,6 @@ namespace renderkit {
         }
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay after vsync setting");
-
-        //======================================================
-        // Construct the present buffers we're going to use when in Render()
-        // mode, to
-        // wrap the Present interface.
-        if (!constructRenderBuffers()) {
-            removeOpenGLContexts();
-            std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
-                         "construct present buffers to wrap Render() path"
-                      << std::endl;
-            ret.status = FAILURE;
-            return ret;
-        }
-
-        checkForGLError("RenderManagerOpenGL::OpenDisplay after constructRenderBuffers");
 
         //======================================================
         // Construct the shaders and program we'll use to present things

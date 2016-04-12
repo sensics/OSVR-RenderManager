@@ -443,6 +443,16 @@ namespace renderkit {
             return false;
         }
 
+        // Make sure we've set up for the Render() path.
+        if (!m_renderPathSetupDone) {
+          if (!RenderPathSetup()) {
+            std::cerr << "RenderManager::Render(): RenderPathSetup() failed."
+              << std::endl;
+            return false;
+          }
+          m_renderPathSetupDone = true;
+        }
+
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
@@ -571,8 +581,12 @@ namespace renderkit {
         // by a mutex.
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        m_latchedRenderInfo = GetRenderInfoInternal(params);
-        return m_latchedRenderInfo.size();
+        return LatchRenderInfoInternal(params);
+    }
+
+    size_t RenderManager::LatchRenderInfoInternal(const RenderParams& params) {
+      m_latchedRenderInfo = GetRenderInfoInternal(params);
+      return m_latchedRenderInfo.size();
     }
 
     RenderInfo RenderManager::GetRenderInfo(size_t index) {
@@ -794,8 +808,7 @@ namespace renderkit {
         }
 
         // Render into each display, setting up the display beforehand and
-        // finalizing
-        // it after.
+        // finalizing it after.
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
             // Set up the appropriate display before setting up its eye(s).
@@ -2686,7 +2699,6 @@ namespace renderkit {
         // Construct the distortion parameters based on the local display
         // class.
         // @todo Remove once we get a general polynomial from Core.
-
         RenderManager::DistortionParameters distortion;
         distortion.m_desiredTriangles = 200 * 64;
 
@@ -2750,7 +2762,6 @@ namespace renderkit {
                       << p.m_displayConfiguration.getDistortionTypeString()
                       << ") in display config file" << std::endl;
         }
-
 #endif
 
         // @todo Read the info we need from Core.
@@ -2787,20 +2798,10 @@ namespace renderkit {
               // to harness.  @todo This should be doable on top of a non-
               // DirectMode interface as well.
               if (p.m_asynchronousTimeWarp) {
-                // @todo See about making this fall-back not be required.
-                if (p.m_graphicsLibrary.D3D11 == nullptr) {
-                  std::cerr << "Async timewarp enabled, but D3D11 graphics"
-                    << " library not passed in. Falling back to"
-                    << " synchronous timewarp." << std::endl;
-                  ret.reset(openRenderManagerDirectMode(context, p));
-                } else {
-                  // the wrapped RenderManager should create its own graphics device
-                  RenderManager::ConstructorParameters pTemp = p;
-                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                  auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
-                  auto atwRm = new RenderManagerD3D11ATW(context, p, wrappedRm);
-                  ret.reset(atwRm);
-                }
+                RenderManager::ConstructorParameters pTemp = p;
+                pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
+                ret.reset(new RenderManagerD3D11ATW(context, p, wrappedRm));
               } else {
                 // Try each available DirectRender library to see if we can
                 // get a pointer to a RenderManager that has access to the
@@ -2870,8 +2871,22 @@ namespace renderkit {
                     p2.m_distortionParameters[eye].m_distortionCOP[1] = scaled;
                 }
 
+                // If we've been asked for asynchronous time warp, we layer
+                // the request on top of a request for a DirectRender instance
+                // to harness.  @todo This should be doable on top of a non-
+                // DirectMode interface as well.
                 std::unique_ptr<RenderManagerD3D11Base> host = nullptr;
-                host.reset(openRenderManagerDirectMode(context, p2));
+                if (p.m_asynchronousTimeWarp) {
+                  RenderManager::ConstructorParameters pTemp = p2;
+                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                  auto wrappedRm = openRenderManagerDirectMode(context, pTemp);
+                  host.reset(new RenderManagerD3D11ATW(context, p2, wrappedRm));
+                } else {
+                  // Try each available DirectRender library to see if we can
+                  // get a pointer to a RenderManager that has access to the
+                  // DirectMode display we want to use.
+                  host.reset(openRenderManagerDirectMode(context, p2));
+                }
                 if (host == nullptr) {
                   std::cerr << "createRenderManager: Could not open the"
                     << " requested harnessed DirectMode display" << std::endl;

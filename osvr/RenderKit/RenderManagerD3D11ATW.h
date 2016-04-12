@@ -48,19 +48,25 @@ namespace osvr {
             const UINT acqKey = 1;
             const UINT relKey = 0;
 
+            /// Holds the information needed to handle locking and unlocking of
+            /// buffers and also the copying of buffers in the case where we have
+            /// our own internal copy.
             typedef struct {
-                osvr::renderkit::RenderBuffer rtBuffer;
                 osvr::renderkit::RenderBuffer atwBuffer;
                 IDXGIKeyedMutex* rtMutex;
                 IDXGIKeyedMutex* atwMutex;
                 HANDLE sharedResourceHandle;
+                ID3D11Texture2D *textureCopy;   //< nullptr if no copy needed.
             } RenderBufferATWInfo;
+            std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo> mBufferMap;
 
             std::mutex mLock;
             std::shared_ptr<std::thread> mThread = nullptr;
-            std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo> mBufferMap;
-            GraphicsLibraryD3D11* mRTGraphicsLibrary;
 
+            /// Holds information about the buffers to be used by the next rendering
+            /// pass.  This is filled in by PresentRenderBuffersInternal() and used
+            /// by the ATW thread.  Access should be guarded using the mLock to prevent
+            /// simultaneous use in both threads.
             struct {
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
                 std::vector<osvr::renderkit::RenderInfo> renderInfo;
@@ -83,7 +89,6 @@ namespace osvr {
                 OSVR_ClientContext context,
                 ConstructorParameters p, RenderManagerD3D11Base* D3DToHarness)
                 : RenderManagerD3D11Base(context, p) {
-                mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
                 mRenderManager.reset(D3DToHarness);
             }
 
@@ -91,6 +96,15 @@ namespace osvr {
                 if (mThread) {
                     stop();
                     mThread->join();
+                }
+                // Delete textures and views that we allocated or otherwise opened
+                std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo>::iterator i;
+                for (i = mBufferMap.begin(); i != mBufferMap.end(); i++) {
+                  i->second.atwBuffer.D3D11->colorBuffer->Release();
+                  i->second.atwBuffer.D3D11->colorBufferView->Release();
+                  if (i->second.textureCopy != nullptr) {
+                    i->second.textureCopy->Release();
+                  }
                 }
             }
 
@@ -103,9 +117,6 @@ namespace osvr {
                 // but don't open an additional display -- we're
                 // going to pass all display-related things down to
                 // our render thread.
-                // @todo Consider whether we want to just return
-                // the device and context of our render-thread's
-                // RenderManager
                 if (!SetDeviceAndContext()) {
                   std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                     "create device and context"
@@ -125,14 +136,14 @@ namespace osvr {
                 }
 
                 //======================================================
-                // Start our ATW sub-thread.
-                start();
-
-                //======================================================
                 // Fill in our library with the things the application may need to
                 // use to do its graphics state set-up.
                 m_library.D3D11->device = m_D3D11device;
                 m_library.D3D11->context = m_D3D11Context;
+
+                //======================================================
+                // Start our ATW sub-thread.
+                start();
 
                 // Fill in our library, rather than that of
                 // the harnessed RenderManager, since this is the one
@@ -143,7 +154,7 @@ namespace osvr {
 
         protected:
 
-          bool OSVR_RENDERMANAGER_EXPORT
+          bool
             PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
@@ -151,6 +162,7 @@ namespace osvr {
                   std::vector<OSVR_ViewportDescription>(),
                 bool flipInY = false) override {
 
+                  // Lock our mutex so we don't adjust the buffers while rendering is happening.
                   std::lock_guard<std::mutex> lock(mLock);
                   HRESULT hr;
 
@@ -162,7 +174,8 @@ namespace osvr {
                     auto key = mNextFrameInfo.renderBuffers[i].D3D11;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
-                      std::cerr << "No Buffer info for key " << (size_t)key << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "No Buffer info for key " << (size_t)key << std::endl;
                       m_doingOkay = false;
                       mQuit = true;
                     }
@@ -170,19 +183,42 @@ namespace osvr {
                     //std::cerr << "releasing atwMutex " << (size_t)key << std::endl;
                     hr = bufferInfoItr->second.atwMutex->ReleaseSync(relKey);
                     if (FAILED(hr)) {
-                      std::cerr << "Could not ReleaseSync in the render manager thread." << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not ReleaseSync in the render manager thread." << std::endl;
                       m_doingOkay = false;
                       mQuit = true;
                     }
                     //std::cerr << "acquiring rtMutex " << (size_t)key << std::endl;
                     hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
                     if (FAILED(hr)) {
-                      std::cerr << "Could not lock the render thread's mutex" << std::endl;
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not lock the render thread's mutex" << std::endl;
                       m_doingOkay = false;
                       mQuit = true;
                     }
                   }
                   mNextFrameInfo.renderBuffers.clear();
+
+                  // If we have non-NULL texture-copy pointers in any of the buffers
+                  // associated with the presented buffers, copy the texture into
+                  // the associated buffer.  This is to handle the case where the client
+                  // did not promise not to overwrite the texture before it is presented.
+                  for (size_t i = 0; i < renderBuffers.size(); i++) {
+                    auto key = renderBuffers[i].D3D11;
+                    auto bufferInfoItr = mBufferMap.find(key);
+                    if (bufferInfoItr == mBufferMap.end()) {
+                      std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                      std::cerr << "  (Be sure to register buffers before presenting them)" << std::endl;
+                      m_doingOkay = false;
+                      return false;
+                    }
+
+                    if (bufferInfoItr->second.textureCopy != nullptr) {
+                      m_D3D11Context->CopyResource(bufferInfoItr->second.textureCopy,
+                        renderBuffers[i].D3D11->colorBuffer);
+                    }
+                  }
 
                   // For all of the buffers we're getting ready to hand to the ATW thread,
                   // we release our lock and lock them for that thread and then push them
@@ -193,13 +229,16 @@ namespace osvr {
                       //std::cerr << "releasing rtMutex " << (size_t)key << std::endl;
                       auto bufferInfoItr = mBufferMap.find(key);
                       if (bufferInfoItr == mBufferMap.end()) {
-                          std::cerr << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                          std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                            << "Could not find buffer info for RenderBuffer " << (size_t)key << std::endl;
+                          std::cerr << "  (Be sure to register buffers before presenting them)" << std::endl;
                           m_doingOkay = false;
                           return false;
                       }
                       hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
                       if (FAILED(hr)) {
-                          std::cerr << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
+                          std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                            << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present." << std::endl;
                           m_doingOkay = false;
                           return false;
                       }
@@ -207,11 +246,12 @@ namespace osvr {
                       //std::cerr << "locking atwMutex " << (size_t)key << std::endl;
                       hr = bufferInfoItr->second.atwMutex->AcquireSync(rtRelKey, INFINITE);
                       if (FAILED(hr)) {
-                          std::cerr << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
+                          std::cerr << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                            << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
                           m_doingOkay = false;
                           return false;
                       }
-                      mNextFrameInfo.renderBuffers.push_back(bufferInfoItr->second.rtBuffer);
+                      mNextFrameInfo.renderBuffers.push_back(renderBuffers[i]);
                   }
                   mFirstFramePresented = true;
                   mNextFrameInfo.renderInfo = renderInfoUsed;
@@ -221,24 +261,13 @@ namespace osvr {
                   return true;
             }
 
-            ///**
-            // * Construct an D3D ATW wrapper around an existing D3D render
-            // * manager. Takes ownership of the passed in render manager
-            // * and deletes it when the wrapper is deleted.
-            // */
-            //RenderManagerD3D11ATW(
-            //    OSVR_ClientContext context,
-            //    ConstructorParameters p, std::unique_ptr<RenderManagerD3D11Base> && D3DToHarness)
-            //    : RenderManager(context, p) {
-            //    mRTGraphicsLibrary = p.m_graphicsLibrary.D3D11;
-            //}
-
             void start() {
                 if (mStarted) {
                     std::cerr << "RenderManagerThread::start() - thread loop already started." << std::endl;
                 } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
                 }
+                mStarted = true;
             }
 
             void stop() {
@@ -292,6 +321,8 @@ namespace osvr {
                     }
 
                     if (timeToPresent) {
+                        // Lock our mutex so that we're not rendering while new buffers are
+                        // being presented.
                         std::lock_guard<std::mutex> lock(mLock);
                         if (mFirstFramePresented) {
                             // Update the context so we get our callbacks called and
@@ -363,88 +394,66 @@ namespace osvr {
                 const std::vector<RenderBuffer>& buffers,
                 bool appWillNotOverwriteBeforeNewPresent = false) override {
 
-                // If they are promising to not present the same buffers
-                // each frame, make sure they have registered twice as
-                // many as there are viewports for them to render.
-                if (appWillNotOverwriteBeforeNewPresent) {
-                  if (buffers.size() != LatchRenderInfo() * 2) {
-                    std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Promised"
-                      << " not to re-use buffers, but number registered ("
-                      << buffers.size() << " != twice number of viewports ("
-                      << LatchRenderInfo() << std::endl;
-                    return false;
-                  }
-                }
-
-                // @todo If not promising to not overwrite, we need to
-                // construct a set of copy buffers that we'll pull the
-                // data into and render from.
+                // They may be using one buffer for two eyes or one buffer
+                // per eye, so we can't check the number of buffers.  Also,
+                // we should support letting them register the render buffers
+                // in batches, not all at once.
 
                 HRESULT hr;
 
                 std::vector<osvr::renderkit::RenderInfo> renderInfo = mRenderManager->GetRenderInfo();
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
+                size_t numRenderInfos = renderInfo.size();
 
                 for (size_t i = 0; i < buffers.size(); i++) {
                   RenderBufferATWInfo newInfo;
-
-                  //
-                  // Let's start by getting some resources from the render thread's ID3D11Device
-                  //
-                  newInfo.rtBuffer = buffers[i];
-
-                  // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
-                  // get that, we need to get the IDXGIResource* first
-                  {
-                    IDXGIResource* dxgiResource = NULL;
-                    hr = buffers[i].D3D11->colorBuffer->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
-                    if (FAILED(hr)) {
-                      std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource." << std::endl;
-                      m_doingOkay = false;
-                      return false;
-                    }
-
-                    // now get the shared HANDLE
-                    hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
-                    if (FAILED(hr)) {
-                      std::cerr << "RenderManagerD3D11ATW::"
-                        << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource." << std::endl;
-                      m_doingOkay = false;
-                      return false;
-                    }
-                    dxgiResource->Release(); // we don't need this anymore
-                  }
-
-                  // now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
-                  hr = buffers[i].D3D11->colorBuffer->QueryInterface(
-                    __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
-                  if (FAILED(hr) || newInfo.rtMutex == nullptr) {
-                    std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the texture resource." << std::endl;
-                    m_doingOkay = false;
-                    return false;
-                  }
-
-                  // Start with all render thread's IDXGIKeyedMutex locked
-                  //std::cerr << "Locking buffer " << (size_t)buffers[i].D3D11 << " for the render thread." << std::endl;
-                  hr = newInfo.rtMutex->AcquireSync(rtAcqKey, INFINITE);
-                  if (FAILED(hr)) {
-                    std::cerr << "RenderManagerD3D11ATW::"
-                      << "RegisterRenderBuffersInternal: Could not AcquireSync on a game render target's IDXGIKeyedMutex during registration." << std::endl;
-                    m_doingOkay = false;
-                    return false;
-                  }
-
-                  //
-                  // Next, some resources for the ATW thread's ID3D11Device
-                  //
+                  newInfo.textureCopy = nullptr; // We don't yet have a place to copy the texture.
 
                   // OK, now we need to open the shared resource on the ATW thread's ID3D11Device.
-                    {
-                      auto atwDevice = renderInfo[i].library.D3D11->device;
-                      ID3D11Texture2D *texture2D = nullptr;
+                  // We assume that the buffers for the eyes repeat, so that we modulo the number
+                  // of buffers to find the correct index.
+                  // @todo Specify this requirement in the API
+                  {
+                    auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
+                    ID3D11Texture2D *texture2D = nullptr;
+
+                    if (appWillNotOverwriteBeforeNewPresent) {
+                      // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
+                      // get that, we need to get the IDXGIResource* first
+                      IDXGIResource* dxgiResource = NULL;
+                      hr = buffers[i].D3D11->colorBuffer->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
+                      if (FAILED(hr)) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource." << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+
+                      // now get the shared HANDLE
+                      hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
+                      if (FAILED(hr)) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource." << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+                      dxgiResource->Release(); // we don't need this anymore
+
+                      // Now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
+                      // The application should have already locked these mutexes, so we
+                      // don't attempt to lock them here.
+                      hr = buffers[i].D3D11->colorBuffer->QueryInterface(
+                        __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
+                      if (FAILED(hr) || newInfo.rtMutex == nullptr) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the texture resource." << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+
+                      // The application is maintaining two sets of buffers, so we don't
+                      // need to make a copy of this texture when it is presented.  We just
+                      // get a shared handle to it and re-use the existing texture.
                       hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
                         (LPVOID*)&texture2D);
                       if (FAILED(hr)) {
@@ -453,47 +462,129 @@ namespace osvr {
                         m_doingOkay = false;
                         return false;
                       }
+                    } else {
+                      // The application is not maintaining two sets of buffers, so we
+                      // need to make a copy of this texture when it is presented.  Here
+                      // we allocate a place to put it.  We have to allocate a shared
+                      // resource, so it can be used by both threads.  It is allocated on
+                      // the render thread's device.  We need to introspect the texture
+                      // to find its size and we need to make sure that we don't make
+                      // two copies of the same buffer.
+                      // @todo Handle the case where the client sends us the same buffer
+                      // twice or more, with multiple eyes packed into the same one.  We
+                      // don't want to duplicate that buffer more than once.
 
-                      // And get the IDXGIKeyedMutex for the ATW thread's ID3D11Texture2D
-                      hr = texture2D->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.atwMutex);
-                      if (FAILED(hr) || newInfo.atwMutex == nullptr) {
-                        std::cerr << "RenderManagerD3D11ATW::"
-                          << "RegisterRenderBuffersInternal: - failed to create keyed mutex." << std::endl;
-                        m_doingOkay = false;
-                        return false;
-                      }
+                      D3D11_TEXTURE2D_DESC info;
+                      buffers[i].D3D11->colorBuffer->GetDesc(&info);
 
-                      // We can't use the render thread's ID3D11RenderTargetView. Create one from
-                      // the ATW's ID3D11Texture2D handle.
-
-                      // Fill in the resource view for your render texture buffer here
-                      D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-                      memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
-                      // This must match what was created in the texture to be rendered
-                      // @todo Figure this out by introspection on the texture?
-                      //renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-                      renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                      renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-                      renderTargetViewDesc.Texture2D.MipSlice = 0;
-
-                      // Create the render target view.
-                      ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
-                      hr = atwDevice->CreateRenderTargetView(texture2D, &renderTargetViewDesc, &renderTargetView);
+                      D3D11_TEXTURE2D_DESC textureDesc = {};
+                      textureDesc.Width = info.Width;
+                      textureDesc.Height = info.Height;
+                      textureDesc.MipLevels = 1;
+                      textureDesc.ArraySize = 1;
+                      textureDesc.Format = info.Format;
+                      textureDesc.SampleDesc.Count = 1;
+                      textureDesc.SampleDesc.Quality = 0;
+                      textureDesc.Usage = D3D11_USAGE_DEFAULT;
+                      // We need it to be both a render target and a shader resource
+                      textureDesc.BindFlags =
+                        D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+                      textureDesc.CPUAccessFlags = 0;
+                      textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+                      hr = m_D3D11device->CreateTexture2D(&textureDesc, NULL, &texture2D);
                       if (FAILED(hr)) {
                         std::cerr << "RenderManagerD3D11ATW::"
-                          << "RegisterRenderBuffersInternal: Could not create render target for eye " << i
-                          << std::endl;
+                          << "RegisterRenderBuffersInternal: - Can't create copy texture for buffer "
+                          << i << std::endl;
                         m_doingOkay = false;
                         return false;
                       }
 
-                      newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
-                      newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
-                      newInfo.atwBuffer.D3D11->colorBufferView = renderTargetView;
-                      renderBuffers.push_back(newInfo.atwBuffer);
+                      // We need to get the shared resource HANDLE for the ID3D11Texture2D,
+                      //  but in order to get that, we need to get the IDXGIResource* first
+                      IDXGIResource* dxgiResource = NULL;
+                      hr = texture2D->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
+                      if (FAILED(hr)) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for created texture resource." << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+
+                      // now get the shared HANDLE
+                      hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
+                      if (FAILED(hr)) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource from the created texture." << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+                      dxgiResource->Release(); // we don't need this anymore
+
+                      // Now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
+                      // Then lock the mutex for the render thread.
+                      hr = texture2D->QueryInterface(
+                        __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
+                      if (FAILED(hr) || newInfo.rtMutex == nullptr) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the created texture resource." << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+                      hr = newInfo.rtMutex->AcquireSync(0, INFINITE);
+                      if (FAILED(hr)) {
+                        std::cerr << "RenderManagerD3D11ATW::"
+                          << "RegisterRenderBuffersInternal: Could not acquire mutex" << std::endl;
+                        m_doingOkay = false;
+                        return false;
+                      }
+
+                      // Record the place to copy incoming textures to.
+                      newInfo.textureCopy = texture2D;
                     }
 
-                    mBufferMap[buffers[i].D3D11] = newInfo;
+                    // And get the IDXGIKeyedMutex for the ATW thread's ID3D11Texture2D
+                    hr = texture2D->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.atwMutex);
+                    if (FAILED(hr) || newInfo.atwMutex == nullptr) {
+                      std::cerr << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: - failed to create keyed mutex." << std::endl;
+                      m_doingOkay = false;
+                      return false;
+                    }
+
+                    // We can't use the render thread's ID3D11RenderTargetView. Create one from
+                    // the ATW's ID3D11Texture2D handle.
+
+                    // Find out the format of the texture by looking at its info.
+                    D3D11_TEXTURE2D_DESC info;
+                    texture2D->GetDesc(&info);
+
+                    // Fill in the resource view for your render texture buffer here
+                    D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+                    memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
+                    // This must match what was created in the texture to be rendered
+                    renderTargetViewDesc.Format = info.Format;
+                    renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+                    renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+                    // Create the render target view.
+                    ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
+                    hr = atwDevice->CreateRenderTargetView(texture2D, &renderTargetViewDesc, &renderTargetView);
+                    if (FAILED(hr)) {
+                      std::cerr << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: Could not create render target for eye " << i
+                        << std::endl;
+                      m_doingOkay = false;
+                      return false;
+                    }
+
+                    newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
+                    newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
+                    newInfo.atwBuffer.D3D11->colorBufferView = renderTargetView;
+                    renderBuffers.push_back(newInfo.atwBuffer);
+                  }
+
+                  mBufferMap[buffers[i].D3D11] = newInfo;
                 }
 
                 if (!mRenderManager->RegisterRenderBuffers(renderBuffers,

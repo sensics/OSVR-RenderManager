@@ -268,8 +268,7 @@ int main(int argc, char* argv[]) {
             unsigned height = static_cast<int>(renderInfo[i].viewport.height);
 
             // Initialize a new render target texture description.
-            D3D11_TEXTURE2D_DESC textureDesc;
-            memset(&textureDesc, 0, sizeof(textureDesc));
+            D3D11_TEXTURE2D_DESC textureDesc = {};
             textureDesc.Width = width;
             textureDesc.Height = height;
             textureDesc.MipLevels = 1;
@@ -293,13 +292,27 @@ int main(int argc, char* argv[]) {
                 return -1;
             }
 
+            // Grab and lock the mutex, so that we will be able to render
+            // to it whether or not RenderManager locks it on our behalf.
+            // it will not be auto-locked when we're in the non-ATW case.
+            IDXGIKeyedMutex* myMutex = nullptr;
+            hr = D3DTexture->QueryInterface(
+              __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
+            if (FAILED(hr) || myMutex == nullptr) {
+              std::cerr << "Could not get mutex pointer" << std::endl;
+              return -2;
+            }
+            hr = myMutex->AcquireSync(0, INFINITE);
+            if (FAILED(hr)) {
+              std::cerr << "Could not acquire mutex" << std::endl;
+              return -3;
+            }
+
             // Fill in the resource view for your render texture buffer here
             D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
             memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
             // This must match what was created in the texture to be rendered
-            // @todo Figure this out by introspection on the texture?
-            // renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            renderTargetViewDesc.Format = textureDesc.Format;
             renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
             renderTargetViewDesc.Texture2D.MipSlice = 0;
 
@@ -407,14 +420,22 @@ int main(int argc, char* argv[]) {
         return -3;
     }
 
+    // Register all of our constructed buffers so that we can use them for
+    // presentation, and promise not to re-use a buffer for rendering until
+    // we're not presenting it.
+    std::vector<osvr::renderkit::RenderBuffer> allBuffers;
     // Register our constructed buffers so that we can use them for
     // presentation.
     for (size_t frame = 0; frame < frameInfo.size(); frame++) {
-        if (!render->RegisterRenderBuffers(frameInfo[frame].renderBuffers)) {
-            std::cerr << "RegisterRenderBuffers() returned false, cannot continue" << std::endl;
-            quit = true;
-        }
+      for (size_t buf = 0; buf < frameInfo[frame].renderBuffers.size(); buf++) {
+        allBuffers.push_back(frameInfo[frame].renderBuffers[buf]);
+      }
     }
+    if (!render->RegisterRenderBuffers(allBuffers, true)) {
+      std::cerr << "RegisterRenderBuffers() returned false, cannot continue" << std::endl;
+      quit = true;
+    }
+    allBuffers.clear();
 
     size_t iteration = 0;
     // Continue rendering until it is time to quit.
