@@ -297,6 +297,20 @@ namespace renderkit {
         /// from it.
         p.xPos += p.width * static_cast<int>(m_displays.size());
 
+        // If this is not the first display, or if the configuration
+        // includes a graphics library that says to share, we re-use
+        // the existing context.
+        if ((m_displays.size() > 0) ||
+          ((m_params.m_graphicsLibrary.OpenGL != nullptr) &&
+          (m_params.m_graphicsLibrary.OpenGL->shareOpenGLContext == true))) {
+          // Share the current context
+          std::cout << "XXX Sharing current context" << std::endl;
+          SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+        } else {
+          // Replace the current context
+          SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+        }
+
         // Push back a new window and context.
         m_displays.push_back(DisplayInfo());
         m_displays.back().m_window = SDL_CreateWindow(
@@ -308,22 +322,6 @@ namespace renderkit {
             return false;
         }
 
-        // Finally, create our OpenGL context.  If this is not the first
-        // display, or if the configuration includes a graphics library
-        // that says to share, we re-use the existing context.
-        // @todo Make the context-specific vector a singleton again, except for
-        // the display.
-        if ( (m_displays.size() > 0) ||
-            ((m_params.m_graphicsLibrary.OpenGL != nullptr) &&
-             (m_params.m_graphicsLibrary.OpenGL->shareOpenGLContext == true) ) ) {
-            // Share the current context
-            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-        } else {
-            // Replace the current context
-            // @todo When the user passes in the request to use the same
-            // context, we should also share the context here.
-            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
-        }
         m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
         if (m_GLContext == nullptr) {
             std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
@@ -331,6 +329,7 @@ namespace renderkit {
                       << std::endl;
             return false;
         }
+        std::cout << "XXX Context = " << m_GLContext << std::endl;
 
         return true;
     }
