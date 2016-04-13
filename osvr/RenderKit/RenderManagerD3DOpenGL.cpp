@@ -6,7 +6,7 @@ rendering interface
 @date 2015
 
 @author
-Russ Taylor working through ReliaSolve.com for Sensics, Inc.
+Russ Taylor <russ@sensics.com>
 <http://sensics.com/osvr>
 */
 
