@@ -63,7 +63,7 @@ matrix to fix up changes due to motion between the start of rendering and its
 completion.  This warping is geometrically correct for strict rotations around
 the center of projection and is approximated by a 2-meter distance for translations.
 
-**Asynchronous Time Warp** is supported under DirectMode configurations.  This
+* **Asynchronous Time Warp** is supported under DirectMode configurations.  This
 mode is enabled by a configuration-file setting and does not require code change.
 It produces a separate rendering thread that re-warps and re-renders images at
 full rate even when the application renders too slowly to present a new image each frame.
