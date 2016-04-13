@@ -63,6 +63,23 @@ matrix to fix up changes due to motion between the start of rendering and its
 completion.  This warping is geometrically correct for strict rotations around
 the center of projection and is approximated by a 2-meter distance for translations.
 
+**Asynchronous Time Warp** is supported under DirectMode configurations.  This
+mode is enabled by a configuration-file setting and does not require code change.
+It produces a separate rendering thread that re-warps and re-renders images at
+full rate even when the application renders too slowly to present a new image each frame.
+Applications that want to avoid an extra copy of their render buffer to the
+ATW thread can do internal double-buffered rendering and present alternate sets
+of buffers.  An example D3D11 program doing this ATW double-buffered rendering
+is available in the examples directory.
+
+* **Client-side prediction:** When used with trackers that report velocity or
+angular velocity, RenderManager predicts the time each eye will be rendered based
+on the next upcoming vertical retrace.  The transform associated with each eye
+is adjusted to suit the time at which it will be rendered.  This prediction
+happens for both time-warped and non-time-warped presentation and can use a
+different delay for each eye (supporting systems in portrait mode).  This
+capability is enabled using a setting in the configuration file.
+
 * **Rendering state:** RenderManager produces graphics-language-specific conversion
 functions to describe the number and size of required textures, the viewports,
 projection and ModelView matrices needed to configure rendering for scenes.
@@ -77,7 +94,7 @@ OSVR configuration space (head space, hand space, room space, etc.).
 * **Window creation:** RenderManager uses SDL on Windows, Linux, and Mac systems
 to construct windows of the appropriate size for a given HMD or on-screen display.
 Configuration file entries describe window size, placement, and orientation.  For
-non-DirectMode operation, these show up within the operating virtual screen and can
+non-DirectMode operation, these show up within the operating system's virtual screen and can
 be either full-screen or windowed.  For DirectMode operation, they provide full-
 screen operation on one or more displays.
 
@@ -91,14 +108,6 @@ from the application.  Configuration file entries can adjust these; trading rend
 speed for performance at run time without changes to the code.
 
 ## Coming Soon
-
-**Asynchronous Time Warp** is under development as of 3/10/2016.  There is a single
-D3D11 example program that runs on DirectMode displays under Windows.  This capability
-is not yet fully operational (the example program does not work when run without
-ATW enabled, and there are several open Github issues).  When complete, this
-mode will be enabled by a configuration-file setting.  It produces a separate rendering
-thread that re-warps and re-renders images at full rate even when the application
-renders too slowly to present a new image each frame.
 
 **Android** support is under development.  As of 2/23/2016, the OpenGL internal
 code is all compatible with OpenGL ES 2.0 and there is an OpenGLES example
