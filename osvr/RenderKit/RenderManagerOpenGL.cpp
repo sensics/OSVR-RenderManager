@@ -309,11 +309,13 @@ namespace renderkit {
         }
 
         // Finally, create our OpenGL context.  If this is not the first
-        // display,
-        // we re-use the existing context.
+        // display, or if the configuration includes a graphics library
+        // that says to share, we re-use the existing context.
         // @todo Make the context-specific vector a singleton again, except for
         // the display.
-        if (m_displays.size() > 0) {
+        if ( (m_displays.size() > 0) ||
+            ((m_params.m_graphicsLibrary.OpenGL != nullptr) &&
+             (m_params.m_graphicsLibrary.OpenGL->shareOpenGLContext == true) ) ) {
             // Share the current context
             SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
         } else {

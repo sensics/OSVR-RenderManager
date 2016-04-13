@@ -40,8 +40,19 @@ namespace renderkit {
 
     class GraphicsLibraryOpenGL {
       public:
-        /// @todo Need to add an entry here to let the client code
-        /// assert the OpenGL context for us to use.
+        /// Handling the case of multiple OpenGL contexts
+        /// in the client, with the one to be shared not the current
+        /// one at the time the display is opened, is going to be
+        /// challenging to do in a cross-platform manner, because
+        /// we need a context that depends on the library used to
+        /// open it (SDL, native interface, ...).
+        ///  This flag tells whether to share the OpenGL context
+        /// that is open when the library is opened.  If this is
+        /// true, the application should open a context and make it
+        /// current before calling OpenDisplay() and then again make
+        /// sure it is current before calling any RenderManager
+        /// method.
+        bool shareOpenGLContext = false;
     };
 
     /// @brief Describes a OpenGL textures to be rendered
