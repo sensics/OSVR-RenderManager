@@ -440,8 +440,7 @@ void DrawWorld(
         projection //< Projection matrix set by RenderManager
     , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.OpenGL == nullptr) {
         std::cerr
             << "DrawWorld: No OpenGL GraphicsLibrary, this should not happen"
@@ -530,22 +529,19 @@ int main(int argc, char* argv[]) {
     }
     SDL_Window *myWindow = SDL_CreateWindow(
       "Test window, not used", 30, 30, 300, 100,
-      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
     if (myWindow == nullptr) {
-      std::cerr
-        << "SDL window open failed: Could not get window"
+      std::cerr << "SDL window open failed: Could not get window"
         << std::endl;
       return 101;
     }
     SDL_GLContext myGLContext;
     myGLContext = SDL_GL_CreateContext(myWindow);
-    if (myGLContext == nullptr) {
+    if (myGLContext == 0) {
       std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
-        "OpenGL context"
-        << std::endl;
+        "OpenGL context" << std::endl;
       return 102;
     }
-    std::cout << "XXX My Context = " << myGLContext << std::endl;
 
     // Construct a graphics library and tell RenderManager we
     // want to share an OpenGL context.
