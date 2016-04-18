@@ -623,6 +623,19 @@ int main(int argc, char* argv[]) {
                 << std::endl;
             quit = true;
         }
+
+        // Draw something in our window, just looping the background color
+        static GLfloat bg = 0;
+        SDL_GL_MakeCurrent(myWindow, myGLContext);
+        glViewport(static_cast<GLint>(0),
+          static_cast<GLint>(0),
+          static_cast<GLint>(300),
+          static_cast<GLint>(100));
+        glClearColor(bg, bg, bg, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        SDL_GL_SwapWindow(myWindow);
+        bg += 0.003f;
+        if (bg > 1) { bg = 0; }
     }
 
     // Close the Renderer interface cleanly.
