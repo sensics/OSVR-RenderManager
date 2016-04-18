@@ -453,10 +453,15 @@ namespace renderkit {
         glShaderSource(vertexShaderId, 1, &distortionVertexShader, nullptr);
         glCompileShader(vertexShaderId);
         if (!checkShaderError(vertexShaderId)) {
+            GLint infoLogLength;
+            glGetShaderiv(vertexShaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
+            GLchar* strInfoLog = new GLchar[infoLogLength + 1];
+            glGetShaderInfoLog(vertexShaderId, infoLogLength, NULL, strInfoLog);
+
             removeOpenGLContexts();
             std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
-                         "construct vertex shader "
-                      << std::endl;
+                         "construct vertex shader:"
+                      << std::endl << strInfoLog << std::endl;
             ret.status = FAILURE;
             return ret;
         }
@@ -465,10 +470,15 @@ namespace renderkit {
         glShaderSource(fragmentShaderId, 1, &distortionFragmentShader, nullptr);
         glCompileShader(fragmentShaderId);
         if (!checkShaderError(fragmentShaderId)) {
+            GLint infoLogLength;
+            glGetShaderiv(fragmentShaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
+            GLchar* strInfoLog = new GLchar[infoLogLength + 1];
+            glGetShaderInfoLog(fragmentShaderId, infoLogLength, NULL, strInfoLog);
+
             removeOpenGLContexts();
             std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
-                         "construct fragment shader "
-                      << std::endl;
+                         "construct fragment shader:"
+                      << std::endl << strInfoLog << std::endl;
             ret.status = FAILURE;
             return ret;
         }
