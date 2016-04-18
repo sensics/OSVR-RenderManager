@@ -159,6 +159,9 @@ namespace renderkit {
     }
 
     bool RenderManagerD3D11OpenGL::RenderDisplayInitialize(size_t display) {
+        if (!RenderManagerOpenGL::RenderDisplayInitialize(display)) {
+          return false;
+        }
         if (m_D3D11Renderer == nullptr) {
             return false;
         }
@@ -211,6 +214,9 @@ namespace renderkit {
     }
 
     bool RenderManagerD3D11OpenGL::PresentDisplayInitialize(size_t display) {
+        if (!RenderManagerOpenGL::PresentDisplayInitialize(display)) {
+          return false;
+        }
         if (m_D3D11Renderer == nullptr) {
             return false;
         }
@@ -232,6 +238,9 @@ namespace renderkit {
     }
 
     bool RenderManagerD3D11OpenGL::PresentFrameFinalize() {
+        if (!RenderManagerOpenGL::PresentFrameFinalize()) {
+          return false;
+        }
         if (m_D3D11Renderer == nullptr) {
             return false;
         }
