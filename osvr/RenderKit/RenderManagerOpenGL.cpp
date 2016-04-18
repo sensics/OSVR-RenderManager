@@ -303,8 +303,8 @@ namespace renderkit {
         if ((m_displays.size() > 0) ||
           ((m_params.m_graphicsLibrary.OpenGL != nullptr) &&
           (m_params.m_graphicsLibrary.OpenGL->shareOpenGLContext == true))) {
+
           // Share the current context
-          std::cout << "XXX Sharing current context" << std::endl;
           SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
         } else {
           // Replace the current context
@@ -329,7 +329,6 @@ namespace renderkit {
                       << std::endl;
             return false;
         }
-        std::cout << "XXX Context = " << m_GLContext << std::endl;
 
         return true;
     }
@@ -562,7 +561,8 @@ namespace renderkit {
         }
 
         // Call the display set-up callback for each eye, because they each
-        // have their own frame buffer.
+        // have their own frame buffer whether or not they actually end up
+        // in different windows.
         if (m_displayCallback.m_callback != nullptr) {
             m_displayCallback.m_callback(m_displayCallback.m_userData,
                                          m_library, m_buffers);
