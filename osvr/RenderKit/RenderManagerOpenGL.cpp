@@ -297,6 +297,20 @@ namespace renderkit {
         /// from it.
         p.xPos += p.width * static_cast<int>(m_displays.size());
 
+        // If this is not the first display, or if the configuration
+        // includes a graphics library that says to share, we re-use
+        // the existing context.
+        if ((m_displays.size() > 0) ||
+          ((m_params.m_graphicsLibrary.OpenGL != nullptr) &&
+          (m_params.m_graphicsLibrary.OpenGL->shareOpenGLContext == true))) {
+
+          // Share the current context
+          SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+        } else {
+          // Replace the current context
+          SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+        }
+
         // Push back a new window and context.
         m_displays.push_back(DisplayInfo());
         m_displays.back().m_window = SDL_CreateWindow(
@@ -308,20 +322,6 @@ namespace renderkit {
             return false;
         }
 
-        // Finally, create our OpenGL context.  If this is not the first
-        // display,
-        // we re-use the existing context.
-        // @todo Make the context-specific vector a singleton again, except for
-        // the display.
-        if (m_displays.size() > 0) {
-            // Share the current context
-            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-        } else {
-            // Replace the current context
-            // @todo When the user passes in the request to use the same
-            // context, we should also share the context here.
-            SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
-        }
         m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
         if (m_GLContext == nullptr) {
             std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
@@ -571,7 +571,8 @@ namespace renderkit {
         }
 
         // Call the display set-up callback for each eye, because they each
-        // have their own frame buffer.
+        // have their own frame buffer whether or not they actually end up
+        // in different windows.
         if (m_displayCallback.m_callback != nullptr) {
             m_displayCallback.m_callback(m_displayCallback.m_userData,
                                          m_library, m_buffers);

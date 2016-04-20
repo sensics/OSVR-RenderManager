@@ -129,12 +129,25 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
 	# OpenGL Example program using the OpenGL Core profile
 	add_executable(RenderManagerOpenGLCoreExample RenderManagerOpenGLCoreExample.cpp)
 	target_link_libraries(RenderManagerOpenGLCoreExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
-    target_compile_features(RenderManagerOpenGLCoreExample PRIVATE cxx_range_for)
+  target_compile_features(RenderManagerOpenGLCoreExample PRIVATE cxx_range_for)
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
 			RenderManagerOpenGLCoreExample
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
+
+ if (SDL2_FOUND)
+	#-----------------------------------------------------------------------------
+	# OpenGL Example program using the OpenGL Core profile and a shared context
+	add_executable(RenderManagerOpenGLSharedContextExample RenderManagerOpenGLSharedContextExample.cpp)
+	target_link_libraries(RenderManagerOpenGLSharedContextExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
+  target_compile_features(RenderManagerOpenGLSharedContextExample PRIVATE cxx_range_for)
+	if(OSVRRM_INSTALL_EXAMPLES)
+		install(TARGETS
+			RenderManagerOpenGLSharedContextExample
+			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
+ endif()
 
  if (NOT APPLE)
 	#-----------------------------------------------------------------------------

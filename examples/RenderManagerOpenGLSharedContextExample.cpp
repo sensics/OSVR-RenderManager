@@ -1,6 +1,6 @@
 /** @file
     @brief Example program that uses the OSVR direct-to-display interface
-           and OpenGL to render a scene with low latency.
+           and an OpenGL shared context to render a scene with low latency.
 
     @date 2015
 
@@ -34,6 +34,13 @@
 #endif
 
 #include <GL/glew.h>
+
+// We are going to use SDL to get our OpenGL context for us.
+// Unfortunately, SDL.h has #define main    SDL_main in it, so
+// we need to undefine main again so we can make our own below.
+#include <SDL.h>
+#include <SDL_opengl.h>
+#undef main
 
 // Standard includes
 #include <iostream>
@@ -433,8 +440,7 @@ void DrawWorld(
         projection //< Projection matrix set by RenderManager
     , OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
+    // Make sure our pointers are filled in correctly.
     if (library.OpenGL == nullptr) {
         std::cerr
             << "DrawWorld: No OpenGL GraphicsLibrary, this should not happen"
@@ -514,12 +520,42 @@ int main(int argc, char* argv[]) {
         context.getInterface("/controller/right/1");
     rightButton1.registerCallback(&myButtonCallback, &quit);
 
+    // Use SDL to open a window and then get an OpenGL context for us.
+    // Note: This window is not the one that will be used for rendering.
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+      std::cerr << "Could not initialize SDL"
+        << std::endl;
+      return 100;
+    }
+    SDL_Window *myWindow = SDL_CreateWindow(
+      "Test window, not used", 30, 30, 300, 100,
+      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+    if (myWindow == nullptr) {
+      std::cerr << "SDL window open failed: Could not get window"
+        << std::endl;
+      return 101;
+    }
+    SDL_GLContext myGLContext;
+    myGLContext = SDL_GL_CreateContext(myWindow);
+    if (myGLContext == 0) {
+      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
+        "OpenGL context" << std::endl;
+      return 102;
+    }
+
+    // Construct a graphics library and tell RenderManager we
+    // want to share an OpenGL context.
+    osvr::renderkit::GraphicsLibrary myLibrary;
+    myLibrary.OpenGL = new osvr::renderkit::GraphicsLibraryOpenGL;
+    myLibrary.OpenGL->shareOpenGLContext = true;
+
     // Open OpenGL and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,
     // which maps to the nVidia or other vendor direct mode
     // to reduce the latency.
     osvr::renderkit::RenderManager* render =
-        osvr::renderkit::createRenderManager(context.get(), "OpenGL");
+        osvr::renderkit::createRenderManager(context.get(), "OpenGL",
+        myLibrary);
 
     if ((render == nullptr) || (!render->doingOkay())) {
         std::cerr << "Could not create RenderManager" << std::endl;
@@ -583,6 +619,19 @@ int main(int argc, char* argv[]) {
                 << std::endl;
             quit = true;
         }
+
+        // Draw something in our window, just looping the background color
+        static GLfloat bg = 0;
+        SDL_GL_MakeCurrent(myWindow, myGLContext);
+        glViewport(static_cast<GLint>(0),
+          static_cast<GLint>(0),
+          static_cast<GLint>(300),
+          static_cast<GLint>(100));
+        glClearColor(bg, bg, bg, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        SDL_GL_SwapWindow(myWindow);
+        bg += 0.003f;
+        if (bg > 1) { bg = 0; }
     }
 
     // Close the Renderer interface cleanly.
