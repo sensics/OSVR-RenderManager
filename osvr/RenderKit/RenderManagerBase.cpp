@@ -2230,79 +2230,66 @@ namespace renderkit {
             float quadSide = 2.0f / quadsPerSide;
             float quadTexSide = 1.0f / quadsPerSide;
 
-            // Generate a pair of triangles for each quad, wound
-            // counter-clockwise, with appropriate spatial location and texture
-            // coordinates.
             // Compute distorted texture coordinates and use those for each
-            // vertex.
+            // vertex, with appropriate spatial location and texture
+            // coordinates.
+
+            auto const numVertsPerSide = quadsPerSide + 1;
+            auto const numVertices = numVertsPerSide*numVertsPerSide;
+            std::vector<DistortionMeshVertex> vertices;
+            vertices.reserve(numVertices);
+
+            // Generate a grid of vertices with distorted texture coordinates
+            for (int x = 0; x < numVertsPerSide; x++) {
+                float xPos = -1 + x * quadSide;
+                float xTex = x * quadTexSide;
+
+                for (int y = 0; y < numVertsPerSide; y++) {
+                    float yPos = -1 + y * quadSide;
+                    float yTex = y * quadTexSide;
+
+                    Float2 pos = { xPos, yPos };
+                    Float2 tex = { xTex, yTex };
+
+                    vertices.emplace_back(pos,
+                        DistortionCorrectTextureCoordinate(eye, tex, distort, 0),
+                        DistortionCorrectTextureCoordinate(eye, tex, distort, 1),
+                        DistortionCorrectTextureCoordinate(eye, tex, distort, 2));
+                }
+            }
+
+            // Generate a pair of triangles for each quad, wound
+            // counter-clockwise from the mesh grid
 
             // total of quadsPerSide * quadsPerSide * 6 vertices added: reserve
             // that space to avoid excess copying during mesh generation.
+            std::vector<int> indices;
+            indices.reserve(quadsPerSide * quadsPerSide * 6);
             ret.reserve(quadsPerSide * quadsPerSide * 6);
-
             for (int x = 0; x < quadsPerSide; x++) {
-                float xLow = -1 + x * quadSide;
-                float xHigh = -1 + (x + 1) * quadSide;
-                float xTexLow = x * quadTexSide;
-                float xTexHigh = (x + 1) * quadTexSide;
-
                 for (int y = 0; y < quadsPerSide; y++) {
-                    /// 6 vertices per inner loop
-                    float yLow = -1 + y * quadSide;
-                    float yHigh = -1 + (y + 1) * quadSide;
-                    float yTexLow = y * quadTexSide;
-                    float yTexHigh = (y + 1) * quadTexSide;
+                    // Grid generated above is in column-major order
+                    int indexLL = x*numVertsPerSide + y;
+                    int indexHL = indexLL + numVertsPerSide;
+                    int indexHH = indexLL + numVertsPerSide + 1;
+                    int indexLH = indexLL + 1;
 
-                    Float2 posLL = { xLow, yLow };
-                    Float2 posLH = { xLow, yHigh };
-                    Float2 posHL = { xHigh, yLow };
-                    Float2 posHH = { xHigh, yHigh };
+                    // Triangle 1
+                    indices.emplace_back(indexLL);
+                    indices.emplace_back(indexHL);
+                    indices.emplace_back(indexHH);
 
-                    Float2 texLL = {xTexLow, yTexLow};
-                    Float2 texLH = {xTexLow, yTexHigh};
-                    Float2 texHL = {xTexHigh, yTexLow};
-                    Float2 texHH = {xTexHigh, yTexHigh};
-
-                    // First triangle - emplace DistortionMeshVertex
-                    ret.emplace_back(posLL, DistortionCorrectTextureCoordinate(
-                                                eye, texLL, distort, 0),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texLL, distort, 1),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texLL, distort, 2));
-                    ret.emplace_back(posHL, DistortionCorrectTextureCoordinate(
-                                                eye, texHL, distort, 0),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texHL, distort, 1),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texHL, distort, 2));
-                    ret.emplace_back(posHH, DistortionCorrectTextureCoordinate(
-                                                eye, texHH, distort, 0),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texHH, distort, 1),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texHH, distort, 2));
-
-                    // Second triangle
-                    ret.emplace_back(posLL, DistortionCorrectTextureCoordinate(
-                                                eye, texLL, distort, 0),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texLL, distort, 1),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texLL, distort, 2));
-                    ret.emplace_back(posHH, DistortionCorrectTextureCoordinate(
-                                                eye, texHH, distort, 0),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texHH, distort, 1),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texHH, distort, 2));
-                    ret.emplace_back(posLH, DistortionCorrectTextureCoordinate(
-                                                eye, texLH, distort, 0),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texLH, distort, 1),
-                                     DistortionCorrectTextureCoordinate(
-                                         eye, texLH, distort, 2));
+                    // Triangle 2
+                    indices.emplace_back(indexLL);
+                    indices.emplace_back(indexHH);
+                    indices.emplace_back(indexLH);
                 }
+            }
+
+            // Convert the indexed mesh back into an unindexed
+            // triangle mesh for consistency with existing pipeline
+            for each(auto index in indices) {
+                ret.emplace_back(vertices[index]);
             }
         } break;
         case RADIAL: {
