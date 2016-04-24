@@ -137,17 +137,22 @@ namespace renderkit {
         Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizerState;
         Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbPerObjectBuffer;
         ID3D11InputLayout* m_vertexLayout;
+
+        struct DistortionMeshBuffer {
+            /// Used to render quads for present mode
+            Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
+            /// Backing data for vertexBuffer
+            std::vector<DistortionVertex> vertices;
+            /// Vertex indices, for DrawIndexed
+            Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+            /// Backing data for indexBuffer
+            std::vector<UINT16> indices;
+
+        };
+
         // @todo One per eye/display combination in case of multiple displays
         // per eye
-        std::vector<ID3D11Buffer*>
-            m_quadVertexBuffer; //< Used to render quads for present mode
-        std::vector<UINT>
-            m_quadVertexCount; //< How many vertices in our quad array
-        std::vector<DistortionVertex*>
-            m_triangleBuffer; //< Points to our triangle array buffers
-        // @todo Remove as redundant with m_quadVertexCount, here and in OpenGL
-        std::vector<size_t>
-            m_numTriangles; //< Number of triangles in our array buffers
+        std::vector<DistortionMeshBuffer> m_distortionMeshBuffer;
 
         ID3D11DepthStencilState* m_depthStencilStateForPresent; // Depth/stencil
                                                                 // state that

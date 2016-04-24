@@ -2042,13 +2042,13 @@ namespace renderkit {
         return ret;
     }
 
-    std::vector<RenderManager::DistortionMeshVertex>
+    RenderManager::DistortionMesh
     RenderManager::ComputeDistortionMesh(
         size_t eye //< Which eye?
         , DistortionMeshType type //< Type of mesh to produce
         , DistortionParameters distort //< Distortion parameters
         ) {
-        std::vector<RenderManager::DistortionMeshVertex> ret;
+        RenderManager::DistortionMesh ret;
 
         // Clear any created interpolators, freeing up their memory
         // first.  These may have been left behind by a failed
@@ -2236,8 +2236,7 @@ namespace renderkit {
 
             auto const numVertsPerSide = quadsPerSide + 1;
             auto const numVertices = numVertsPerSide*numVertsPerSide;
-            std::vector<DistortionMeshVertex> vertices;
-            vertices.reserve(numVertices);
+            ret.vertices.reserve(numVertices);
 
             // Generate a grid of vertices with distorted texture coordinates
             for (int x = 0; x < numVertsPerSide; x++) {
@@ -2251,7 +2250,7 @@ namespace renderkit {
                     Float2 pos = { xPos, yPos };
                     Float2 tex = { xTex, yTex };
 
-                    vertices.emplace_back(pos,
+                    ret.vertices.emplace_back(pos,
                         DistortionCorrectTextureCoordinate(eye, tex, distort, 0),
                         DistortionCorrectTextureCoordinate(eye, tex, distort, 1),
                         DistortionCorrectTextureCoordinate(eye, tex, distort, 2));
@@ -2263,9 +2262,7 @@ namespace renderkit {
 
             // total of quadsPerSide * quadsPerSide * 6 vertices added: reserve
             // that space to avoid excess copying during mesh generation.
-            std::vector<int> indices;
-            indices.reserve(quadsPerSide * quadsPerSide * 6);
-            ret.reserve(quadsPerSide * quadsPerSide * 6);
+            ret.indices.reserve(quadsPerSide * quadsPerSide * 6);
             for (int x = 0; x < quadsPerSide; x++) {
                 for (int y = 0; y < quadsPerSide; y++) {
                     // Grid generated above is in column-major order
@@ -2275,21 +2272,15 @@ namespace renderkit {
                     int indexLH = indexLL + 1;
 
                     // Triangle 1
-                    indices.emplace_back(indexLL);
-                    indices.emplace_back(indexHL);
-                    indices.emplace_back(indexHH);
+                    ret.indices.emplace_back(indexLL);
+                    ret.indices.emplace_back(indexHL);
+                    ret.indices.emplace_back(indexHH);
 
                     // Triangle 2
-                    indices.emplace_back(indexLL);
-                    indices.emplace_back(indexHH);
-                    indices.emplace_back(indexLH);
+                    ret.indices.emplace_back(indexLL);
+                    ret.indices.emplace_back(indexHH);
+                    ret.indices.emplace_back(indexLH);
                 }
-            }
-
-            // Convert the indexed mesh back into an unindexed
-            // triangle mesh for consistency with existing pipeline
-            for each(auto index in indices) {
-                ret.emplace_back(vertices[index]);
             }
         } break;
         case RADIAL: {
