@@ -2757,28 +2757,6 @@ namespace renderkit {
 
         // @todo Read the info we need from Core.
 
-        // If DirectMode is turned off and we've got a valid vendor ID, then we
-        // construct a vendor-specific device to disable it.  This is a side
-        // effect of trying to open the display on that vendor's device.
-        // @todo Rethink how this should work now that we have an external
-        // program to bring devices back out of DirectMode.  We should at least
-        // check to see if it is already in this mode.  This will require doing
-        // the check on both nVidia and AMD.
-        if (!p.m_directMode && (p.m_directVendorIds.size() > 0)) {
-#ifdef RM_USE_NVIDIA_DIRECT_D3D11
-            // Turn off parameters that would cause a lot of code to run.
-            RenderManager::ConstructorParameters pTemp = p;
-            pTemp.m_distortionCorrection = false;
-            pTemp.m_enableTimeWarp = false;
-            pTemp.m_distortionParameters.clear();
-            {
-                std::unique_ptr<RenderManager> temp(
-                  new RenderManagerNVidiaD3D11(contextParameter, pTemp));
-                temp->OpenDisplay();
-            }
-#endif
-        }
-
         // Open the appropriate render manager based on the rendering library
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
