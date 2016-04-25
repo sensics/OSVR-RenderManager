@@ -178,8 +178,7 @@ namespace osvr {
 
         protected:
 
-          bool
-            PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
+          bool PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
                 const std::vector<RenderInfo>& renderInfoUsed,
                 const RenderParams& renderParams = RenderParams(),
                 const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports =
