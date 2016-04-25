@@ -417,8 +417,6 @@ namespace renderkit {
         /// all eyes in a single frame and the second half being the buffers
         /// to be used for all eyes in the next frame.
         ///
-        /// @todo Make use of this when ATW is fully implemented.
-        ///
         ///  @return Returns true on success and false on failure.
         bool OSVR_RENDERMANAGER_EXPORT
         RegisterRenderBuffers(const std::vector<RenderBuffer>& buffers,
@@ -935,8 +933,6 @@ namespace renderkit {
         RenderParams m_renderParamsForRender;
         std::vector<RenderInfo> m_renderInfoForRender;
 
-        /// @brief Use current and previous values above to compute ATWs for
-        /// each eye.
         /// NOTE: The base-class implementation constructs a texture matrix
         /// that is apropriate for use in OpenGL.  Other rendering libraries
         /// that
@@ -1363,7 +1359,7 @@ namespace renderkit {
                 m_flipInY = false;
                 m_buffer.D3D11 = nullptr;
                 m_buffer.OpenGL = nullptr;
-                m_ATW = nullptr;
+                m_timeWarp = nullptr;
             }
 
             size_t m_index;         //< Which eye (0-indexed)
@@ -1379,7 +1375,7 @@ namespace renderkit {
             /// there are
             /// two or more eyes packed into the same buffer.
             OSVR_ViewportDescription m_normalizedCroppingViewport;
-            matrix16* m_ATW; //< Asynchronous Time Warp matrix to use (nullptr
+            matrix16* m_timeWarp; //< Time Warp matrix to use (nullptr
             // for none)
         };
         virtual bool PresentEye(PresentEyeParameters params) = 0;

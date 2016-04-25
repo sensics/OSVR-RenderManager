@@ -189,13 +189,15 @@ namespace osvr {
                   // sure we wait until rendering has finished on our buffers before
                   // handing them over to the ATW thread.  We flush our queue so that
                   // rendering will get moving right away.
-                  m_D3D11Context->End(m_completionQuery);
-                  m_D3D11Context->Flush();
-                  if (m_completionQuery) while(S_FALSE ==
+                  if (m_completionQuery) {
+                    m_D3D11Context->End(m_completionQuery);
+                    m_D3D11Context->Flush();
+                    while (S_FALSE ==
                       m_D3D11Context->GetData(m_completionQuery, nullptr, 0, 0)) {
-                    // We don't want to miss the completion because Windows has
-                    // swapped us out, so we busy-wait here on the completion
-                    // event.
+                      // We don't want to miss the completion because Windows has
+                      // swapped us out, so we busy-wait here on the completion
+                      // event.
+                    }
                   }
 
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.

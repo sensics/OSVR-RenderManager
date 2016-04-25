@@ -160,7 +160,7 @@ namespace renderkit {
         // Special vertex/fragment shader information for our shader that
         // handles
         // asynchronous time warp and/or distortion.
-        GLuint m_programId;           //< Groups the shaders for ATW/distortion
+        GLuint m_programId;           //< Groups the shaders for time warp/distortion
         GLuint m_projectionUniformId; //< Pointer to projection matrix, vertex
                                       /// shader
         GLuint

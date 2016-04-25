@@ -445,9 +445,9 @@ namespace renderkit {
 
         //======================================================
         // Construct the shaders and program we'll use to present things
-        // handling ATW/distortion.
-        GLuint vertexShaderId;   //< Vertex shader for ATW/distortion
-        GLuint fragmentShaderId; //< Fragment shader for ATW/distortion
+        // handling time warp/distortion.
+        GLuint vertexShaderId;   //< Vertex shader for time warp/distortion
+        GLuint fragmentShaderId; //< Fragment shader for time warp/distortion
 
         vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShaderId, 1, &distortionVertexShader, nullptr);
@@ -850,10 +850,10 @@ namespace renderkit {
         // Set up the texture matrix to handle asynchronous time warp
 
         float textureMat[] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-        if (params.m_ATW != nullptr) {
+        if (params.m_timeWarp != nullptr) {
           // Because the matrix was built in compliance with the OpenGL
           // spec, we can just directly use it.
-          memcpy(textureMat, params.m_ATW->data, 15 * sizeof(float));
+          memcpy(textureMat, params.m_timeWarp->data, 15 * sizeof(float));
         }
 
         // We now crop to a subregion of the texture.  This is used to handle

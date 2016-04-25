@@ -790,20 +790,16 @@ namespace renderkit {
             } while (!proceed);
         }
 
-        // Store the previous matrices we returned to the client and a new set
-        // using
-        // the same transformation hierarchy.  This is a side effect of the
-        // GetRenderInfo function.  Use these parameters to construct info
-        // needed
-        // to perform Asynchronous Time Warp.
+        // Use the current and previous parameters to construct info
+        // needed to perform Time Warp.
         std::vector<RenderInfo> currentRenderInfo =
             GetRenderInfoInternal(renderParams);
-        // @todo make the depth for ATW a parameter?
+        // @todo make the depth for time warp a parameter?
         if (m_params.m_enableTimeWarp) {
             if (!ComputeAsynchronousTimeWarps(renderInfoUsed, currentRenderInfo,
                                               2.0f)) {
                 std::cerr << "RenderManager::PresentRenderBuffers: Could not "
-                             "compute ATWs"
+                             "compute time warps"
                           << std::endl;
                 return false;
             }
@@ -889,7 +885,7 @@ namespace renderkit {
                                   << "Warp matrix not available" << std::endl;
                         return false;
                     }
-                    p.m_ATW = &m_asynchronousTimeWarps[eye];
+                    p.m_timeWarp = &m_asynchronousTimeWarps[eye];
                 }
 
                 // Fill in the region to image within the buffer.  If the client
@@ -1532,7 +1528,7 @@ namespace renderkit {
     bool RenderManager::ComputeAsynchronousTimeWarps(
         std::vector<RenderInfo> usedRenderInfo,
         std::vector<RenderInfo> currentRenderInfo, float assumedDepth) {
-        // Empty out the ATW vector until we fill it again below.
+        // Empty out the time warp vector until we fill it again below.
         m_asynchronousTimeWarps.clear();
 
         size_t numEyes = GetNumEyes();
@@ -1676,9 +1672,9 @@ namespace renderkit {
                 preProjectionTranslate * preScale * preTranslation;
 
             // Store the result.
-            matrix16 ATW;
-            memcpy(ATW.data, full.matrix().data(), sizeof(ATW.data));
-            m_asynchronousTimeWarps.push_back(ATW);
+            matrix16 timeWarp;
+            memcpy(timeWarp.data, full.matrix().data(), sizeof(timeWarp.data));
+            m_asynchronousTimeWarps.push_back(timeWarp);
         }
         return true;
     }
