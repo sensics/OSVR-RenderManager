@@ -420,6 +420,7 @@ namespace renderkit {
     }
 
     RenderManager::~RenderManager() {
+
         // Unregister any remaining callback handlers for devices that
         // are set to update our transformation matrices.
         while (m_callbacks.size() > 0) {
@@ -2409,7 +2410,7 @@ namespace renderkit {
       RenderManagerD3D11Base *ret = nullptr;
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11) || defined(RM_USE_AMD_DIRECT_D3D11)
   #if defined(RM_USE_AMD_DIRECT_D3D11)
-      if (ret == nullptr) {
+      if ((ret == nullptr) && RenderManagerAMDD3D11::DirectModeAvailable() ) {
         // See if we have an AMD card.  This is done by
         // creating an instance of an AMD RenderManager, which will only
         // be doing okay if it could load the libraries it needs.
@@ -2421,7 +2422,7 @@ namespace renderkit {
       }
   #endif
   #if defined(RM_USE_NVIDIA_DIRECT_D3D11)
-      if (ret == nullptr) {
+      if ((ret == nullptr) && RenderManagerNVidiaD3D11::DirectModeAvailable() ) {
         ret = new RenderManagerNVidiaD3D11(context, params);
         if (!ret->doingOkay()) {
           delete ret;
