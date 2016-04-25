@@ -427,6 +427,12 @@ namespace renderkit {
             RemoveRenderCallback(cb.m_interfaceName, cb.m_callback,
                                  cb.m_userData);
         }
+
+        // Close our roomFromHeadInterface
+        osvrClientFreeInterface(m_context, m_roomFromHeadInterface);
+
+        // We're done with our context.
+        osvrClientShutdown(m_context);
     }
 
     bool RenderManager::Render(const RenderParams& params) {
