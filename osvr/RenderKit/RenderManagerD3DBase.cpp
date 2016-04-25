@@ -974,10 +974,6 @@ namespace renderkit {
         return ret;
     }
 
-    bool RenderManagerD3D11Base::RenderFrameInitialize() {
-        return PresentFrameInitialize();
-    }
-
     bool RenderManagerD3D11Base::RenderDisplayFinalize(size_t display) {
         return PresentDisplayFinalize(display);
     }

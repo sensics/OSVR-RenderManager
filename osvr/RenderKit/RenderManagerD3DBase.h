@@ -184,7 +184,7 @@ namespace renderkit {
                          OSVR_ProjectionMatrix projection //< Projection to use
                          ) override;
 
-        bool RenderFrameInitialize() override;
+        bool RenderFrameInitialize() override { return true; }
         bool RenderDisplayFinalize(size_t display) override;
         bool RenderFrameFinalize() override;
 
