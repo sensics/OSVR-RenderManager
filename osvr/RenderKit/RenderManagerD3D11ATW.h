@@ -79,6 +79,10 @@ namespace osvr {
             bool mStarted = false;
             bool mFirstFramePresented = false;
 
+            /// Used to keep track of when rendering has completed so we can hand
+            /// our buffers over to the ATW thread.
+            ID3D11Query* m_completionQuery = nullptr;
+
         public:
             /**
             * Construct an D3D ATW wrapper around an existing D3D render
@@ -105,6 +109,10 @@ namespace osvr {
                   if (i->second.textureCopy != nullptr) {
                     i->second.textureCopy->Release();
                   }
+                }
+                if (m_completionQuery) {
+                  m_completionQuery->Release();
+                  m_completionQuery = nullptr;
                 }
             }
 
@@ -142,9 +150,25 @@ namespace osvr {
                 m_library.D3D11->context = m_D3D11Context;
 
                 //======================================================
+                // Construct our completion query that will be used to
+                // wait for rendering completion.
+                {
+                  D3D11_QUERY_DESC desc = {};
+                  desc.Query = D3D11_QUERY_EVENT;
+                  HRESULT hr = m_D3D11device->CreateQuery(&desc, &m_completionQuery);
+                  if (FAILED(hr)) {
+                    std::cerr << "RenderManagerD3D11ATW::OpenDisplay: "
+                      "Warning: Failed to create completion event query: code "
+                      << hr << std::endl;
+                    m_completionQuery = nullptr;
+                  }
+                }
+
+                //======================================================
                 // Start our ATW sub-thread.
                 start();
 
+                //======================================================
                 // Fill in our library, rather than that of
                 // the harnessed RenderManager, since this is the one
                 // that the client will deal with.
@@ -161,6 +185,19 @@ namespace osvr {
                 const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports =
                   std::vector<OSVR_ViewportDescription>(),
                 bool flipInY = false) override {
+
+                  // We use a D3D query placed right at the end of rendering to make
+                  // sure we wait until rendering has finished on our buffers before
+                  // handing them over to the ATW thread.  We flush our queue so that
+                  // rendering will get moving right away.
+                  m_D3D11Context->End(m_completionQuery);
+                  m_D3D11Context->Flush();
+                  if (m_completionQuery) while(S_FALSE ==
+                      m_D3D11Context->GetData(m_completionQuery, nullptr, 0, 0)) {
+                    // We don't want to miss the completion because Windows has
+                    // swapped us out, so we busy-wait here on the completion
+                    // event.
+                  }
 
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
                   std::lock_guard<std::mutex> lock(mLock);
