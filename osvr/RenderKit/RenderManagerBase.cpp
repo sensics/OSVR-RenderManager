@@ -120,7 +120,6 @@ static void PredictFuturePose(
     osvrQuatToQuatlib(rotationAmount,
       &vel.angularVelocity.incrementalRotation);
 
-    // @todo
     double remaining = predictionIntervalSec;
     while (remaining > vel.angularVelocity.dt) {
       q_mult(newOrientation, rotationAmount, newOrientation);
@@ -147,11 +146,6 @@ static void PredictFuturePose(
     out.translation.data[2] += vel.linearVelocity.data[2]
       * predictionIntervalSec;
   }
-
-  // @todo Make sure the above transformation happens in
-  // the correct space, so we're rotating about the object
-  // center and translating in external (not object-local)
-  // space.
 
   // Copy the resulting pose.
   poseOut = out;
@@ -465,9 +459,6 @@ namespace renderkit {
         // Read the transformations
         m_renderParamsForRender = params;
         m_renderInfoForRender = GetRenderInfoInternal(params);
-
-        /// @todo Use acceleration and velocity to predict viewpoint at the
-        // time we expect to render.
 
         // Initialize the rendering for the whole frame.
         if (!RenderFrameInitialize()) {
@@ -1545,8 +1536,7 @@ namespace renderkit {
         for (size_t eye = 0; eye < numEyes; eye++) {
             /// @todo For CAVE displays and fish-tank VR, the projection matrix
             /// will not be the same between frames.  Make sure we're not
-            /// assuming
-            /// here that it is.
+            /// assuming here that it is.
 
             // Compute the scale to use during forward transform.
             // Scale the coordinates in X and Y so that they match the width and
