@@ -191,6 +191,10 @@ namespace renderkit {
         bool PresentFrameInitialize() override;
         bool PresentEye(PresentEyeParameters params) override;
 
+        /// Used to keep track of when rendering has completed so we can hand
+        /// our buffers over to the ATW thread.
+        ID3D11Query* m_completionQuery = nullptr;
+
         friend class RenderManagerD3D11OpenGL;
         friend class RenderManagerD3D11ATW;
     };

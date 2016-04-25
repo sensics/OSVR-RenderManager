@@ -170,6 +170,11 @@ namespace renderkit {
           m_depthStencilStateForRender->Release();
         }
 
+        if (m_completionQuery) {
+          m_completionQuery->Release();
+          m_completionQuery = nullptr;
+        }
+
         delete m_buffers.D3D11;
         delete m_library.D3D11;
     }
@@ -200,6 +205,21 @@ namespace renderkit {
             "create D3D11 device" << std::endl;
           m_doingOkay = false;
           return false;
+        }
+      }
+
+      //======================================================
+      // Construct our completion query that will be used to
+      // wait for rendering completion.
+      {
+        D3D11_QUERY_DESC desc = {};
+        desc.Query = D3D11_QUERY_EVENT;
+        HRESULT hr = m_D3D11device->CreateQuery(&desc, &m_completionQuery);
+        if (FAILED(hr)) {
+          std::cerr << "RenderManagerD3D11Base::SetDeviceAndContext: "
+            "Warning: Failed to create completion event query: code "
+            << hr << std::endl;
+          m_completionQuery = nullptr;
         }
       }
 
@@ -984,8 +1004,36 @@ namespace renderkit {
     }
 
     bool RenderManagerD3D11Base::PresentFrameInitialize() {
-        /// @todo Construct our vertex and fragment shaders, one per actual
-        /// display.
+        // @todo Consider making this into a WaitForRenderingCompletion() function
+        // derived from the base class and require implementation in all
+        // classes, putting the appropriate thing into each one.  Call this
+        // function in the base class, putting the guards below into it rather
+        // than here.  OpenGL will do glFinish().
+        // ISSUE: We don't actually want OpenGL to do this, because we've
+        // wrapped its DirectRender around D3D on Windows.  Maybe we need
+        // to leave thinks funky like this, but think about it some more.
+
+        // If we're doing anything that requires careful timing of the
+        // rendering presentation, we need to make sure that rendering has
+        // finished before moving on to the steps that follow.  This
+        // includes:
+        //    Direct Rendering with vsync or app-blocking vsync
+        //    Time warp with a specific delay
+        if ((m_params.m_maxMSBeforeVsyncTimeWarp) ||
+            (m_params.m_directMode &&
+            (m_params.m_verticalSync || m_params.m_verticalSyncBlocksRendering))) {
+
+          if (m_completionQuery) {
+            m_D3D11Context->End(m_completionQuery);
+            m_D3D11Context->Flush();
+            while (S_FALSE ==
+              m_D3D11Context->GetData(m_completionQuery, nullptr, 0, 0)) {
+              // We don't want to miss the completion because Windows has
+              // swapped us out, so we busy-wait here on the completion
+              // event.
+            }
+          }
+        }
 
         return true;
     }
