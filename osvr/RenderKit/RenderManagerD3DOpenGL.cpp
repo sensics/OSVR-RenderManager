@@ -499,6 +499,10 @@ namespace renderkit {
         myD3DBuffers.push_back(rb);
       }
 
+      // Make sure to finish up our rendering and complete the buffers before
+      // presenting them to D3D.
+      glFinish();
+
       // Unlock all of the render buffers we know about.
       for (size_t i = 0; i < m_oglToD3D.size(); i++) {
         if (!wglDXUnlockObjectsNV(m_glD3DHandle, 1, &m_oglToD3D[i].glColorHandle)) {
