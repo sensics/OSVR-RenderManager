@@ -790,12 +790,8 @@ namespace renderkit {
             } while (!proceed);
         }
 
-        // Store the previous matrices we returned to the client and a new set
-        // using
-        // the same transformation hierarchy.  This is a side effect of the
-        // GetRenderInfo function.  Use these parameters to construct info
-        // needed
-        // to perform Asynchronous Time Warp.
+        // Use the current and previous parameters to construct info
+        // needed to perform Time Warp.
         std::vector<RenderInfo> currentRenderInfo =
             GetRenderInfoInternal(renderParams);
         // @todo make the depth for time warp a parameter?
