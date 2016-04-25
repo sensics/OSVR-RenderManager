@@ -615,7 +615,7 @@ namespace renderkit {
         /// @todo Make this and the base-class method share code rather than
         /// repeat
 
-        // Empty out the ATW vector until we fill it again below.
+        // Empty out the time warp vector until we fill it again below.
         m_asynchronousTimeWarps.clear();
 
         size_t numEyes = GetNumEyes();
@@ -764,13 +764,13 @@ namespace renderkit {
             // in the opposite order from OpenGL.
             // @todo Figure out how to handle the transpose or the handedness
             // change in Eigen with a method or declaration.
-            matrix16 ATW;
+            matrix16 timeWarp;
             for (size_t r = 0; r < 4; r++) {
                 for (size_t c = 0; c < 4; c++) {
-                    ATW.data[r * 4 + c] = full.matrix().data()[c * 4 + r];
+                  timeWarp.data[r * 4 + c] = full.matrix().data()[c * 4 + r];
                 }
             }
-            m_asynchronousTimeWarps.push_back(ATW);
+            m_asynchronousTimeWarps.push_back(timeWarp);
         }
         return true;
     }
@@ -1047,7 +1047,7 @@ namespace renderkit {
         m_D3D11Context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
         //====================================================================
-        // Set up matrices to be used for overfill, flipping, and ATW.
+        // Set up matrices to be used for overfill, flipping, and time warp.
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1083,8 +1083,8 @@ namespace renderkit {
         // idea of transformations, which matches OpenGL's.
         // Start with the identity matrix and fill in if needed.
         float textureMat[] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-        if (params.m_ATW != nullptr) {
-            memcpy(textureMat, params.m_ATW->data, 16 * sizeof(float));
+        if (params.m_timeWarp != nullptr) {
+          memcpy(textureMat, params.m_timeWarp->data, 16 * sizeof(float));
         }
 
         // We now crop to a subregion of the texture.  This is used to handle
