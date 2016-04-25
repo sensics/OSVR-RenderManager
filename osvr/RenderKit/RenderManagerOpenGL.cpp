@@ -160,7 +160,7 @@ namespace renderkit {
             glDeleteFramebuffers(1, &m_frameBuffer);
             size_t numEyes = GetNumEyes();
             // @todo Handle the case of multiple displays per eye
-            for (size_t i = 0; i < numEyes; i++) {
+            for (size_t i = 0; i < m_colorBuffers.size(); i++) {
                 glDeleteTextures(1, &m_colorBuffers[i].OpenGL->colorBufferName);
                 delete m_colorBuffers[i].OpenGL;
                 glDeleteRenderbuffers(1, &m_depthBuffers[i]);
