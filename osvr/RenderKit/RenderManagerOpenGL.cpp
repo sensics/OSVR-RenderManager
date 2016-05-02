@@ -913,13 +913,11 @@ namespace renderkit {
         // Disable face culling (in case client switched
         // front-face).
 
-        GLboolean depthTest, cullFace, texture2D;
+        GLboolean depthTest, cullFace;
         glGetBooleanv(GL_DEPTH_TEST, &depthTest);
         glGetBooleanv(GL_CULL_FACE, &cullFace);
-        glGetBooleanv(GL_TEXTURE_2D, &texture2D);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
-        glEnable(GL_TEXTURE_2D);
 
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after environment setting")) {
@@ -968,13 +966,6 @@ namespace renderkit {
           glEnable(GL_CULL_FACE);
         } else {
           glDisable(GL_CULL_FACE);
-        }
-
-        if (texture2D) {
-          glEnable(GL_TEXTURE_2D);
-        }
-        else {
-          glDisable(GL_TEXTURE_2D);
         }
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
