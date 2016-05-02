@@ -258,6 +258,9 @@ namespace renderkit {
         OSVR_ClientContext context,
         const ConstructorParameters& p) {
 
+        /// So far, so good...
+        m_doingOkay = true;
+
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
         m_context = osvrClientInit("com.osvr.renderManager");
@@ -294,7 +297,7 @@ namespace renderkit {
             OSVR_RETURN_FAILURE) {
             std::cerr << "RenderManager::RenderManager(): Can't get interface "
                       << headSpaceName << std::endl;
-            throw std::runtime_error("Can't get head interface.");
+            m_doingOkay = false;
         }
         osvrPose3SetIdentity(&m_roomFromHead);
 
