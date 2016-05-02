@@ -49,9 +49,8 @@ namespace renderkit {
         m_library.OpenGL = nullptr;
 
         if (!m_D3D11Renderer) {
-            std::cerr << "RenderManagerD3D11OpenGL::RenderManagerD3D11OpenGL: "
-                      << "NULL pointer to D3D Renderer to harness."
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::RenderManagerD3D11OpenGL: "
+                      << "NULL pointer to D3D Renderer to harness.";
             return;
         }
 
@@ -108,17 +107,15 @@ namespace renderkit {
         GLContextParams p;
         p.visible = false; // Make the context invisible, to not distract
         if (!addOpenGLContext(p)) {
-            std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't open GL "
-                         "context"
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::OpenDisplay: Can't open GL "
+                         "context";
             return ret;
         }
         glewExperimental = true; // Needed for core profile
         if (glewInit() != GLEW_OK) {
             removeOpenGLContexts();
-            std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't "
-                         "initialize GLEW"
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::OpenDisplay: Can't "
+                         "initialize GLEW";
             return ret;
         }
 
@@ -127,17 +124,15 @@ namespace renderkit {
         // on it to use to map our OpenGL objects.
         ret = m_D3D11Renderer->OpenDisplay();
         if (ret.status == FAILURE) {
-            std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't open "
-                         "D3D11 display"
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::OpenDisplay: Can't open "
+                         "D3D11 display";
             m_doingOkay = false;
             return ret;
         }
         m_glD3DHandle = wglDXOpenDeviceNV(ret.library.D3D11->device);
         if (m_glD3DHandle == nullptr) {
-            std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't get GL "
-                         "device handle"
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::OpenDisplay: Can't get GL "
+                         "device handle";
             ret.status = FAILURE;
             return ret;
         }
@@ -194,9 +189,8 @@ namespace renderkit {
         // Always check that our framebuffer is ok
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
             GL_FRAMEBUFFER_COMPLETE) {
-            std::cerr << "RenderManagerD3D11OpenGL::RenderEyeInitialize: "
-                         "Incomplete Framebuffer"
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::RenderEyeInitialize: "
+                         "Incomplete Framebuffer";
             return false;
         }
 
@@ -251,9 +245,8 @@ namespace renderkit {
         bool appWillNotOverwriteBeforeNewPresent) {
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers(): "
-                         "Display not opened."
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers(): "
+                         "Display not opened.";
             return false;
         }
 
@@ -262,9 +255,9 @@ namespace renderkit {
         // one buffer.
         size_t numEyes = GetNumEyes();
         if (buffers.size() > numEyes) {
-            std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+            m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
                          "Wrong number of buffers: "
-                      << buffers.size() << ", need " << numEyes << std::endl;
+                      << buffers.size() << ", need " << numEyes;
             return false;
         }
 
@@ -302,9 +295,9 @@ namespace renderkit {
             glGetTexLevelParameteriv(GL_TEXTURE_2D, mipLevel, GL_TEXTURE_HEIGHT,
                                      &height);
             if ((width == 0) || (height == 0)) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
                              "Zero-sized buffer for buffer: "
-                          << i << std::endl;
+                          << i;
                 return false;
             }
 
@@ -331,9 +324,8 @@ namespace renderkit {
             HRESULT hr = m_D3D11Renderer->m_D3D11device->CreateTexture2D(
                 &textureDesc, NULL, &D3DTexture);
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
-                             "Can't create texture"
-                          << std::endl;
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                             "Can't create texture";
                 return false;
             }
 
@@ -350,9 +342,8 @@ namespace renderkit {
             hr = m_D3D11Renderer->m_D3D11device->CreateRenderTargetView(
                 D3DTexture, &renderTargetViewDesc, &renderTargetView);
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
-                             "Could not create render target"
-                          << std::endl;
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                             "Could not create render target";
                 return false;
             }
 
@@ -367,16 +358,14 @@ namespace renderkit {
             HANDLE sharedHandle;
             hr = pOtherResource->GetSharedHandle(&sharedHandle);
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
-                             "Could not get shared handle"
-                          << std::endl;
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                             "Could not get shared handle";
                 return false;
             }
             if (wglDXSetResourceShareHandleNV(D3DTexture, sharedHandle) !=
                 TRUE) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers()"
-                             ": Could not share resource"
-                          << std::endl;
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers()"
+                             ": Could not share resource";
                 return false;
             }
 
@@ -389,22 +378,21 @@ namespace renderkit {
                 m_glD3DHandle, D3DTexture, buffers[i].OpenGL->colorBufferName,
                 GL_TEXTURE_2D, WGL_ACCESS_WRITE_DISCARD_NV);
             if (glColorHandle == nullptr) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
                              "Can't get Color buffer handle"
-                          << " (error " << GetLastError() << ")";
+                          << " (error " << GetLastError() << "):";
                 switch (GetLastError()) {
                 case ERROR_INVALID_HANDLE:
-                    std::cerr << "  (Invalid handle)" << std::endl;
+                    m_log->error() << "  (Invalid handle)";
                     break;
                 case ERROR_INVALID_DATA:
-                    std::cerr << "  (Invalid data)" << std::endl;
+                    m_log->error() << "  (Invalid data)";
                     break;
                 case ERROR_OPEN_FAILED:
-                    std::cerr << "  (Could not open Direct3D resource)"
-                              << std::endl;
+                    m_log->error() << "  (Could not open Direct3D resource)";
                     break;
                 default:
-                    std::cerr << "  (Unexpected error code)" << std::endl;
+                    m_log->error() << "  (Unexpected error code)";
                 }
                 return false;
             }
@@ -419,9 +407,8 @@ namespace renderkit {
 
             // Lock the render target for OpenGL access
             if (!wglDXLockObjectsNV(m_glD3DHandle, 1, &map.glColorHandle)) {
-                std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
-                             "Can't lock Color buffer"
-                          << std::endl;
+                m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                             "Can't lock Color buffer";
                 return false;
             }
         }
@@ -436,9 +423,8 @@ namespace renderkit {
         }
         if (!m_D3D11Renderer->RegisterRenderBuffers(newBuffers,
             appWillNotOverwriteBeforeNewPresent)) {
-          std::cerr << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
-            "Could not register buffers with harnessed RenderManager"
-            << std::endl;
+          m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+            "Could not register buffers with harnessed RenderManager";
           return false;
         }
 
@@ -505,9 +491,8 @@ namespace renderkit {
       // Unlock all of the render buffers we know about.
       for (size_t i = 0; i < m_oglToD3D.size(); i++) {
         if (!wglDXUnlockObjectsNV(m_glD3DHandle, 1, &m_oglToD3D[i].glColorHandle)) {
-          std::cerr << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal: Can't unlock "
-            "Color buffer"
-            << std::endl;
+          m_log->error() << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal: Can't unlock "
+            "Color buffer";
           return false;
         }
       }
@@ -521,9 +506,8 @@ namespace renderkit {
       // so that the application can draw to them.
       for (size_t i = 0; i < m_oglToD3D.size(); i++) {
         if (!wglDXLockObjectsNV(m_glD3DHandle, 1, &m_oglToD3D[i].glColorHandle)) {
-          std::cerr << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal: Can't lock "
-            "Color buffer"
-            << std::endl;
+          m_log->error() << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal: Can't lock "
+            "Color buffer";
           return false;
         }
       }

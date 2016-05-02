@@ -76,9 +76,8 @@ namespace renderkit {
 
         // Initialize the SDL video subsystem.
         if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-            std::cerr << "RenderManagerD3D11::openD3D11Context: Could not "
-                         "initialize SDL"
-                      << std::endl;
+            m_log->error() << "RenderManagerD3D11::openD3D11Context: Could not "
+                         "initialize SDL";
             /// @todo should this be return withFailure() ?
             return ret;
         }
@@ -180,9 +179,8 @@ namespace renderkit {
                                               &swapChainDescription,
                                               &m_displays[display].m_swapChain);
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11::OpenDisplay: Could not get "
-                             "swapChain for display "
-                          << display << std::endl;
+                m_log->error() << "RenderManagerD3D11::OpenDisplay: Could not get "
+                             "swapChain for display ";
                 return withFailure();
             }
 
@@ -195,9 +193,8 @@ namespace renderkit {
                 0, __uuidof(ID3D11Texture2D),
                 reinterpret_cast<void**>(&m_displays[display].m_renderTarget));
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11::OpenDisplay: Could not get "
-                             "color buffer for display "
-                          << display << std::endl;
+                m_log->error() << "RenderManagerD3D11::OpenDisplay: Could not get "
+                             "color buffer for display ";
                 /// @todo this was missing a m_doingOkay = false line - bug or
                 /// intentional?
                 return withFailure();
@@ -209,9 +206,8 @@ namespace renderkit {
                 m_displays[display].m_renderTarget, nullptr,
                 &m_displays[display].m_renderTargetView);
             if (FAILED(hr)) {
-                std::cerr << "RenderManagerD3D11::OpenDisplay: Could not get "
-                             "render target view for display "
-                          << display << std::endl;
+              m_log->error() << "RenderManagerD3D11::OpenDisplay: Could not get "
+                             "render target view for display ";
                 /// @todo this was missing a m_doingOkay = false line - bug or
                 /// intentional?
                 return withFailure();

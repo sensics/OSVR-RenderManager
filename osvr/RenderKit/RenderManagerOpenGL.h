@@ -211,7 +211,7 @@ namespace renderkit {
         /// See if we had an OpenGL error
         /// @return True if there is an error, false if not.
         /// @param [in] message Message to print if there is an error
-        static bool checkForGLError(const std::string& message);
+        bool checkForGLError(const std::string& message);
 
         friend RenderManager OSVR_RENDERMANAGER_EXPORT*
         createRenderManager(OSVR_ClientContext context,
