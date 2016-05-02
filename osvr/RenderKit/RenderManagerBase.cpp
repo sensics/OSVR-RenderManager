@@ -302,7 +302,7 @@ namespace renderkit {
 
         if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
                                    &m_roomFromHeadInterface) ==
-            OSVR_RETURN_FAILURE) {
+              OSVR_RETURN_FAILURE) {
             m_log->error() << "RenderManager::RenderManager(): Can't get interface "
                       << headSpaceName;
             m_doingOkay = false;
@@ -1840,7 +1840,6 @@ namespace renderkit {
       // points, we just go with the values from the closest point.
       typedef std::multimap<double, size_t> PointDistanceIndexMap;
       PointDistanceIndexMap map;
-      //if (points.size() < 460 && points.size() > 0) std::cout << "XXX Sorting mesh of size " << points.size() << std::endl;
       for (size_t i = 0; i < points.size(); i++) {
         // Insertion into the multimap sorts them by distance.
         map.insert(std::make_pair(
