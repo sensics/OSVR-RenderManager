@@ -261,6 +261,14 @@ namespace renderkit {
         /// So far, so good...
         m_doingOkay = true;
 
+        /// Construct my logger
+        m_log = osvr::util::log::make_logger("RenderManager");
+        if (m_log == nullptr) {
+          std::cerr << "RenderManager::RenderManager(): Could not construct logger."
+            << " Expect a crash on the next function call." << std::endl;
+          m_doingOkay = false;
+        }
+
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
         m_context = osvrClientInit("com.osvr.renderManager");
@@ -295,8 +303,8 @@ namespace renderkit {
         if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
                                    &m_roomFromHeadInterface) ==
             OSVR_RETURN_FAILURE) {
-            std::cerr << "RenderManager::RenderManager(): Can't get interface "
-                      << headSpaceName << std::endl;
+            m_log->error() << "RenderManager::RenderManager(): Can't get interface "
+                      << headSpaceName;
             m_doingOkay = false;
         }
         osvrPose3SetIdentity(&m_roomFromHead);
@@ -313,9 +321,8 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            std::cerr
-                << "RenderManager::SetDisplayCallback: NULL callback handler"
-                << std::endl;
+          m_log->error()
+              << "RenderManager::SetDisplayCallback: NULL callback handler";
             return false;
         }
 
@@ -334,9 +341,8 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            std::cerr << "RenderManager::SetViewProjectionCallback: NULL "
-                         "callback handler"
-                      << std::endl;
+            m_log->error() << "RenderManager::SetViewProjectionCallback: NULL "
+                << "callback handler";
             return false;
         }
 
@@ -355,9 +361,8 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            std::cerr
-                << "RenderManager::AddRenderCallback: NULL callback handler"
-                << std::endl;
+            m_log->error()
+                << "RenderManager::AddRenderCallback: NULL callback handler";
             return false;
         }
 
@@ -376,9 +381,8 @@ namespace renderkit {
             if (osvrClientGetInterface(m_context, interfaceName.c_str(),
                                        &cb.m_interface) ==
                 OSVR_RETURN_FAILURE) {
-                std::cerr << "RenderManager::AddRenderCallback(): Can't get "
-                             "interface "
-                          << interfaceName << std::endl;
+                m_log->error() << "RenderManager::AddRenderCallback(): Can't get "
+                             << "interface " << interfaceName;
             }
         }
 
@@ -407,10 +411,9 @@ namespace renderkit {
                     if (osvrClientFreeInterface(m_context,
                                                 ci.m_interface) ==
                         OSVR_RETURN_FAILURE) {
-                        std::cerr
+                      m_log->error()
                             << "RenderManager::RemoveRenderCallback(): Could "
-                               "not free the interface for this callback."
-                            << std::endl;
+                               "not free the interface for this callback.";
                         return false;
                     }
                 }
@@ -446,16 +449,14 @@ namespace renderkit {
 
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            std::cerr << "RenderManager::Render(): Display not opened."
-                      << std::endl;
+            m_log->error() << "RenderManager::Render(): Display not opened.";
             return false;
         }
 
         // Make sure we've set up for the Render() path.
         if (!m_renderPathSetupDone) {
           if (!RenderPathSetup()) {
-            std::cerr << "RenderManager::Render(): RenderPathSetup() failed."
-              << std::endl;
+            m_log->error() << "RenderManager::Render(): RenderPathSetup() failed.";
             return false;
           }
           m_renderPathSetupDone = true;
@@ -464,9 +465,8 @@ namespace renderkit {
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-            std::cerr
-                << "RenderManager::Render(): client context update failed."
-                << std::endl;
+            m_log->error()
+                << "RenderManager::Render(): client context update failed.";
             return false;
         }
 
@@ -487,9 +487,9 @@ namespace renderkit {
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
             if (!RenderDisplayInitialize(display)) {
-                std::cerr
+                m_log->error()
                     << "RenderManager::Render(): Could not initialize display "
-                    << display << std::endl;
+                    << display;
                 return false;
             }
 
@@ -511,9 +511,8 @@ namespace renderkit {
                 // Every eye is on its own display now, so we need to
                 // initialize and finalize the displays as well.
                 if (!RenderEyeInitialize(eye)) {
-                    std::cerr
-                        << "RenderManager::Render(): Could not initialize eye."
-                        << std::endl;
+                    m_log->error()
+                        << "RenderManager::Render(): Could not initialize eye.";
                     return false;
                 }
                 if (m_viewCallback.m_callback != nullptr) {
@@ -555,17 +554,16 @@ namespace renderkit {
 
                 // Done with this eye.
                 if (!RenderEyeFinalize(eye)) {
-                    std::cerr
-                        << "RenderManager::Render(): Could not finalize eye."
-                        << std::endl;
+                    m_log->error()
+                        << "RenderManager::Render(): Could not finalize eye.";
                     return false;
                 }
             }
 
             if (!RenderDisplayFinalize(display)) {
-                std::cerr
+                m_log->error()
                     << "RenderManager::Render(): Could not finalize display "
-                    << display << std::endl;
+                    << display;
                 return false;
             }
         }
@@ -614,8 +612,7 @@ namespace renderkit {
 
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            std::cerr << "RenderManager::GetRenderInfo(): Display not opened."
-                      << std::endl;
+            m_log->error() << "RenderManager::GetRenderInfo(): Display not opened.";
             ret.clear();
             return ret;
         }
@@ -623,9 +620,8 @@ namespace renderkit {
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-            std::cerr << "RenderManager::GetRenderInfo(): client context "
-                         "update failed."
-                      << std::endl;
+            m_log->error() << "RenderManager::GetRenderInfo(): client context "
+                         "update failed.";
             ret.clear();
             return ret;
         }
@@ -661,9 +657,8 @@ namespace renderkit {
             // By passing m_callbacks.size(), we guarantee world space.
             if (!ConstructModelView(m_callbacks.size(), eye, params,
                                     info.pose)) {
-                std::cerr << "RenderManagerBase::GetRenderInfo(): Could not "
-                             "ConstructModelView"
-                          << std::endl;
+                m_log->error() << "RenderManagerBase::GetRenderInfo(): Could not "
+                             "ConstructModelView";
                 ret.clear();
                 return ret;
             }
@@ -718,25 +713,22 @@ namespace renderkit {
         bool flipInY) {
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            std::cerr
-                << "RenderManager::PresentRenderBuffers(): Display not opened."
-                << std::endl;
+            m_log->error()
+                << "RenderManager::PresentRenderBuffers(): Display not opened.";
             return false;
         }
 
         // Make sure we've registered some render buffers
         if (!m_renderBuffersRegistered) {
-            std::cerr << "RenderManager::PresentRenderBuffers(): Buffers not "
-                         "registered."
-                      << std::endl;
+            m_log->error() << "RenderManager::PresentRenderBuffers(): Buffers not "
+                         "registered.";
             return false;
         }
 
         // Initialize the presentation for the whole frame.
         if (!PresentFrameInitialize()) {
-            std::cerr << "RenderManager::PresentRenderBuffers(): "
-                         "PresentFrameInitialize() failed."
-                      << std::endl;
+            m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                         "PresentFrameInitialize() failed.";
             return false;
         }
 
@@ -767,9 +759,8 @@ namespace renderkit {
                 // Update the client context so we keep getting all required
                 // callbacks called during our busy-wait.
                 if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-                    std::cerr << "RenderManager::PresentRenderBuffers(): "
-                                 "client context update failed."
-                              << std::endl;
+                    m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                                 "client context update failed.";
                     return false;
                 }
 
@@ -801,9 +792,8 @@ namespace renderkit {
         if (m_params.m_enableTimeWarp) {
             if (!ComputeAsynchronousTimeWarps(renderInfoUsed, currentRenderInfo,
                                               2.0f)) {
-                std::cerr << "RenderManager::PresentRenderBuffers: Could not "
-                             "compute time warps"
-                          << std::endl;
+                m_log->error() << "RenderManager::PresentRenderBuffers: Could not "
+                             "compute time warps";
                 return false;
             }
         }
@@ -814,9 +804,8 @@ namespace renderkit {
 
             // Set up the appropriate display before setting up its eye(s).
             if (!PresentDisplayInitialize(display)) {
-                std::cerr << "RenderManager::PresentRenderBuffers(): "
-                             "PresentDisplayInitialize() failed."
-                          << std::endl;
+                m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                             "PresentDisplayInitialize() failed.";
                 return false;
             }
 
@@ -870,9 +859,9 @@ namespace renderkit {
                 p.m_index = eye;
                 p.m_rotateDegrees = rotate_pixels_degrees;
                 if (buffers.size() <= eye) {
-                    std::cerr << "RenderManager::PresentRenderBuffers: Given "
+                    m_log->error() << "RenderManager::PresentRenderBuffers: Given "
                               << GetNumEyes() << " eyes, but only "
-                              << buffers.size() << " buffers" << std::endl;
+                              << buffers.size() << " buffers";
                     return false;
                 }
                 p.m_buffer = buffers[eye];
@@ -883,9 +872,9 @@ namespace renderkit {
                 if (m_params.m_enableTimeWarp) {
                     // Apply the asynchronous time warp matrix for this eye.
                     if (m_asynchronousTimeWarps.size() <= eye) {
-                        std::cerr << "RenderManager::PresentRenderBuffers: "
+                        m_log->error() << "RenderManager::PresentRenderBuffers: "
                                      "Required Asynchronous Time "
-                                  << "Warp matrix not available" << std::endl;
+                                  << "Warp matrix not available";
                         return false;
                     }
                     p.m_timeWarp = &m_asynchronousTimeWarps[eye];
@@ -909,27 +898,24 @@ namespace renderkit {
                 p.m_normalizedCroppingViewport = bufferCrop;
 
                 if (!PresentEye(p)) {
-                    std::cerr << "RenderManager::PresentRenderBuffers(): "
-                                 "PresentEye failed."
-                              << std::endl;
+                    m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                                 "PresentEye failed.";
                     return false;
                 }
             }
 
             // We're done with this display.
             if (!PresentDisplayFinalize(display)) {
-                std::cerr << "RenderManager::PresentRenderBuffers(): "
-                             "PresentDisplayFinalize failed."
-                          << std::endl;
+                m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                             "PresentDisplayFinalize failed.";
                 return false;
             }
         }
 
         // Finalize the rendering for the whole frame.
         if (!PresentFrameFinalize()) {
-            std::cerr << "RenderManager::PresentRenderBuffers(): "
-                         "PresentFrameFinalize failed."
-                      << std::endl;
+            m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                         "PresentFrameFinalize failed.";
             return false;
         }
 
@@ -983,9 +969,8 @@ namespace renderkit {
             }
             return 1;
         default:
-            std::cerr << "RenderManager::GetNumDisplays(): Unrecognized value: "
-                      << m_params.m_displayConfiguration.getEyes().size()
-                      << std::endl;
+            m_log->error() << "RenderManager::GetNumDisplays(): Unrecognized value: "
+                      << m_params.m_displayConfiguration.getEyes().size();
         }
         return 1;
     }
@@ -1138,10 +1123,9 @@ namespace renderkit {
             yFactor = 0.5;
             break;
         default:
-            std::cerr << "RenderManager::ConstructViewportForRender: "
+            m_log->error() << "RenderManager::ConstructViewportForRender: "
                          "Unrecognized Display Mode"
-                      << m_params.m_displayConfiguration.getDisplayMode()
-                      << std::endl;
+                      << m_params.m_displayConfiguration.getDisplayMode();
             return false;
         }
 
@@ -1204,10 +1188,9 @@ namespace renderkit {
             }
             break;
         default:
-            std::cerr << "RenderManager::ConstructViewportForPresent: "
+            m_log->error() << "RenderManager::ConstructViewportForPresent: "
                          "Unrecognized Display Mode"
-                      << m_params.m_displayConfiguration.getDisplayMode()
-                      << std::endl;
+                      << m_params.m_displayConfiguration.getDisplayMode();
             return false;
         }
 
@@ -1333,8 +1316,8 @@ namespace renderkit {
 
         // Make sure that we have as many eyes as were asked for.
         if (whichEye >= GetNumEyes()) {
-            std::cerr << "RenderManager::ConstructModelView(): Eye index "
-                      << "out of bounds" << std::endl;
+            m_log->error() << "RenderManager::ConstructModelView(): Eye index "
+                      << "out of bounds";
             return false;
         }
 
@@ -2066,73 +2049,66 @@ namespace renderkit {
         if (distort.m_type ==
             RenderManager::DistortionParameters::rgb_symmetric_polynomials) {
             if (distort.m_distortionPolynomialRed.size() < 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
                              "red polynomial coefficients, found "
-                          << distort.m_distortionPolynomialRed.size()
-                          << std::endl;
+                          << distort.m_distortionPolynomialRed.size();
                 return ret;
             }
             if (distort.m_distortionPolynomialGreen.size() < 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
                              "green polynomial coefficients, found "
-                          << distort.m_distortionPolynomialGreen.size()
-                          << std::endl;
+                          << distort.m_distortionPolynomialGreen.size();
                 return ret;
             }
             if (distort.m_distortionPolynomialBlue.size() < 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
                              "blue polynomial coefficients, found "
-                          << distort.m_distortionPolynomialBlue.size()
-                          << std::endl;
+                          << distort.m_distortionPolynomialBlue.size();
                 return ret;
             }
             if (distort.m_distortionD.size() != 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2 "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
                              "distortion coefficients, found "
-                          << distort.m_distortionD.size() << std::endl;
+                          << distort.m_distortionD.size();
                 return ret;
             }
         } else if (distort.m_type ==
                    RenderManager::DistortionParameters::mono_point_samples) {
             if (distort.m_monoPointSamples.size() != 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2 "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
                              "meshes, found "
-                          << distort.m_monoPointSamples.size() << std::endl;
+                          << distort.m_monoPointSamples.size();
                 return ret;
             }
             // Add a new interpolator to be used when we're finding
             // mesh coordinates.
             if (distort.m_monoPointSamples[eye].size() < 3) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need "
                               "3+ points, found "
-                          << distort.m_monoPointSamples[eye].size()
-                          << std::endl;
+                          << distort.m_monoPointSamples[eye].size();
                 return ret;
             }
             for (size_t i = 0; i < distort.m_monoPointSamples[eye].size();
                   i++) {
                 if (distort.m_monoPointSamples[eye][i].size() != 2) {
-                    std::cerr
+                    m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need 2 "
                         << "points in the mesh, found "
-                        << distort.m_monoPointSamples[eye][i].size()
-                        << std::endl;
+                        << distort.m_monoPointSamples[eye][i].size();
                     return ret;
                 }
                 if (distort.m_monoPointSamples[eye][i][0].size() != 2) {
-                    std::cerr
+                    m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need 2 "
                         << "values in input point, found "
-                        << distort.m_monoPointSamples[eye][i][0].size()
-                        << std::endl;
+                        << distort.m_monoPointSamples[eye][i][0].size();
                     return ret;
                 }
                 if (distort.m_monoPointSamples[eye][i][1].size() != 2) {
-                    std::cerr
+                    m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need 2 "
                         << "values in output point, found "
-                        << distort.m_monoPointSamples[eye][i][1].size()
-                        << std::endl;
+                        << distort.m_monoPointSamples[eye][i][1].size();
                     return ret;
                 }
             }
@@ -2144,61 +2120,56 @@ namespace renderkit {
         else if (distort.m_type ==
                    RenderManager::DistortionParameters::rgb_point_samples) {
             if (distort.m_rgbPointSamples.size() != 3) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 3 "
+                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 3 "
                              "color meshes, found "
-                          << distort.m_rgbPointSamples.size() << std::endl;
+                          << distort.m_rgbPointSamples.size();
                 return ret;
             }
             for (size_t clr = 0; clr < 3; clr++) {
                 if (distort.m_rgbPointSamples[clr].size() != 2) {
-                    std::cerr << "RenderManager::ComputeDistortionMesh: Need 2 "
+                    m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
                                  "eye meshes, found "
-                              << distort.m_rgbPointSamples[clr].size()
-                              << std::endl;
+                              << distort.m_rgbPointSamples[clr].size();
                     return ret;
                 }
                 // Add a new interpolator to be used when we're finding
                 // mesh coordinates.
                 if (distort.m_rgbPointSamples[clr][eye].size() < 3) {
-                    std::cerr
+                    m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need "
                             "3+ points, found "
-                        << distort.m_rgbPointSamples[clr][eye].size()
-                        << std::endl;
+                        << distort.m_rgbPointSamples[clr][eye].size();
                     return ret;
                 }
                 for (size_t i = 0;
                       i < distort.m_rgbPointSamples[clr][eye].size(); i++) {
                     if (distort.m_rgbPointSamples[clr][eye][i].size() !=
                         2) {
-                        std::cerr
+                        m_log->error()
                             << "RenderManager::ComputeDistortionMesh: Need "
                                 "2 "
                             << "points in the mesh, found "
-                            << distort.m_rgbPointSamples[clr][eye][i].size()
-                            << std::endl;
+                            << distort.m_rgbPointSamples[clr][eye][i].size();
                         return ret;
                     }
                     if (distort.m_rgbPointSamples[clr][eye][i][0].size() !=
                         2) {
-                        std::cerr
+                        m_log->error()
                             << "RenderManager::ComputeDistortionMesh: Need "
                                 "2 "
                             << "values in input point, found "
                             << distort.m_rgbPointSamples[clr][eye][i][0]
-                                    .size()
-                            << std::endl;
+                                    .size();
                         return ret;
                     }
                     if (distort.m_rgbPointSamples[clr][eye][i][1].size() !=
                         2) {
-                        std::cerr
+                        m_log->error()
                             << "RenderManager::ComputeDistortionMesh: Need "
                                 "2 "
                             << "values in output point, found "
                             << distort.m_rgbPointSamples[clr][eye][i][1]
-                                    .size()
-                            << std::endl;
+                                    .size();
                         return ret;
                     }
                 }
@@ -2209,8 +2180,8 @@ namespace renderkit {
                   UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
             }
         } else {
-            std::cerr << "RenderManager::ComputeDistortionMesh: Unrecognized "
-                      << "distortion parameter type" << std::endl;
+            m_log->error() << "RenderManager::ComputeDistortionMesh: Unrecognized "
+                      << "distortion parameter type";
             return ret;
         }
 
@@ -2309,17 +2280,16 @@ namespace renderkit {
             }
         } break;
         case RADIAL: {
-            std::cerr
+            m_log->error()
                 << "RenderManager::ComputeDistortionMesh: Radial mesh type "
-                << "not yet implemented" << std::endl;
+                << "not yet implemented";
 
             // @todo Scale the aspect ratio of the rings around the center of
             // projection so that they will be round in the visible display.
         } break;
         default:
-            std::cerr << "RenderManager::ComputeDistortionMesh: Unsupported "
-                         "mesh type: "
-                      << type << std::endl;
+            m_log->error() << "RenderManager::ComputeDistortionMesh: Unsupported "
+                         "mesh type: " << type;
         }
 
         // Clear any created interpolators, freeing up their memory

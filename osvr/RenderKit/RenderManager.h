@@ -34,6 +34,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/Util/TimeValueC.h>
+#include <osvr/Util/Log.h>
 
 // Standard includes
 #include <vector>
@@ -790,6 +791,9 @@ namespace renderkit {
         /// @brief Constructor given OSVR context and parameters
         RenderManager(OSVR_ClientContext context,
                       const ConstructorParameters& p);
+
+        /// Logger to use for writing information, warning, and errors.
+        osvr::util::log::LoggerPtr m_log;
 
         /// Bool telling whether we're doing okay.  When we get a failure
         /// that will prevent rendering, this will be set to false.
