@@ -102,7 +102,6 @@ namespace renderkit {
     /// Structure that holds timing information about the system.
     /// Each of these times will have the value (0,0) if they are
     /// not available from a particular RenderManager.
-    /// @todo Move these into a C API file
     typedef struct {
         OSVR_TimeValue
             hardwareDisplayInterval; //< Time between refresh of display device
@@ -208,8 +207,6 @@ namespace renderkit {
     /// well, but will also have already been set.
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
-    /// @todo Use this struct as the return info in the callback above,
-    /// and modify examples to go one level deeper to get the info.
     typedef struct {
         GraphicsLibrary library; //< Graphics library context to use
         OSVR_ViewportDescription
@@ -677,7 +674,6 @@ namespace renderkit {
                                        /// screen?
             int m_windowXPosition;     //< Where to put the window
             int m_windowYPosition;     //< Where to put the window
-            /// @todo Implement this
             Display_Rotation m_displayRotation; //< Present mode: Rotate display
             // about Z when presenting
             unsigned m_bitsPerColor; //< Color depth of the window we want
@@ -989,10 +985,6 @@ namespace renderkit {
         /// location.
         /// Be sure to modify (transpose, etc.) as needed for other rendering
         /// libraries.
-        /// @todo Can we make an opaque Eigen matrix/transform type so that we
-        /// don't need to copy in the computation and get a more useful type but
-        /// also
-        /// don't need to #include the Eigen headers in this class?
         typedef struct { float data[16]; } matrix16;
         std::vector<matrix16> m_asynchronousTimeWarps;
 
@@ -1431,10 +1423,6 @@ namespace renderkit {
     createRenderManager(OSVR_ClientContext context,
                         const std::string& renderLibraryName,
                         GraphicsLibrary graphicsLibrary = GraphicsLibrary());
-
-    //=========================================================================
-    /// C API for the RenderManager (will be in a separate file).
-    /// @todo
 
 } // namespace renderkit
 } // namespace osvr
