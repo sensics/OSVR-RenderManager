@@ -42,7 +42,7 @@ namespace renderkit {
         // Is the renderer currently working?
         bool OSVR_RENDERMANAGER_EXPORT doingOkay() override {
             // We check both our harnessed renderer and us.
-            if (m_D3D11Renderer->doingOkay() && m_doingOkay) {
+            if (m_D3D11Renderer->doingOkay() && RenderManager::doingOkay()) {
                 return true;
             } else {
                 return false;
@@ -70,7 +70,6 @@ namespace renderkit {
             ConstructorParameters p,
             std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness);
 
-        bool m_doingOkay;   //< Are we doing okay?
         bool m_displayOpen; //< Has our display been opened?
 
         // We harness a D3D11 DirectMode renderer to do our

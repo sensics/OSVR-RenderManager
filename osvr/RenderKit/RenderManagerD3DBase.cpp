@@ -139,7 +139,6 @@ namespace renderkit {
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.
-        m_doingOkay = true;
         m_displayOpen = false;
         m_D3D11device = nullptr;
         m_D3D11Context = nullptr;

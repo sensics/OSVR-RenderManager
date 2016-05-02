@@ -231,8 +231,12 @@ namespace renderkit {
         /// correctly.
         virtual OSVR_RENDERMANAGER_EXPORT ~RenderManager();
 
-        /// Is the renderer currently working?
-        virtual bool OSVR_RENDERMANAGER_EXPORT doingOkay() = 0;
+        /// Is the renderer currently working?  Derived classes can override
+        /// this to do additional checking as needed, but should also call the
+        /// base-class method.
+        virtual bool OSVR_RENDERMANAGER_EXPORT doingOkay() {
+          return m_doingOkay;
+        }
 
         ///-------------------------------------------------------------
         /// @brief Did we get all we asked for, some of it, or nothing
@@ -790,6 +794,10 @@ namespace renderkit {
         /// @brief Constructor given OSVR context and parameters
         RenderManager(OSVR_ClientContext context,
                       const ConstructorParameters& p);
+
+        /// Bool telling whether we're doing okay.  When we get a failure
+        /// that will prevent rendering, this will be set to false.
+        bool m_doingOkay;
 
         /// Mutex to provide thread safety to this class and its
         /// subclasses.  NOTE: All subclasses must lock this mutex

@@ -84,9 +84,6 @@ namespace renderkit {
       public:
         virtual ~RenderManagerOpenGL();
 
-        // Is the renderer currently working?
-        bool doingOkay() override { return m_doingOkay; }
-
         // Opens the D3D renderer we're going to use.
         OpenResults OpenDisplay() override;
 
@@ -103,7 +100,6 @@ namespace renderkit {
                 distort //< Distortion parameters
             ) override;
 
-        bool m_doingOkay;   //< Are we doing okay?
         bool m_displayOpen; //< Has our display been opened?
 
         // Methods to open and close a window, used to get
