@@ -105,7 +105,7 @@ namespace osvr {
                 std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo>::iterator i;
                 for (i = mBufferMap.begin(); i != mBufferMap.end(); i++) {
                   i->second.atwBuffer.D3D11->colorBuffer->Release();
-                  i->second.atwBuffer.D3D11->colorBufferView->Release();
+                  // We don't release the colorBufferView because we didn't create one.
                   if (i->second.textureCopy != nullptr) {
                     i->second.textureCopy->Release();
                   }
@@ -606,19 +606,15 @@ namespace osvr {
                     renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
                     renderTargetViewDesc.Texture2D.MipSlice = 0;
 
-                    // Create the render target view.
-                    ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
-                    hr = atwDevice->CreateRenderTargetView(texture2D, &renderTargetViewDesc, &renderTargetView);
-                    if (FAILED(hr)) {
-                      m_log->error() << "RenderManagerD3D11ATW::"
-                        << "RegisterRenderBuffersInternal: Could not create render target for eye " << i;
-                      m_doingOkay = false;
-                      return false;
-                    }
-
                     newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
                     newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
-                    newInfo.atwBuffer.D3D11->colorBufferView = renderTargetView;
+
+                    // We do not need a render target view for the ATW thread -- it will
+                    // only be reading from the buffer, not rendering into it.  Our base
+                    // class will create our RenderTargetView the first time the app calls
+                    // Render().
+                    newInfo.atwBuffer.D3D11->colorBufferView = nullptr; // We don't need this.
+
                     renderBuffers.push_back(newInfo.atwBuffer);
                   }
 
