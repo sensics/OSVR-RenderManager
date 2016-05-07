@@ -448,6 +448,7 @@ namespace osvr {
                   {
                     auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
                     ID3D11Texture2D *texture2D = nullptr;
+                    m_log->flush();
 
                     if (appWillNotOverwriteBeforeNewPresent) {
                       // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
