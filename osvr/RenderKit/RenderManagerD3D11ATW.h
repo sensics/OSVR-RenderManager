@@ -183,6 +183,12 @@ namespace osvr {
                   std::vector<OSVR_ViewportDescription>(),
                 bool flipInY = false) override {
 
+                  if (!m_renderBuffersRegistered) {
+                    m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal: "
+                      << "Render buffers not yet registered, ignoring present request.";
+                    return true;
+                  }
+
                   // We use a D3D query placed right at the end of rendering to make
                   // sure we wait until rendering has finished on our buffers before
                   // handing them over to the ATW thread.  We flush our queue so that
