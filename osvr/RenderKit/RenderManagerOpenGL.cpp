@@ -164,10 +164,9 @@ namespace renderkit {
                 glDeleteTextures(1, &m_colorBuffers[i].OpenGL->colorBufferName);
                 delete m_colorBuffers[i].OpenGL;
                 glDeleteRenderbuffers(1, &m_depthBuffers[i]);
-                glDeleteVertexArrays(1, &m_distortVAO[i]);
-                glDeleteBuffers(1, &m_distortBuffer[i]);
-                delete[] m_triangleBuffer[i];
             }
+
+            m_distortionMeshBuffer.clear();
 
             /// @todo Clean up anything else we need to
 
@@ -609,96 +608,146 @@ namespace renderkit {
         return true;
     }
 
+    RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer()
+        : VAO(0)
+        , vertexBuffer(0)
+        , indexBuffer(0)
+    {   }
+
+    RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer(
+        DistortionMeshBuffer && rhs) {
+        VAO = std::move(rhs.VAO);
+        vertexBuffer = std::move(rhs.vertexBuffer);
+        indexBuffer = std::move(rhs.indexBuffer);
+        vertices = std::move(rhs.vertices);
+        indices = std::move(rhs.indices);
+    }
+
+    RenderManagerOpenGL::DistortionMeshBuffer::~DistortionMeshBuffer() {
+        Clear();
+    }
+
+    RenderManagerOpenGL::DistortionMeshBuffer &
+        RenderManagerOpenGL::DistortionMeshBuffer::operator = (
+        DistortionMeshBuffer && rhs) {
+        if (&rhs != this) {
+            Clear();
+            VAO = std::move(rhs.VAO);
+            vertexBuffer = std::move(rhs.vertexBuffer);
+            indexBuffer = std::move(rhs.indexBuffer);
+            vertices = std::move(rhs.vertices);
+            indices = std::move(rhs.indices);
+        }
+        return *this;
+    }
+
+    void RenderManagerOpenGL::DistortionMeshBuffer::Clear() {
+        if (VAO) {
+            glDeleteVertexArrays(1, &VAO);
+            VAO = 0;
+        }
+        if (vertexBuffer) {
+            glDeleteBuffers(1, &vertexBuffer);
+            vertexBuffer = 0;
+        }
+        if (indexBuffer) {
+            glDeleteBuffers(1, &indexBuffer);
+            indexBuffer = 0;
+        }
+        vertices.clear();
+        indices.clear();
+    }
+
     bool RenderManagerOpenGL::UpdateDistortionMeshesInternal(
         DistortionMeshType type //< Type of mesh to produce
         ,
         std::vector<DistortionParameters> const&
             distort //< Distortion parameters
         ) {
+
         // Clear the triangle and quad buffers if we have created them before.
-        m_numTriangles.clear();
-        m_triangleBuffer.clear();
-        for (size_t i = 0; i < m_distortVAO.size(); i++) {
-            glDeleteVertexArrays(1, &m_distortVAO[i]);
-        }
-        m_distortVAO.clear();
-        for (size_t i = 0; i < m_distortBuffer.size(); i++) {
-            glDeleteBuffers(1, &m_distortBuffer[i]);
-        }
-        m_distortBuffer.clear();
+        m_distortionMeshBuffer.clear();
 
         // Construct the data buffer that will hold the vertices and texture
-        // coordinates
-        // for R,G,B distortion mapping.  Fill it in with the vertices in the
-        // first
-        // block, the red texture coordinates in the next, then the green and
-        // then
-        // the blue.
-        size_t numEyes = GetNumEyes();
+        // coordinates for R,G,B distortion mapping.
+
+        size_t const numEyes = GetNumEyes();
         if (numEyes > distort.size()) {
-            std::cerr << "RenderManagerOpenGL::UpdateDistortionMesh: Not "
-                         "enough distortion "
-                      << "parameters for all eyes" << std::endl;
+            std::cerr << "RenderManagerD3D11Base::UpdateDistortionMesh: "
+                "Not enough distortion parameters for all eyes" << std::endl;
             removeOpenGLContexts();
             return false;
         }
+
+        m_distortionMeshBuffer.resize(numEyes);
         for (size_t eye = 0; eye < numEyes; eye++) {
 
-            m_numTriangles.push_back(0);
-            m_triangleBuffer.push_back(nullptr);
+            auto & meshBuffer = m_distortionMeshBuffer[eye];
 
-            std::vector<RenderManager::DistortionMeshVertex> mesh =
-                ComputeDistortionMesh(eye, type, distort[eye]);
-            m_numTriangles[eye] = mesh.size() / 3;
-            if (m_numTriangles[eye] == 0) {
+            // Compute the distortion mesh
+            DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye]);
+            if (mesh.vertices.empty()) {
                 std::cerr << "RenderManagerOpenGL::UpdateDistortionMesh: Could "
                              "not create mesh "
                           << "for eye " << eye << std::endl;
                 removeOpenGLContexts();
                 return false;
             }
-            // 4 floats for position, 2 for each texture coordinate (R,G,B)
-            m_triangleBuffer[eye] =
-                new GLfloat[m_numTriangles[eye] * 3 * (4 + 2 + 2 + 2)];
-            GLfloat* cur = m_triangleBuffer[eye];
-            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
-                for (size_t vert = 0; vert < 3; vert++) {
-                    *(cur++) = mesh[3 * tri + vert].m_pos[0];
-                    *(cur++) = mesh[3 * tri + vert].m_pos[1];
-                    *(cur++) = 0; // Z = 0
-                    *(cur++) = 1; // Homogeneous coordinate = 1
-                }
-            }
-            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
-                for (size_t vert = 0; vert < 3; vert++) {
-                    *(cur++) = mesh[3 * tri + vert].m_texRed[0];
-                    *(cur++) = mesh[3 * tri + vert].m_texRed[1];
-                }
-            }
-            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
-                for (size_t vert = 0; vert < 3; vert++) {
-                    *(cur++) = mesh[3 * tri + vert].m_texGreen[0];
-                    *(cur++) = mesh[3 * tri + vert].m_texGreen[1];
-                }
-            }
-            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
-                for (size_t vert = 0; vert < 3; vert++) {
-                    *(cur++) = mesh[3 * tri + vert].m_texBlue[0];
-                    *(cur++) = mesh[3 * tri + vert].m_texBlue[1];
-                }
+
+            // Transcribe the vertex data into the correct format
+            meshBuffer.vertices.resize(mesh.vertices.size());
+            for (size_t i = 0; i < meshBuffer.vertices.size(); ++i) {
+                auto & meshVert = meshBuffer.vertices[i];
+                auto const & v = mesh.vertices[i];
+                meshVert.pos[0] = v.m_pos[0];
+                meshVert.pos[1] = v.m_pos[1];
+                meshVert.pos[2] = 0; // Z = 0
+                meshVert.pos[3] = 1; // Homogeneous coordinate = 1
+
+                meshVert.texRed[0] = v.m_texRed[0];
+                meshVert.texRed[1] = v.m_texRed[1];
+
+                meshVert.texGreen[0] = v.m_texGreen[0];
+                meshVert.texGreen[1] = v.m_texGreen[1];
+
+                meshVert.texBlue[0] = v.m_texBlue[0];
+                meshVert.texBlue[1] = v.m_texBlue[1];
             }
 
+            // Copy the index data
+            meshBuffer.indices = mesh.indices;
+
             // Construct the geometry we're going to render into the eyes
-            GLuint distortBuffer, distortVAO;
-            glGenVertexArrays(1, &distortVAO);
-            glBindVertexArray(distortVAO);
-            glGenBuffers(1, &distortBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, distortBuffer);
-            glBufferData(GL_ARRAY_BUFFER, m_numTriangles[eye] * 3 *
-                                              (4 + 2 + 2 + 2) * sizeof(GLfloat),
-                         m_triangleBuffer[eye], GL_STATIC_DRAW);
-            m_distortBuffer.push_back(distortBuffer);
-            m_distortVAO.push_back(distortVAO);
+            glGenVertexArrays(1, &meshBuffer.VAO);
+            glBindVertexArray(meshBuffer.VAO);
+            
+            glGenBuffers(1, &meshBuffer.vertexBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
+            glBufferData(GL_ARRAY_BUFFER,
+                sizeof(DistortionVertex) * meshBuffer.vertices.size(),
+                &meshBuffer.vertices[0], GL_STATIC_DRAW);
+
+            size_t const stride = sizeof(DistortionVertex);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+                (void*)offsetof(DistortionVertex,pos));
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+                (void*)offsetof(DistortionVertex, texRed));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
+                (void*)offsetof(DistortionVertex, texGreen));
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+                (void*)offsetof(DistortionVertex, texBlue));
+            glEnableVertexAttribArray(3);
+
+            glGenBuffers(1, &meshBuffer.indexBuffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                sizeof(decltype(meshBuffer.indices[0])) * meshBuffer.indices.size(),
+                &meshBuffer.indices[0], GL_STATIC_DRAW);
+
+            glBindVertexArray(0);
         }
 
         return true;
@@ -932,27 +981,9 @@ namespace renderkit {
           return false;
         }
 
-        char* base = nullptr;
-        size_t vertBase = 0;
-        size_t redBase =
-            vertBase + m_numTriangles[params.m_index] * 3 * 4 * sizeof(GLfloat);
-        size_t greenBase =
-            redBase + m_numTriangles[params.m_index] * 3 * 2 * sizeof(GLfloat);
-        size_t blueBase =
-            greenBase +
-            m_numTriangles[params.m_index] * 3 * 2 * sizeof(GLfloat);
-        glBindVertexArray(m_distortVAO[params.m_index]);
-        glBindBuffer(GL_ARRAY_BUFFER, m_distortBuffer[params.m_index]);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, base + vertBase);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, base + redBase);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, base + greenBase);
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, base + blueBase);
-        glEnableVertexAttribArray(3);
-        glDrawArrays(GL_TRIANGLES, 0,
-                     static_cast<GLuint>(m_numTriangles[params.m_index] * 3));
+        auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
+        glBindVertexArray(meshBuffer.VAO);
+        glDrawElements(GL_TRIANGLES, meshBuffer.indices.size(), GL_UNSIGNED_SHORT, 0);
 
         // Put rendering parameters back the way they were before we set them
         // above.

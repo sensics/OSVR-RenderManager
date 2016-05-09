@@ -173,18 +173,33 @@ namespace renderkit {
         std::vector<GLuint> m_depthBuffers; //< Depth/stencil buffers to hand to
                                             /// render callbacks
 
+        struct DistortionVertex {
+            GLfloat pos[4];
+            GLfloat texRed[2];
+            GLfloat texGreen[2];
+            GLfloat texBlue[2];
+        };
+
+        struct DistortionMeshBuffer {
+            GLuint VAO;
+            GLuint vertexBuffer;
+            GLuint indexBuffer;
+            std::vector<DistortionVertex> vertices;
+            std::vector<uint16_t> indices;
+
+            DistortionMeshBuffer();
+            DistortionMeshBuffer(DistortionMeshBuffer && rhs);
+            ~DistortionMeshBuffer();
+            DistortionMeshBuffer & operator=(DistortionMeshBuffer && rhs);
+
+            void Clear();
+        };
+
         // Vertex/texture coordinate buffer to render into final windows, one
         // per eye
         // @todo One per eye/display combination in case of multiple displays
         // per eye
-        std::vector<GLuint>
-            m_distortBuffer; //< Buffer objects to point to geometry to render
-        std::vector<GLuint>
-            m_distortVAO; //< Vertex array objects for the geometry to render
-        std::vector<GLfloat*>
-            m_triangleBuffer; //< Pointer to our triangle array buffers
-        std::vector<size_t>
-            m_numTriangles; //< Number of triangles in our array buffers
+        std::vector<DistortionMeshBuffer> m_distortionMeshBuffer;
 
         //===================================================================
         // Overloaded render functions from the base class.

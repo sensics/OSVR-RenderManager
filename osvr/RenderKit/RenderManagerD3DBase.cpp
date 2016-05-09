@@ -152,12 +152,7 @@ namespace renderkit {
 
     RenderManagerD3D11Base::~RenderManagerD3D11Base() {
         // Release any prior buffers we allocated
-        for (size_t i = 0; i < m_quadVertexBuffer.size(); i++) {
-            m_quadVertexBuffer[i]->Release();
-        }
-        for (size_t i = 0; i < m_triangleBuffer.size(); i++) {
-            delete[] m_triangleBuffer[i];
-        }
+        m_distortionMeshBuffer.clear();
 
         for (size_t i = 0; i < m_renderBuffers.size(); i++) {
             m_renderBuffers[i].D3D11->colorBuffer->Release();
@@ -852,37 +847,31 @@ namespace renderkit {
         std::vector<DistortionParameters> const&
             distort //< Distortion parameters
         ) {
-        // Release any prior buffers we already allocated
-        for (size_t i = 0; i < m_quadVertexBuffer.size(); i++) {
-            m_quadVertexBuffer[i]->Release();
-        }
-        for (size_t i = 0; i < m_triangleBuffer.size(); i++) {
-            delete[] m_triangleBuffer[i];
-        }
 
-        // Clear the triangle and quad buffers
-        m_numTriangles.clear();
-        m_triangleBuffer.clear();
-        m_quadVertexBuffer.clear();
-        m_quadVertexCount.clear();
+        // Release any prior buffers we already allocated
+        m_distortionMeshBuffer.clear();
 
         HRESULT hr;
 
         // Create distortion meshes for each of the eyes.
-        size_t numEyes = m_params.m_displayConfiguration.getEyes().size();
-        for (size_t eye = 0; eye < distort.size(); eye++) {
-            m_numTriangles.push_back(0);
-            m_triangleBuffer.push_back(nullptr);
+        size_t const numEyes = GetNumEyes();
+        if (numEyes > distort.size()) {
+            std::cerr << "RenderManagerD3D11Base::UpdateDistortionMesh: "
+                "Not enough distortion parameters for all eyes" << std::endl;
+            return false;
+        }
+
+        //size_t numEyes = m_params.m_displayConfiguration.getEyes().size();
+        m_distortionMeshBuffer.resize(numEyes);
+        for (size_t eye = 0; eye < numEyes; eye++) {
+            auto & meshBuffer = m_distortionMeshBuffer[eye];
 
             // Construct a distortion mesh for this eye using the RenderManager
             // standard, which is an OpenGL-compatible mesh.
-            std::vector<RenderManager::DistortionMeshVertex> mesh =
-                ComputeDistortionMesh(eye, type, distort[eye]);
-            m_numTriangles[eye] = mesh.size() / 3;
-            if (m_numTriangles[eye] == 0) {
+            DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye]);
+            if (mesh.vertices.empty()) {
                 std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
-                             "create mesh "
-                          << "for eye " << eye << std::endl;
+                             "create mesh for eye " << eye << std::endl;
                 return false;
             }
 
@@ -891,41 +880,44 @@ namespace renderkit {
             // texture coordinate 0 at Y spatial coordinate 1 and texture
             // coordinate 1 at Y spatial coordinate -1; this is not a simple
             // inversion but  rather a remapping.
-            m_triangleBuffer[eye] =
-                new DistortionVertex[m_numTriangles[eye] * 3];
-            for (size_t tri = 0; tri < m_numTriangles[eye]; tri++) {
-                for (size_t vert = 0; vert < 3; vert++) {
-                    DistortionVertex& v = m_triangleBuffer[eye][tri * 3 + vert];
-                    v.Pos.x = mesh[3 * tri + vert].m_pos[0];
-                    v.Pos.y = mesh[3 * tri + vert].m_pos[1];
+            meshBuffer.vertices.resize(mesh.vertices.size());
+            for (size_t i = 0; i < meshBuffer.vertices.size(); i++) {
+                DistortionVertex& v = meshBuffer.vertices[i];
+                auto const & meshVertex = mesh.vertices[i];
+                v.Pos.x = meshVertex.m_pos[0];
+                v.Pos.y = meshVertex.m_pos[1];
                     v.Pos.z = 0; // Z = 0, and vertices in mesh only have 2
                                  // coordinates.
 
-                    v.TexR.x = mesh[3 * tri + vert].m_texRed[0];
+                v.TexR.x = meshVertex.m_texRed[0];
                     v.TexR.y =
                         RenderManager::DistortionMeshVertex::flipTexCoord(
-                            mesh[3 * tri + vert].m_texRed[1]);
+                    meshVertex.m_texRed[1]);
 
-                    v.TexG.x = mesh[3 * tri + vert].m_texGreen[0];
+                v.TexG.x = meshVertex.m_texGreen[0];
                     v.TexG.y =
                         RenderManager::DistortionMeshVertex::flipTexCoord(
-                            mesh[3 * tri + vert].m_texGreen[1]);
+                    meshVertex.m_texGreen[1]);
 
-                    v.TexB.x = mesh[3 * tri + vert].m_texBlue[0];
+                v.TexB.x = meshVertex.m_texBlue[0];
                     v.TexB.y =
                         RenderManager::DistortionMeshVertex::flipTexCoord(
-                            mesh[3 * tri + vert].m_texBlue[1]);
-                }
+                    meshVertex.m_texBlue[1]);
             }
 
-            ID3D11Buffer* quadVertexBuffer;
-            CD3D11_BUFFER_DESC bufferDesc(
-                static_cast<UINT>(sizeof(DistortionVertex) *
-                                  m_numTriangles[eye] * 3),
+            // Copy the index data
+            meshBuffer.indices = mesh.indices;
+
+            // Create the D3D resource for the vertex buffer
+            {
+                ID3D11Buffer* vertexBuffer;
+                CD3D11_BUFFER_DESC vertexBufferDesc(
+                    static_cast<UINT>(sizeof(decltype(meshBuffer.vertices[0]))
+                                      * meshBuffer.vertices.size()),
                 D3D11_BIND_VERTEX_BUFFER);
-            D3D11_SUBRESOURCE_DATA subResData = {m_triangleBuffer[eye], 0, 0};
-            hr = m_D3D11device->CreateBuffer(&bufferDesc, &subResData,
-                                             &quadVertexBuffer);
+                D3D11_SUBRESOURCE_DATA subResData = { &meshBuffer.vertices[0], 0, 0 };
+                hr = m_D3D11device->CreateBuffer(&vertexBufferDesc, &subResData,
+                    &vertexBuffer);
             if (FAILED(hr)) {
                 std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
                              "create vertex buffer"
@@ -934,9 +926,30 @@ namespace renderkit {
                           << std::endl;
                 return false;
             }
-            m_quadVertexCount.push_back(
-                static_cast<UINT>(m_numTriangles[eye] * 3));
-            m_quadVertexBuffer.push_back(quadVertexBuffer);
+                meshBuffer.vertexBuffer.Attach(vertexBuffer);
+                vertexBuffer = nullptr; // Attach took ownership
+            }
+
+            // Create the D3D resource for the index buffer
+            {
+                ID3D11Buffer* indexBuffer;
+                CD3D11_BUFFER_DESC indexBufferDesc(
+                    static_cast<UINT>(sizeof(decltype(meshBuffer.indices[0]))
+                                      * meshBuffer.indices.size()),
+                    D3D11_BIND_INDEX_BUFFER);
+                D3D11_SUBRESOURCE_DATA subResData = { &meshBuffer.indices[0], 0, 0 };
+                hr = m_D3D11device->CreateBuffer(&indexBufferDesc, &subResData, &indexBuffer);
+                if (FAILED(hr)) {
+                    std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
+                        "create index buffer"
+                        << std::endl;
+                    std::cerr << "  Direct3D error type: " << StringFromD3DError(hr)
+                        << std::endl;
+                    return false;
+                }
+                meshBuffer.indexBuffer.Attach(indexBuffer);
+                indexBuffer = nullptr; // Attach took ownership
+            }
         }
         return true;
     }
@@ -1159,11 +1172,21 @@ namespace renderkit {
             0, 1, m_cbPerObjectBuffer.GetAddressOf());
 
         //====================================================================
+        // Which distortion mesh to use
+        auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
+
+        //====================================================================
         // Set vertex buffer
         UINT stride = sizeof(DistortionVertex);
         UINT offset = 0;
+        ID3D11Buffer * vertexBuffer[1] = { meshBuffer.vertexBuffer.Get() };
         m_D3D11Context->IASetVertexBuffers(
-            0, 1, &m_quadVertexBuffer[params.m_index], &stride, &offset);
+            0, 1, vertexBuffer, &stride, &offset);
+
+        //====================================================================
+        // Set index buffer
+        m_D3D11Context->IASetIndexBuffer(meshBuffer.indexBuffer.Get(),
+            DXGI_FORMAT_R16_UINT, 0);
 
         //====================================================================
         // Create the shader resource view.
@@ -1201,7 +1224,7 @@ namespace renderkit {
         typedef ID3D11SamplerState *SamplerConstPtr;
         SamplerConstPtr states[] {m_renderTextureSamplerState.Get()};
         m_D3D11Context->PSSetSamplers(0, 1, states);
-        m_D3D11Context->Draw(m_quadVertexCount[params.m_index], 0);
+        m_D3D11Context->DrawIndexed((UINT)meshBuffer.indices.size(), 0, 0);
 
         // Clean up after ourselves.
         renderTextureResourceView->Release();

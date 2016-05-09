@@ -1244,6 +1244,12 @@ namespace renderkit {
             Float2 m_texBlue;         //< U,V
         };
 
+        class DistortionMesh {
+          public:
+            std::vector<DistortionMeshVertex> vertices;
+            std::vector<uint16_t> indices;
+        };
+
         /// @brief Constructs a mesh to correct lens distortions
         ///  Constructs a set of vertices in the range (-1,-1) to (1,1),
         /// with (-1,-1) at the lower-left corner and (1,1) at the upper
@@ -1262,7 +1268,7 @@ namespace renderkit {
         /// as a set of triangles to the rendering system.
         ///  @todo Consider switching to an indexed-based mesh.
         ///  @return Vector of triangles (sets of 3 vertices), empty on failure.
-        std::vector<DistortionMeshVertex> ComputeDistortionMesh(
+        DistortionMesh ComputeDistortionMesh(
             size_t eye //< Which eye?
             , DistortionMeshType type //< Type of mesh to produce
             , DistortionParameters distort //< Distortion parameters
