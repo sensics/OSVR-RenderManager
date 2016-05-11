@@ -239,21 +239,15 @@ namespace renderkit {
             return false;
         }
 
+        // Save and restore (in Finalize) the current rendering state
+        // so we don't clobber end-user settings here.
+        m_D3D11Context->OMGetRenderTargets(m_numStashedViews,
+          m_stashedRenderTargetViews, &m_stashedDepthStencilView);
+
         // We want to render to the on-screen display now.  The user will have
         // switched this to their views.
-        // Do not need to clear depth/stencil for final display because we
-        // set the mode to always overwrite.
-        // @todo Put back the original one in PresentDisplayFinalize.
         m_D3D11Context->OMSetRenderTargets(
             1, &m_displays[display].m_renderTargetView, nullptr);
-        m_D3D11Context->OMSetDepthStencilState(m_depthStencilStateForPresent,
-                                               1);
-
-        // @todo Turn off backface culling in case user has switched the
-        // front/back which will keep our quads from being rendered.
-
-        // @todo Save and restore (in Finalize) the current rendering state
-        // so we don't clobber end-user settings here.
 
         return true;
     }
@@ -273,6 +267,20 @@ namespace renderkit {
             vblanks = 1;
         }
         m_displays[display].m_swapChain->Present(vblanks, 0);
+
+        // Restore the render target views to what they were before we
+        // changed them.
+        m_D3D11Context->OMSetRenderTargets(m_numStashedViews,
+          m_stashedRenderTargetViews, m_stashedDepthStencilView);
+        for (size_t i = 0; i < m_numStashedViews; i++) {
+          if (m_stashedRenderTargetViews[i]) {
+            m_stashedRenderTargetViews[i]->Release();
+          }
+        }
+        if (m_stashedDepthStencilView) {
+          m_stashedDepthStencilView->Release();
+        }
+
         return true;
     }
 

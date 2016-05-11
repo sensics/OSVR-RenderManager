@@ -23,6 +23,7 @@ Sensics, Inc.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <osvr/Util/Finally.h>
 #include "RenderManagerD3DBase.h"
 #include "GraphicsLibraryD3D11.h"
 #include <boost/assert.hpp>
@@ -148,6 +149,7 @@ namespace renderkit {
         m_library.D3D11 = new GraphicsLibraryD3D11;
         m_buffers.D3D11 = new RenderBufferD3D11;
         m_depthStencilStateForRender = nullptr;
+        m_depthStencilStateForPresent = nullptr;
     }
 
     RenderManagerD3D11Base::~RenderManagerD3D11Base() {
@@ -163,6 +165,9 @@ namespace renderkit {
         }
         if (m_depthStencilStateForRender != nullptr) {
           m_depthStencilStateForRender->Release();
+        }
+        if (m_depthStencilStateForPresent != nullptr) {
+          m_depthStencilStateForPresent->Release();
         }
 
         if (m_completionQuery) {
@@ -596,7 +601,7 @@ namespace renderkit {
         depthStencilDescription.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
         depthStencilDescription.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
-        // Create depth stencil state and set it.
+        // Create depth stencil state for presentation.
         hr = m_D3D11device->CreateDepthStencilState(
             &depthStencilDescription, &m_depthStencilStateForPresent);
         if (FAILED(hr)) {
@@ -1060,9 +1065,152 @@ namespace renderkit {
             return false;
         }
 
+        //-----------------------------------------------------------------
         // @todo Record all state we change and re-set it to what it was
         // originally so we don't mess with client rendering.
+        // We make use of the util::finally() lambda function to put
+        // things back no matter how we exit this function, whether at
+        // the end or in an error return partway through.
 
+        // @todo Several of the get/set sections below get all of the
+        // possible states and reset all of the possible states, when
+        // in fact we know that we are only changing a fixed number of
+        // them.  We may be able to make this slightly faster by only
+        // reading and restoring the ones we know we are going to set.
+        // For now, leaving this general so it will work even if we
+        // use more resources in the future.
+
+        D3D11_VIEWPORT viewPorts[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+        UINT numViewports = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+        m_D3D11Context->RSGetViewports(&numViewports, viewPorts);
+        auto resetViewports = util::finally([&]{
+          if (numViewports > 0) { m_D3D11Context->RSSetViewports(numViewports, viewPorts); }
+        });
+
+        D3D11_PRIMITIVE_TOPOLOGY topology;
+        m_D3D11Context->IAGetPrimitiveTopology(&topology);
+        auto resetTopology = util::finally([&]{
+          m_D3D11Context->IASetPrimitiveTopology(topology);
+        });
+
+        ID3D11InputLayout *inputLayout;
+        m_D3D11Context->IAGetInputLayout(&inputLayout);
+        auto resetLayout = util::finally([&]{
+          m_D3D11Context->IASetInputLayout(inputLayout);
+          if (inputLayout) inputLayout->Release();
+        });
+
+        ID3D11VertexShader *vertexShader;
+        ID3D11ClassInstance *vertexShaderClassInstances[256];
+        UINT vertexShaderNumInstances = 256;
+        m_D3D11Context->VSGetShader(&vertexShader,
+          vertexShaderClassInstances, &vertexShaderNumInstances);
+        auto resetVertexShader = util::finally([&]{
+          m_D3D11Context->VSSetShader(vertexShader,
+            vertexShaderClassInstances, vertexShaderNumInstances);
+          if (vertexShader) {
+            vertexShader->Release();
+          }
+          for (size_t i = 0; i < vertexShaderNumInstances; i++) {
+            vertexShaderClassInstances[i]->Release();
+          }
+        });
+
+        ID3D11PixelShader *pixelShader;
+        ID3D11ClassInstance *pixelShaderClassInstances[256];
+        UINT pixelShaderNumInstances = 256;
+        m_D3D11Context->PSGetShader(&pixelShader,
+          pixelShaderClassInstances, &pixelShaderNumInstances);
+        auto resetPixelShader = util::finally([&]{
+          m_D3D11Context->PSSetShader(pixelShader,
+            pixelShaderClassInstances, pixelShaderNumInstances);
+          if (pixelShader) {
+            pixelShader->Release();
+          }
+          for (size_t i = 0; i < pixelShaderNumInstances; i++) {
+            pixelShaderClassInstances[i]->Release();
+          }
+        });
+
+        ID3D11Buffer *constantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+        UINT constantCount = D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
+        m_D3D11Context->VSGetConstantBuffers(0,
+          D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,
+          constantBuffers);
+        auto resetConstantBuffers = util::finally([&]{
+          m_D3D11Context->VSSetConstantBuffers(0,
+            D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,
+            constantBuffers);
+          for (size_t i = 0; i < constantCount; i++) {
+            if (constantBuffers[i]) { constantBuffers[i]->Release(); }
+          }
+        });
+
+        ID3D11Buffer *vertexBuffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+        UINT vertexBufferCount = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+        UINT vertexStrides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+        UINT vertexOffsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+        m_D3D11Context->IAGetVertexBuffers(0, vertexBufferCount, vertexBuffers,
+          vertexStrides, vertexOffsets);
+        auto resetVertexBuffers = util::finally([&]{
+          m_D3D11Context->IASetVertexBuffers(0, vertexBufferCount,
+            vertexBuffers, vertexStrides, vertexOffsets);
+          for (size_t i = 0; i < vertexBufferCount; i++) {
+            if (vertexBuffers[i]) { vertexBuffers[i]->Release(); }
+          }
+        });
+
+        ID3D11Buffer *indexBuffer;
+        DXGI_FORMAT indexFormat;
+        UINT indexOffset;
+        m_D3D11Context->IAGetIndexBuffer(&indexBuffer, &indexFormat,
+          &indexOffset);
+        auto resetIndexBuffer = util::finally([&]{
+          if (indexBuffer) { indexBuffer->Release(); }
+        });
+
+        ID3D11ShaderResourceView *shaderResources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+        UINT shaderResourceCount = D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT;
+        m_D3D11Context->PSGetShaderResources(0,
+          D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,
+          shaderResources);
+        auto resetShaderResource = util::finally([&]{
+          m_D3D11Context->PSSetShaderResources(0,
+            D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,
+            shaderResources);
+          for (size_t i = 0; i < shaderResourceCount; i++) {
+            if (shaderResources[i]) { shaderResources[i]->Release(); }
+          }
+        });
+
+        ID3D11RasterizerState *state;
+        m_D3D11Context->RSGetState(&state);
+        auto resetRasterizerState = util::finally([&]{
+          m_D3D11Context->RSSetState(state);
+          if (state) { state->Release(); }
+        });
+
+        ID3D11SamplerState *samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+        UINT numSamplers = D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+        m_D3D11Context->PSGetSamplers(0, numSamplers, samplers);
+        auto resetSamplers = util::finally([&]{
+          m_D3D11Context->PSSetSamplers(0, numSamplers, samplers);
+          for (size_t i = 0; i < numSamplers; i++) {
+            if (samplers[i]) { samplers[i]->Release(); }
+          }
+        });
+
+        ID3D11DepthStencilState *depthStencilState;
+        UINT depthStencilRef;
+        m_D3D11Context->OMGetDepthStencilState(&depthStencilState,
+          &depthStencilRef);
+        auto resetDepthState = util::finally([&]{
+          m_D3D11Context->OMSetDepthStencilState(depthStencilState,
+            depthStencilRef);
+          if (depthStencilState) { depthStencilState->Release(); }
+        });
+
+        //-----------------------------------------------------------------
         // Get the viewport.  This returns a viewport for OpenGL.  To get one
         // for D3D in the case that we have a display that is rotated by 90 or
         // 270, we need to swap the eyes compared to what we've been asked for.
@@ -1207,8 +1355,11 @@ namespace renderkit {
         }
         m_D3D11Context->PSSetShaderResources(0, 1, &renderTextureResourceView);
 
-        // @todo Record the state and re-set it to what it was originally so
-        // we don't mess with client rendering.
+        // Turn off backface culling in case user has switched the
+        // front/back which will keep our quads from being rendered.
+        m_D3D11Context->OMSetDepthStencilState(m_depthStencilStateForPresent,
+          1);
+
         // Turn off back-face culling, so we render the mesh from either side.
         m_D3D11Context->RSSetState(m_rasterizerState.Get());
 
