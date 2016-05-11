@@ -88,11 +88,11 @@ static bool checkShaderError(GLuint shaderId, osvr::util::log::LoggerPtr m_log) 
         if (maxLength > 1) {
           std::unique_ptr<GLchar> infoLog(new GLchar[maxLength + 1]);
           glGetProgramInfoLog(shaderId, maxLength, NULL, infoLog.get());
-          m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
+          if (m_log) m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
             << "::checkShaderError: Message returned from shader compiler: "
             << infoLog.get();
         } else {
-          m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
+          if (m_log) m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
             << "::checkShaderError: Empty error message from shader compiler.";
         }
         return false;
@@ -109,11 +109,11 @@ static bool checkProgramError(GLuint programId, osvr::util::log::LoggerPtr m_log
         if (infoLength > 1) {
           std::unique_ptr<GLchar> infoLog(new GLchar[infoLength + 1]);
           glGetProgramInfoLog(programId, infoLength, NULL, infoLog.get());
-          m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
+          if (m_log) m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
             << "::checkProgramError: Message returned from shader compiler: "
             << infoLog.get();
         } else {
-          m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
+          if (m_log) m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
             << "::checkProgramError: Empty error message from shader compiler.";
         }
         return false;
@@ -128,7 +128,7 @@ namespace renderkit {
     bool RenderManagerOpenGL::checkForGLError(const std::string& message) {
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
-            m_log->warn() << message << ": OpenGL error " << err;
+            if (m_log) m_log->warn() << message << ": OpenGL error " << err;
         }
         return (err != GL_NO_ERROR);
     }
@@ -180,7 +180,7 @@ namespace renderkit {
       // Construct the present buffers we're going to use when in Render()
       // mode, to wrap the PresentMode interface.
       if (!constructRenderBuffers()) {
-        m_log->error() << "RenderManagerOpenGL::RenderPathSetup: Could not "
+        if (m_log) m_log->error() << "RenderManagerOpenGL::RenderPathSetup: Could not "
           "construct present buffers to wrap Render() path";
         return false;
       }
@@ -245,7 +245,7 @@ namespace renderkit {
         // Initialize the SDL video subsystem.
         if (!m_sdl_initialized) {
             if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-                m_log->error() << "RenderManagerOpenGL::addOpenGLContext: Could not "
+                if (m_log) m_log->error() << "RenderManagerOpenGL::addOpenGLContext: Could not "
                              "initialize SDL";
                 return false;
             }
@@ -311,14 +311,14 @@ namespace renderkit {
         m_displays.back().m_window = SDL_CreateWindow(
             windowTitle.c_str(), p.xPos, p.yPos, p.width, p.height, flags);
         if (m_displays.back().m_window == nullptr) {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManagerOpenGL::addOpenGLContext: Could not get window";
             return false;
         }
 
         m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
         if (m_GLContext == nullptr) {
-            m_log->error() << "RenderManagerOpenGL::addOpenGLContext: Could not get "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::addOpenGLContext: Could not get "
                          "OpenGL context";
             return false;
         }
@@ -337,7 +337,7 @@ namespace renderkit {
         }
         while (m_displays.size() > 0) {
             if (m_displays.back().m_window == nullptr) {
-                m_log->error() << "RenderManagerOpenGL::closeOpenGLContext: No "
+                if (m_log) m_log->error() << "RenderManagerOpenGL::closeOpenGLContext: No "
                              "window pointer";
                 return false;
             }
@@ -389,7 +389,7 @@ namespace renderkit {
         p.visible = true;
         for (size_t display = 0; display < GetNumDisplays(); display++) {
             if (!addOpenGLContext(p)) {
-                m_log->error() << "RenderManagerOpenGL::OpenDisplay: Cannot get GL "
+                if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Cannot get GL "
                              "context "
                           << "for display " << display;
                 ret.status = FAILURE;
@@ -405,7 +405,7 @@ namespace renderkit {
         // the extensions needed below.
         glewExperimental = true; // Needed for core profile
         if (glewInit() != GLEW_OK) {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManagerOpenGL::OpenDisplay: Can't initialize GLEW";
             removeOpenGLContexts();
             ret.status = FAILURE;
@@ -420,12 +420,12 @@ namespace renderkit {
         // Set vertical sync behavior.
         if (m_params.m_verticalSync) {
             if (SDL_GL_SetSwapInterval(1) != 0) {
-                m_log->error() << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+                if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
                              "not set vertical retrace on";
             }
         } else {
             if (SDL_GL_SetSwapInterval(0) != 0) {
-                m_log->error() << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+                if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
                              "not set vertical retrace off";
             }
         }
@@ -448,7 +448,7 @@ namespace renderkit {
             glGetShaderInfoLog(vertexShaderId, infoLogLength, NULL, strInfoLog);
 
             removeOpenGLContexts();
-            m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct vertex shader:"
                       << strInfoLog;
             ret.status = FAILURE;
@@ -465,7 +465,7 @@ namespace renderkit {
             glGetShaderInfoLog(fragmentShaderId, infoLogLength, NULL, strInfoLog);
 
             removeOpenGLContexts();
-            m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct fragment shader:"
                       << strInfoLog;
             ret.status = FAILURE;
@@ -480,7 +480,7 @@ namespace renderkit {
         glLinkProgram(m_programId);
         if (!checkProgramError(m_programId, m_log)) {
             removeOpenGLContexts();
-            m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not link "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not link "
                          "shader program ";
             ret.status = FAILURE;
             return ret;
@@ -500,7 +500,7 @@ namespace renderkit {
         if (!UpdateDistortionMeshesInternal(SQUARE,
                                             m_params.m_distortionParameters)) {
             removeOpenGLContexts();
-            m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct distortion mesh";
             ret.status = FAILURE;
             return ret;
@@ -551,7 +551,7 @@ namespace renderkit {
         // Always check that our framebuffer is ok
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
             GL_FRAMEBUFFER_COMPLETE) {
-            m_log->error() << "RenderManagerOpenGL::RenderEyeInitialize: Incomplete "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::RenderEyeInitialize: Incomplete "
                          "Framebuffer";
             return false;
         }
@@ -622,7 +622,7 @@ namespace renderkit {
         // the blue.
         size_t numEyes = GetNumEyes();
         if (numEyes > distort.size()) {
-            m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Not "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Not "
                          "enough distortion "
                       << "parameters for all eyes";
             removeOpenGLContexts();
@@ -637,7 +637,7 @@ namespace renderkit {
                 ComputeDistortionMesh(eye, type, distort[eye]);
             m_numTriangles[eye] = mesh.size() / 3;
             if (m_numTriangles[eye] == 0) {
-                m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Could "
+                if (m_log) m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Could "
                              "not create mesh "
                           << "for eye " << eye;
                 removeOpenGLContexts();
@@ -699,7 +699,7 @@ namespace renderkit {
           "RenderManagerOpenGL::RenderFramaFinalize: start");
         if (!PresentRenderBuffersInternal(m_colorBuffers, m_renderInfoForRender,
                                           m_renderParamsForRender)) {
-            m_log->error() << "RenderManagerD3D11OpenGL::RenderFrameFinalize: Could "
+            if (m_log) m_log->error() << "RenderManagerD3D11OpenGL::RenderFrameFinalize: Could "
                          "not present render buffers";
             return false;
         }
@@ -749,7 +749,7 @@ namespace renderkit {
             return false;
         }
         if (params.m_buffer.OpenGL == nullptr) {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManagerOpenGL::PresentEye(): NULL buffer pointer";
             return false;
         }
@@ -759,7 +759,7 @@ namespace renderkit {
         if (!ConstructViewportForPresent(
                 params.m_index, viewportDesc,
                 m_params.m_displayConfiguration.getSwapEyes())) {
-            m_log->error() << "RenderManagerOpenGL::PresentEye(): Could not "
+            if (m_log) m_log->error() << "RenderManagerOpenGL::PresentEye(): Could not "
                          "construct viewport";
             return false;
         }
@@ -817,7 +817,7 @@ namespace renderkit {
         if (!ComputeDisplayOrientationMatrix(
           static_cast<float>(params.m_rotateDegrees), params.m_flipInY,
           modelView)) {
-          m_log->error() << "RenderManagerOpenGL::PresentEye(): "
+          if (m_log) m_log->error() << "RenderManagerOpenGL::PresentEye(): "
             "ComputeDisplayOrientationMatrix failed";
           return false;
         }

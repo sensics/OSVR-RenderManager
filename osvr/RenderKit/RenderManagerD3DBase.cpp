@@ -200,7 +200,7 @@ namespace renderkit {
           D3D11_SDK_VERSION, &m_D3D11device, &foundAPI,
           &m_D3D11Context);
         if (FAILED(hr)) {
-          m_log->error() << "RenderManagerD3D11Base::SetDevice: Could not "
+          if (m_log) m_log->error() << "RenderManagerD3D11Base::SetDevice: Could not "
             "create D3D11 device";
           m_doingOkay = false;
           return false;
@@ -215,7 +215,7 @@ namespace renderkit {
         desc.Query = D3D11_QUERY_EVENT;
         HRESULT hr = m_D3D11device->CreateQuery(&desc, &m_completionQuery);
         if (FAILED(hr)) {
-          m_log->error() << "RenderManagerD3D11Base::SetDeviceAndContext: "
+          if (m_log) m_log->error() << "RenderManagerD3D11Base::SetDeviceAndContext: "
             "Warning: Failed to create completion event query: code ";
           m_completionQuery = nullptr;
         }
@@ -261,9 +261,9 @@ namespace renderkit {
             hr =
                 m_D3D11device->CreateTexture2D(&textureDesc, NULL, &D3DTexture);
             if (FAILED(hr)) {
-                m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
+                if (m_log) m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
                              "Can't create texture for eye ";
-                m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+                if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
                 return false;
             }
 
@@ -279,9 +279,9 @@ namespace renderkit {
             hr = m_D3D11device->CreateRenderTargetView(
                 D3DTexture, &renderTargetViewDesc, &renderTargetView);
             if (FAILED(hr)) {
-                m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
+                if (m_log) m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
                              "Could not create render target for eye " << i;
-                m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+                if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
                 return false;
             }
 
@@ -315,10 +315,10 @@ namespace renderkit {
             hr = m_D3D11device->CreateTexture2D(&textureDescription, NULL,
                                                 &depthStencilBuffer);
             if (FAILED(hr)) {
-                m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
+                if (m_log) m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
                              "Could not create depth/stencil texture for eye "
                           << i;
-                m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+                if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
                 return false;
             }
             m_renderBuffers[i].D3D11->depthStencilBuffer = depthStencilBuffer;
@@ -337,10 +337,10 @@ namespace renderkit {
                 depthStencilBuffer, &depthStencilViewDescription,
                 &depthStencilView);
             if (FAILED(hr)) {
-                m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
+                if (m_log) m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
                              "Could not create depth/stencil view for eye "
                           << i;
-                m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+                if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
                 return false;
             }
             m_renderBuffers[i].D3D11->depthStencilView = depthStencilView;
@@ -375,9 +375,9 @@ namespace renderkit {
         hr = m_D3D11device->CreateDepthStencilState(
             &depthStencilDescription, &m_depthStencilStateForRender);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::constructRenderBuffers: "
                          "Could not create depth/stencil state";
-            m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+            if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
             return false;
         }
 
@@ -425,7 +425,7 @@ namespace renderkit {
         if (FAILED(hr)) {
 // this is how you're supposed to get the messages, shush /analyze.
 #pragma warning(suppress : 6102)
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Vertex shader "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Vertex shader "
                          "compilation failed: "
                       << static_cast<char*>(compilerMsgs->GetBufferPointer());
             m_doingOkay = false;
@@ -437,7 +437,7 @@ namespace renderkit {
             compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(),
             nullptr, m_vertexShader.GetAddressOf());
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                          "create vertex shader";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -460,7 +460,7 @@ namespace renderkit {
             layout, _countof(layout), compiledShader->GetBufferPointer(),
             compiledShader->GetBufferSize(), &m_vertexLayout);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                          "create input layout";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -474,7 +474,7 @@ namespace renderkit {
             "triangle_ps", nullptr, nullptr, "triangle_ps", "ps_4_0",
             D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &compiledShader, &compilerMsgs);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Pixel shader "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Pixel shader "
                          "compilation failed: "
                       << static_cast<char*>(compilerMsgs->GetBufferPointer());
             m_doingOkay = false;
@@ -486,7 +486,7 @@ namespace renderkit {
             compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(),
             nullptr, m_pixelShader.GetAddressOf());
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                          "create pixel shader";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -511,7 +511,7 @@ namespace renderkit {
         hr = m_D3D11device->CreateSamplerState(&samplerDescription,
                                                &m_renderTextureSamplerState);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                          "create sampler state";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -526,7 +526,7 @@ namespace renderkit {
         hr = m_D3D11device->CreateRasterizerState(
             &rasDesc, m_rasterizerState.GetAddressOf());
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                          "create rasterizer state";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -546,7 +546,7 @@ namespace renderkit {
         if (FAILED(m_D3D11device->CreateBuffer(
                 &constantBufferDesc, nullptr,
                 m_cbPerObjectBuffer.GetAddressOf()))) {
-            m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                          "create uniform buffer";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -587,7 +587,7 @@ namespace renderkit {
         hr = m_D3D11device->CreateDepthStencilState(
             &depthStencilDescription, &m_depthStencilStateForPresent);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerNVidiaD3D11::OpenDisplay: Could not "
+            if (m_log) m_log->error() << "RenderManagerNVidiaD3D11::OpenDisplay: Could not "
                          "create depth/stencil state";
             m_doingOkay = false;
             ret.status = FAILURE;
@@ -602,7 +602,7 @@ namespace renderkit {
       // Construct the present buffers we're going to use when in Render()
       // mode, to wrap the PresentMode interface.
       if (!constructRenderBuffers()) {
-        m_log->error() << "RenderManagerD3D11Base::RenderPathSetup: Could not "
+        if (m_log) m_log->error() << "RenderManagerD3D11Base::RenderPathSetup: Could not "
           "construct present buffers to wrap Render() path";
         return false;
       }
@@ -860,7 +860,7 @@ namespace renderkit {
                 ComputeDistortionMesh(eye, type, distort[eye]);
             m_numTriangles[eye] = mesh.size() / 3;
             if (m_numTriangles[eye] == 0) {
-                m_log->error() << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
+                if (m_log) m_log->error() << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
                              "create mesh "
                           << "for eye " << eye;
                 return false;
@@ -907,9 +907,9 @@ namespace renderkit {
             hr = m_D3D11device->CreateBuffer(&bufferDesc, &subResData,
                                              &quadVertexBuffer);
             if (FAILED(hr)) {
-                m_log->error() << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
+                if (m_log) m_log->error() << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
                              "create vertex buffer";
-                m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+                if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
                 return false;
             }
             m_quadVertexCount.push_back(
@@ -1020,7 +1020,7 @@ namespace renderkit {
         HRESULT hr;
 
         if (params.m_buffer.D3D11 == nullptr) {
-            m_log->error() << "RenderManagerD3D11::PresentEye(): NULL buffer pointer";
+            if (m_log) m_log->error() << "RenderManagerD3D11::PresentEye(): NULL buffer pointer";
             return false;
         }
 
@@ -1045,7 +1045,7 @@ namespace renderkit {
         OSVR_ViewportDescription viewportDesc;
         if (!ConstructViewportForPresent(params.m_index, viewportDesc,
                                          swapEyes)) {
-            m_log->error() << "RenderManagerD3D11::PresentEye(): Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11::PresentEye(): Could not "
                          "construct viewport";
             return false;
         }
@@ -1090,7 +1090,7 @@ namespace renderkit {
         if (!ComputeDisplayOrientationMatrix(
                 static_cast<float>(params.m_rotateDegrees), params.m_flipInY,
                 modelViewMat)) {
-            m_log->error() << "RenderManagerD3D11Base::PresentEye(): "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::PresentEye(): "
                          "ComputeDisplayOrientationMatrix failed";
             return false;
         }
@@ -1153,9 +1153,9 @@ namespace renderkit {
             params.m_buffer.D3D11->colorBuffer, &shaderResourceViewDesc,
             &renderTextureResourceView);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::PresentEye(): Could not "
+            if (m_log) m_log->error() << "RenderManagerD3D11Base::PresentEye(): Could not "
                          "create resource view for eye " << params.m_index;
-            m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
+            if (m_log) m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
             return false;
         }
         m_D3D11Context->PSSetShaderResources(0, 1, &renderTextureResourceView);

@@ -303,7 +303,7 @@ namespace renderkit {
         if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
                                    &m_roomFromHeadInterface) ==
               OSVR_RETURN_FAILURE) {
-            m_log->error() << "RenderManager::RenderManager(): Can't get interface "
+            if (m_log) m_log->error() << "RenderManager::RenderManager(): Can't get interface "
                       << headSpaceName;
             m_doingOkay = false;
         }
@@ -321,7 +321,7 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-          m_log->error()
+          if (m_log) m_log->error()
               << "RenderManager::SetDisplayCallback: NULL callback handler";
             return false;
         }
@@ -341,7 +341,7 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            m_log->error() << "RenderManager::SetViewProjectionCallback: NULL "
+            if (m_log) m_log->error() << "RenderManager::SetViewProjectionCallback: NULL "
                 << "callback handler";
             return false;
         }
@@ -361,7 +361,7 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManager::AddRenderCallback: NULL callback handler";
             return false;
         }
@@ -381,7 +381,7 @@ namespace renderkit {
             if (osvrClientGetInterface(m_context, interfaceName.c_str(),
                                        &cb.m_interface) ==
                 OSVR_RETURN_FAILURE) {
-                m_log->error() << "RenderManager::AddRenderCallback(): Can't get "
+                if (m_log) m_log->error() << "RenderManager::AddRenderCallback(): Can't get "
                              << "interface " << interfaceName;
             }
         }
@@ -411,7 +411,7 @@ namespace renderkit {
                     if (osvrClientFreeInterface(m_context,
                                                 ci.m_interface) ==
                         OSVR_RETURN_FAILURE) {
-                      m_log->error()
+                      if (m_log) m_log->error()
                             << "RenderManager::RemoveRenderCallback(): Could "
                                "not free the interface for this callback.";
                         return false;
@@ -449,14 +449,14 @@ namespace renderkit {
 
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            m_log->error() << "RenderManager::Render(): Display not opened.";
+            if (m_log) m_log->error() << "RenderManager::Render(): Display not opened.";
             return false;
         }
 
         // Make sure we've set up for the Render() path.
         if (!m_renderPathSetupDone) {
           if (!RenderPathSetup()) {
-            m_log->error() << "RenderManager::Render(): RenderPathSetup() failed.";
+            if (m_log) m_log->error() << "RenderManager::Render(): RenderPathSetup() failed.";
             return false;
           }
           m_renderPathSetupDone = true;
@@ -465,7 +465,7 @@ namespace renderkit {
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManager::Render(): client context update failed.";
             return false;
         }
@@ -487,7 +487,7 @@ namespace renderkit {
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
             if (!RenderDisplayInitialize(display)) {
-                m_log->error()
+                if (m_log) m_log->error()
                     << "RenderManager::Render(): Could not initialize display "
                     << display;
                 return false;
@@ -511,7 +511,7 @@ namespace renderkit {
                 // Every eye is on its own display now, so we need to
                 // initialize and finalize the displays as well.
                 if (!RenderEyeInitialize(eye)) {
-                    m_log->error()
+                    if (m_log) m_log->error()
                         << "RenderManager::Render(): Could not initialize eye.";
                     return false;
                 }
@@ -554,14 +554,14 @@ namespace renderkit {
 
                 // Done with this eye.
                 if (!RenderEyeFinalize(eye)) {
-                    m_log->error()
+                    if (m_log) m_log->error()
                         << "RenderManager::Render(): Could not finalize eye.";
                     return false;
                 }
             }
 
             if (!RenderDisplayFinalize(display)) {
-                m_log->error()
+                if (m_log) m_log->error()
                     << "RenderManager::Render(): Could not finalize display "
                     << display;
                 return false;
@@ -612,7 +612,7 @@ namespace renderkit {
 
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            m_log->error() << "RenderManager::GetRenderInfo(): Display not opened.";
+            if (m_log) m_log->error() << "RenderManager::GetRenderInfo(): Display not opened.";
             ret.clear();
             return ret;
         }
@@ -620,7 +620,7 @@ namespace renderkit {
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-            m_log->error() << "RenderManager::GetRenderInfo(): client context "
+            if (m_log) m_log->error() << "RenderManager::GetRenderInfo(): client context "
                          "update failed.";
             ret.clear();
             return ret;
@@ -657,7 +657,7 @@ namespace renderkit {
             // By passing m_callbacks.size(), we guarantee world space.
             if (!ConstructModelView(m_callbacks.size(), eye, params,
                                     info.pose)) {
-                m_log->error() << "RenderManagerBase::GetRenderInfo(): Could not "
+                if (m_log) m_log->error() << "RenderManagerBase::GetRenderInfo(): Could not "
                              "ConstructModelView";
                 ret.clear();
                 return ret;
@@ -713,21 +713,21 @@ namespace renderkit {
         bool flipInY) {
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManager::PresentRenderBuffers(): Display not opened.";
             return false;
         }
 
         // Make sure we've registered some render buffers
         if (!m_renderBuffersRegistered) {
-            m_log->error() << "RenderManager::PresentRenderBuffers(): Buffers not "
+            if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): Buffers not "
                          "registered.";
             return false;
         }
 
         // Initialize the presentation for the whole frame.
         if (!PresentFrameInitialize()) {
-            m_log->error() << "RenderManager::PresentRenderBuffers(): "
+            if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
                          "PresentFrameInitialize() failed.";
             return false;
         }
@@ -759,7 +759,7 @@ namespace renderkit {
                 // Update the client context so we keep getting all required
                 // callbacks called during our busy-wait.
                 if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-                    m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                    if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                  "client context update failed.";
                     return false;
                 }
@@ -792,7 +792,7 @@ namespace renderkit {
         if (m_params.m_enableTimeWarp) {
             if (!ComputeAsynchronousTimeWarps(renderInfoUsed, currentRenderInfo,
                                               2.0f)) {
-                m_log->error() << "RenderManager::PresentRenderBuffers: Could not "
+                if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers: Could not "
                              "compute time warps";
                 return false;
             }
@@ -804,7 +804,7 @@ namespace renderkit {
 
             // Set up the appropriate display before setting up its eye(s).
             if (!PresentDisplayInitialize(display)) {
-                m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
                              "PresentDisplayInitialize() failed.";
                 return false;
             }
@@ -859,7 +859,7 @@ namespace renderkit {
                 p.m_index = eye;
                 p.m_rotateDegrees = rotate_pixels_degrees;
                 if (buffers.size() <= eye) {
-                    m_log->error() << "RenderManager::PresentRenderBuffers: Given "
+                    if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers: Given "
                               << GetNumEyes() << " eyes, but only "
                               << buffers.size() << " buffers";
                     return false;
@@ -872,7 +872,7 @@ namespace renderkit {
                 if (m_params.m_enableTimeWarp) {
                     // Apply the asynchronous time warp matrix for this eye.
                     if (m_asynchronousTimeWarps.size() <= eye) {
-                        m_log->error() << "RenderManager::PresentRenderBuffers: "
+                        if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers: "
                                      "Required Asynchronous Time "
                                   << "Warp matrix not available";
                         return false;
@@ -898,7 +898,7 @@ namespace renderkit {
                 p.m_normalizedCroppingViewport = bufferCrop;
 
                 if (!PresentEye(p)) {
-                    m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                    if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                  "PresentEye failed.";
                     return false;
                 }
@@ -906,7 +906,7 @@ namespace renderkit {
 
             // We're done with this display.
             if (!PresentDisplayFinalize(display)) {
-                m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
                              "PresentDisplayFinalize failed.";
                 return false;
             }
@@ -914,7 +914,7 @@ namespace renderkit {
 
         // Finalize the rendering for the whole frame.
         if (!PresentFrameFinalize()) {
-            m_log->error() << "RenderManager::PresentRenderBuffers(): "
+            if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
                          "PresentFrameFinalize failed.";
             return false;
         }
@@ -969,7 +969,7 @@ namespace renderkit {
             }
             return 1;
         default:
-            m_log->error() << "RenderManager::GetNumDisplays(): Unrecognized value: "
+            if (m_log) m_log->error() << "RenderManager::GetNumDisplays(): Unrecognized value: "
                       << m_params.m_displayConfiguration.getEyes().size();
         }
         return 1;
@@ -1123,7 +1123,7 @@ namespace renderkit {
             yFactor = 0.5;
             break;
         default:
-            m_log->error() << "RenderManager::ConstructViewportForRender: "
+            if (m_log) m_log->error() << "RenderManager::ConstructViewportForRender: "
                          "Unrecognized Display Mode"
                       << m_params.m_displayConfiguration.getDisplayMode();
             return false;
@@ -1188,7 +1188,7 @@ namespace renderkit {
             }
             break;
         default:
-            m_log->error() << "RenderManager::ConstructViewportForPresent: "
+            if (m_log) m_log->error() << "RenderManager::ConstructViewportForPresent: "
                          "Unrecognized Display Mode"
                       << m_params.m_displayConfiguration.getDisplayMode();
             return false;
@@ -1316,7 +1316,7 @@ namespace renderkit {
 
         // Make sure that we have as many eyes as were asked for.
         if (whichEye >= GetNumEyes()) {
-            m_log->error() << "RenderManager::ConstructModelView(): Eye index "
+            if (m_log) m_log->error() << "RenderManager::ConstructModelView(): Eye index "
                       << "out of bounds";
             return false;
         }
@@ -2048,25 +2048,25 @@ namespace renderkit {
         if (distort.m_type ==
             RenderManager::DistortionParameters::rgb_symmetric_polynomials) {
             if (distort.m_distortionPolynomialRed.size() < 2) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
                              "red polynomial coefficients, found "
                           << distort.m_distortionPolynomialRed.size();
                 return ret;
             }
             if (distort.m_distortionPolynomialGreen.size() < 2) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
                              "green polynomial coefficients, found "
                           << distort.m_distortionPolynomialGreen.size();
                 return ret;
             }
             if (distort.m_distortionPolynomialBlue.size() < 2) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2+ "
                              "blue polynomial coefficients, found "
                           << distort.m_distortionPolynomialBlue.size();
                 return ret;
             }
             if (distort.m_distortionD.size() != 2) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
                              "distortion coefficients, found "
                           << distort.m_distortionD.size();
                 return ret;
@@ -2074,7 +2074,7 @@ namespace renderkit {
         } else if (distort.m_type ==
                    RenderManager::DistortionParameters::mono_point_samples) {
             if (distort.m_monoPointSamples.size() != 2) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
                              "meshes, found "
                           << distort.m_monoPointSamples.size();
                 return ret;
@@ -2082,7 +2082,7 @@ namespace renderkit {
             // Add a new interpolator to be used when we're finding
             // mesh coordinates.
             if (distort.m_monoPointSamples[eye].size() < 3) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need "
                               "3+ points, found "
                           << distort.m_monoPointSamples[eye].size();
                 return ret;
@@ -2090,21 +2090,21 @@ namespace renderkit {
             for (size_t i = 0; i < distort.m_monoPointSamples[eye].size();
                   i++) {
                 if (distort.m_monoPointSamples[eye][i].size() != 2) {
-                    m_log->error()
+                    if (m_log) m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need 2 "
                         << "points in the mesh, found "
                         << distort.m_monoPointSamples[eye][i].size();
                     return ret;
                 }
                 if (distort.m_monoPointSamples[eye][i][0].size() != 2) {
-                    m_log->error()
+                    if (m_log) m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need 2 "
                         << "values in input point, found "
                         << distort.m_monoPointSamples[eye][i][0].size();
                     return ret;
                 }
                 if (distort.m_monoPointSamples[eye][i][1].size() != 2) {
-                    m_log->error()
+                    if (m_log) m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need 2 "
                         << "values in output point, found "
                         << distort.m_monoPointSamples[eye][i][1].size();
@@ -2119,14 +2119,14 @@ namespace renderkit {
         else if (distort.m_type ==
                    RenderManager::DistortionParameters::rgb_point_samples) {
             if (distort.m_rgbPointSamples.size() != 3) {
-                m_log->error() << "RenderManager::ComputeDistortionMesh: Need 3 "
+                if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 3 "
                              "color meshes, found "
                           << distort.m_rgbPointSamples.size();
                 return ret;
             }
             for (size_t clr = 0; clr < 3; clr++) {
                 if (distort.m_rgbPointSamples[clr].size() != 2) {
-                    m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
+                    if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Need 2 "
                                  "eye meshes, found "
                               << distort.m_rgbPointSamples[clr].size();
                     return ret;
@@ -2134,7 +2134,7 @@ namespace renderkit {
                 // Add a new interpolator to be used when we're finding
                 // mesh coordinates.
                 if (distort.m_rgbPointSamples[clr][eye].size() < 3) {
-                    m_log->error()
+                    if (m_log) m_log->error()
                         << "RenderManager::ComputeDistortionMesh: Need "
                             "3+ points, found "
                         << distort.m_rgbPointSamples[clr][eye].size();
@@ -2144,7 +2144,7 @@ namespace renderkit {
                       i < distort.m_rgbPointSamples[clr][eye].size(); i++) {
                     if (distort.m_rgbPointSamples[clr][eye][i].size() !=
                         2) {
-                        m_log->error()
+                        if (m_log) m_log->error()
                             << "RenderManager::ComputeDistortionMesh: Need "
                                 "2 "
                             << "points in the mesh, found "
@@ -2153,7 +2153,7 @@ namespace renderkit {
                     }
                     if (distort.m_rgbPointSamples[clr][eye][i][0].size() !=
                         2) {
-                        m_log->error()
+                        if (m_log) m_log->error()
                             << "RenderManager::ComputeDistortionMesh: Need "
                                 "2 "
                             << "values in input point, found "
@@ -2163,7 +2163,7 @@ namespace renderkit {
                     }
                     if (distort.m_rgbPointSamples[clr][eye][i][1].size() !=
                         2) {
-                        m_log->error()
+                        if (m_log) m_log->error()
                             << "RenderManager::ComputeDistortionMesh: Need "
                                 "2 "
                             << "values in output point, found "
@@ -2179,7 +2179,7 @@ namespace renderkit {
                   UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
             }
         } else {
-            m_log->error() << "RenderManager::ComputeDistortionMesh: Unrecognized "
+            if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Unrecognized "
                       << "distortion parameter type";
             return ret;
         }
@@ -2279,7 +2279,7 @@ namespace renderkit {
             }
         } break;
         case RADIAL: {
-            m_log->error()
+            if (m_log) m_log->error()
                 << "RenderManager::ComputeDistortionMesh: Radial mesh type "
                 << "not yet implemented";
 
@@ -2287,7 +2287,7 @@ namespace renderkit {
             // projection so that they will be round in the visible display.
         } break;
         default:
-            m_log->error() << "RenderManager::ComputeDistortionMesh: Unsupported "
+            if (m_log) m_log->error() << "RenderManager::ComputeDistortionMesh: Unsupported "
                          "mesh type: " << type;
         }
 

@@ -126,7 +126,7 @@ namespace osvr {
                 // going to pass all display-related things down to
                 // our render thread.
                 if (!SetDeviceAndContext()) {
-                  m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: Could not "
+                  if (m_log) m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                     "create device and context";
                   ret.status = OpenStatus::FAILURE;
                   return ret;
@@ -136,7 +136,7 @@ namespace osvr {
                 // RenderManager.  Return false if it fails.
                 ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
-                  m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: Could not "
+                  if (m_log) m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                     "open display in harnessed RenderManager";
                   return ret;
                 }
@@ -155,7 +155,7 @@ namespace osvr {
                   desc.Query = D3D11_QUERY_EVENT;
                   HRESULT hr = m_D3D11device->CreateQuery(&desc, &m_completionQuery);
                   if (FAILED(hr)) {
-                    m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: "
+                    if (m_log) m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: "
                       "Warning: Failed to create completion event query: code "
                       << hr;
                     m_completionQuery = nullptr;
@@ -184,7 +184,7 @@ namespace osvr {
                 bool flipInY = false) override {
 
                   if (!m_renderBuffersRegistered) {
-                    m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal: "
+                    if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal: "
                       << "Render buffers not yet registered, ignoring present request.";
                     return true;
                   }
@@ -216,7 +216,7 @@ namespace osvr {
                     auto key = mNextFrameInfo.renderBuffers[i].D3D11;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
-                      m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                      if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                         << "No Buffer info for key " << (size_t)key;
                       m_doingOkay = false;
                       mQuit = true;
@@ -224,14 +224,14 @@ namespace osvr {
                     auto bufferInfo = bufferInfoItr->second;
                     hr = bufferInfoItr->second.atwMutex->ReleaseSync(relKey);
                     if (FAILED(hr)) {
-                      m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                      if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                         << "Could not ReleaseSync in the render manager thread.";
                       m_doingOkay = false;
                       mQuit = true;
                     }
                     hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
                     if (FAILED(hr)) {
-                      m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                      if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                         << "Could not lock the render thread's mutex";
                       m_doingOkay = false;
                       mQuit = true;
@@ -247,9 +247,9 @@ namespace osvr {
                     auto key = renderBuffers[i].D3D11;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
-                      m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                      if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                         << "Could not find buffer info for RenderBuffer " << (size_t)key;
-                      m_log->error() << "  (Be sure to register buffers before presenting them)";
+                      if (m_log) m_log->error() << "  (Be sure to register buffers before presenting them)";
                       m_doingOkay = false;
                       return false;
                     }
@@ -268,15 +268,15 @@ namespace osvr {
                       auto key = renderBuffers[i].D3D11;
                       auto bufferInfoItr = mBufferMap.find(key);
                       if (bufferInfoItr == mBufferMap.end()) {
-                          m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                          if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                             << "Could not find buffer info for RenderBuffer " << (size_t)key;
-                          m_log->error() << "  (Be sure to register buffers before presenting them)";
+                          if (m_log) m_log->error() << "  (Be sure to register buffers before presenting them)";
                           m_doingOkay = false;
                           return false;
                       }
                       hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                             << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present.";
                           m_doingOkay = false;
                           return false;
@@ -284,7 +284,7 @@ namespace osvr {
                       // and lock the ATW thread's mutex
                       hr = bufferInfoItr->second.atwMutex->AcquireSync(rtRelKey, INFINITE);
                       if (FAILED(hr)) {
-                          m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                          if (m_log) m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                             << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
                           m_doingOkay = false;
                           return false;
@@ -301,7 +301,7 @@ namespace osvr {
 
             void start() {
                 if (mStarted) {
-                  m_log->error() << "RenderManagerThread::start() - thread loop already started.";
+                  if (m_log) m_log->error() << "RenderManagerThread::start() - thread loop already started.";
                 } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
                 }
@@ -311,7 +311,7 @@ namespace osvr {
             void stop() {
                 std::lock_guard<std::mutex> lock(mLock);
                 if (!mStarted) {
-                  m_log->error() << "RenderManagerThread::stop() - thread loop not already started.";
+                  if (m_log) m_log->error() << "RenderManagerThread::stop() - thread loop not already started.";
                 }
                 mQuit = true;
             }
@@ -349,7 +349,7 @@ namespace osvr {
                     // and this code calls to check if we're within range.
                     osvr::renderkit::RenderTimingInfo timing;
                     if (!mRenderManager->GetTimingInfo(0, timing)) {
-                      m_log->error() << "RenderManagerThread::threadFunc() = couldn't get timing info";
+                      if (m_log) m_log->error() << "RenderManagerThread::threadFunc() = couldn't get timing info";
                     }
                     OSVR_TimeValue nextRetrace = timing.hardwareDisplayInterval;
                     osvrTimeValueDifference(&nextRetrace,
@@ -375,7 +375,7 @@ namespace osvr {
                                     auto key = mNextFrameInfo.renderBuffers[i].D3D11;
                                     auto bufferInfoItr = mBufferMap.find(key);
                                     if (bufferInfoItr == mBufferMap.end()) {
-                                      m_log->error() << "No buffer info for key " << (size_t)key;
+                                      if (m_log) m_log->error() << "No buffer info for key " << (size_t)key;
                                         m_doingOkay = false;
                                         mQuit = true;
                                     }
@@ -391,7 +391,7 @@ namespace osvr {
                                     mNextFrameInfo.renderParams,
                                     mNextFrameInfo.normalizedCroppingViewports,
                                     mNextFrameInfo.flipInY)) {
-                                    m_log->error() << "PresentRenderBuffers() returned false, maybe because it was asked to quit";
+                                    if (m_log) m_log->error() << "PresentRenderBuffers() returned false, maybe because it was asked to quit";
                                     m_doingOkay = false;
                                     mQuit = true;
                                 }
@@ -454,7 +454,6 @@ namespace osvr {
                   {
                     auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
                     ID3D11Texture2D *texture2D = nullptr;
-                    m_log->flush();
 
                     if (appWillNotOverwriteBeforeNewPresent) {
                       // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
@@ -462,7 +461,7 @@ namespace osvr {
                       IDXGIResource* dxgiResource = NULL;
                       hr = buffers[i].D3D11->colorBuffer->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource.";
                         m_doingOkay = false;
                         return false;
@@ -471,7 +470,7 @@ namespace osvr {
                       // now get the shared HANDLE
                       hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource.";
                         m_doingOkay = false;
                         return false;
@@ -484,7 +483,7 @@ namespace osvr {
                       hr = buffers[i].D3D11->colorBuffer->QueryInterface(
                         __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
                       if (FAILED(hr) || newInfo.rtMutex == nullptr) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the texture resource.";
                         m_doingOkay = false;
                         return false;
@@ -496,7 +495,7 @@ namespace osvr {
                       hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
                         (LPVOID*)&texture2D);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: - failed to open shared resource.";
                         m_doingOkay = false;
                         return false;
@@ -532,7 +531,7 @@ namespace osvr {
                       textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
                       hr = m_D3D11device->CreateTexture2D(&textureDesc, NULL, &texture2D);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: - Can't create copy texture for buffer "
                           << i;
                         m_doingOkay = false;
@@ -544,7 +543,7 @@ namespace osvr {
                       IDXGIResource* dxgiResource = NULL;
                       hr = texture2D->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for created texture resource.";
                         m_doingOkay = false;
                         return false;
@@ -553,7 +552,7 @@ namespace osvr {
                       // now get the shared HANDLE
                       hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource from the created texture.";
                         m_doingOkay = false;
                         return false;
@@ -565,14 +564,14 @@ namespace osvr {
                       hr = texture2D->QueryInterface(
                         __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
                       if (FAILED(hr) || newInfo.rtMutex == nullptr) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the created texture resource.";
                         m_doingOkay = false;
                         return false;
                       }
                       hr = newInfo.rtMutex->AcquireSync(0, INFINITE);
                       if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::"
+                        if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                           << "RegisterRenderBuffersInternal: Could not acquire mutex";
                         m_doingOkay = false;
                         return false;
@@ -585,7 +584,7 @@ namespace osvr {
                     // And get the IDXGIKeyedMutex for the ATW thread's ID3D11Texture2D
                     hr = texture2D->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.atwMutex);
                     if (FAILED(hr) || newInfo.atwMutex == nullptr) {
-                      m_log->error() << "RenderManagerD3D11ATW::"
+                      if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                         << "RegisterRenderBuffersInternal: - failed to create keyed mutex.";
                       m_doingOkay = false;
                       return false;
@@ -623,7 +622,7 @@ namespace osvr {
 
                 if (!mRenderManager->RegisterRenderBuffers(renderBuffers,
                     appWillNotOverwriteBeforeNewPresent)) {
-                  m_log->error() << "RenderManagerD3D11ATW::"
+                  if (m_log) m_log->error() << "RenderManagerD3D11ATW::"
                     << "RegisterRenderBuffersInternal: Could not Register render"
                     << " buffers on harnessed RenderManager";
                   m_doingOkay = false;
