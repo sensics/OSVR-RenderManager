@@ -268,6 +268,7 @@ namespace renderkit {
             << " No further logging will occur." << std::endl;
           m_doingOkay = false;
         }
+        if (m_log) m_log->info("RenderManager constructed");
 
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
@@ -426,6 +427,7 @@ namespace renderkit {
     }
 
     RenderManager::~RenderManager() {
+        if (m_log) m_log->info("RenderManager deconstructed");
 
         // Unregister any remaining callback handlers for devices that
         // are set to update our transformation matrices.

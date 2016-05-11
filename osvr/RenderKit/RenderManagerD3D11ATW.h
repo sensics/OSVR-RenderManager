@@ -164,6 +164,7 @@ namespace osvr {
 
                 //======================================================
                 // Start our ATW sub-thread.
+                m_log->info("RenderManagerD3D11ATW: Starting ATW thread");
                 start();
 
                 //======================================================
