@@ -983,7 +983,9 @@ namespace renderkit {
 
         auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
         glBindVertexArray(meshBuffer.VAO);
-        glDrawElements(GL_TRIANGLES, meshBuffer.indices.size(), GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES,
+          static_cast<GLsizei>(meshBuffer.indices.size()),
+          GL_UNSIGNED_SHORT, 0);
 
         // Put rendering parameters back the way they were before we set them
         // above.
