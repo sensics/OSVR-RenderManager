@@ -1190,15 +1190,12 @@ namespace renderkit {
 
         //====================================================================
         // Create the shader resource view.
-        D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
-        shaderResourceViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-        shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
+        // We pass a nullptr to the description, resulting in a view that
+        // can access the entire resource.
         ID3D11ShaderResourceView* renderTextureResourceView;
         hr = m_D3D11device->CreateShaderResourceView(
-            params.m_buffer.D3D11->colorBuffer, &shaderResourceViewDesc,
+            params.m_buffer.D3D11->colorBuffer, nullptr,
             &renderTextureResourceView);
         if (FAILED(hr)) {
             std::cerr << "RenderManagerD3D11Base::PresentEye(): Could not "
