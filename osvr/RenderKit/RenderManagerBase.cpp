@@ -265,7 +265,7 @@ namespace renderkit {
         m_log = osvr::util::log::make_logger("RenderManager");
         if (m_log == nullptr) {
           std::cerr << "RenderManager::RenderManager(): Could not construct logger."
-            << " Expect a crash on the next function call." << std::endl;
+            << " No further logging will occur." << std::endl;
           m_doingOkay = false;
         }
 
