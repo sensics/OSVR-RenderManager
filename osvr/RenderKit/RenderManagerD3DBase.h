@@ -95,6 +95,16 @@ namespace renderkit {
         ID3D11DeviceContext*
             m_D3D11Context; //< Pointer to the D3D11 context to use.
 
+        // Location for subclasses to store information about their render
+        // targets when they are set in PresentDisplayInitialize() so they
+        // can be reset in PresentDisplayFinalize().  The base class does
+        // not deal with them at all, but all derived classes will need them
+        // so they are declared here.
+        ID3D11RenderTargetView *m_stashedRenderTargetViews[
+          D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+        ID3D11DepthStencilView *m_stashedDepthStencilView;
+        UINT m_numStashedViews = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+
         //============================================================================
         // Information needed to provide render and depth/stencil buffers for
         // each of the eyes we give to the user to use when rendering.  This is
