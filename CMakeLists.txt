@@ -41,6 +41,11 @@ if(WIN32)
   if(EXISTS "${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp")
 	  set(HAVE_AMD_NDA_SUBMODULE TRUE)
   endif()
+
+  set(INTEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Intel")
+  if(EXISTS "${AMD_SRC_DIR}/RenderManagerIntel3D.cpp")
+	  set(HAVE_INTEL_NDA_SUBMODULE TRUE)
+  endif()
 endif()
 
 # Add one of these libraries for each vendor that we've got a driver
@@ -141,6 +146,20 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR and AMD NDA submodule)")
 else()
 	message(STATUS " - AMD direct support: disabled (need LIQUIDVR and AMD NDA submodule)")
+endif()
+
+if (HAVE_INTEL_NDA_SUBMODULE)
+	# Usage dependencies
+	add_library(osvrRM-intel-requirements INTERFACE)
+	target_include_directories(osvrRM-intel-requirements INTERFACE "${INTEL_SRC_DIR}")
+	# Intel NDA files.
+	list(APPEND RenderManager_SOURCES
+		"${AMD_SRC_DIR}/RenderManagerIntelD3D.cpp"
+		"${AMD_SRC_DIR}/RenderManagerIntelD3D.h")
+	set(RM_USE_INTEL_DIRECT_D3D11 TRUE)
+	message(STATUS " - Intel direct D3D11 support: enabled (found Intel NDA submodule)")
+else()
+	message(STATUS " - Intel direct support: disabled (need Intel NDA submodule)")
 endif()
 
 #-----------------------------------------------------------------------------
