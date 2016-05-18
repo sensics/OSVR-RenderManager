@@ -1338,13 +1338,34 @@ namespace renderkit {
 
         //====================================================================
         // Create the shader resource view.
+        D3D11_TEXTURE2D_DESC colorBufferDesc = { 0 };
+        params.m_buffer.D3D11->colorBuffer->GetDesc(&colorBufferDesc);
+        DXGI_FORMAT shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        switch (colorBufferDesc.Format) {
+        case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+            shaderResourceViewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+            break;
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+            shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+            break;
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+            shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+            break;
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+            shaderResourceViewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+            break;
+        default:
+            std::cerr << "osvr::renderkit::RenderManagerD3D11Base::PresentEye - unknown render target texture format. Defaulting to DXGI_FORMAT_R8G8B8A8_UNORM." << std::endl;
+            shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+            break;
+        }
 
         // We need to set things here, presumably the DXGI format, to
         // make things render correctly when working with Unity or
         // Unreal.  When this was taken out, we got black screens on
         // both of them, even though the demo apps worked.
         D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
-        shaderResourceViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        shaderResourceViewDesc.Format = shaderResourceViewFormat;
         shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
         shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
         shaderResourceViewDesc.Texture2D.MipLevels = 1;
