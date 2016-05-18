@@ -1338,6 +1338,7 @@ namespace renderkit {
 
         //====================================================================
         // Create the shader resource view.
+        // @todo this code needs to move into the registration code rather than PresentEye
         D3D11_TEXTURE2D_DESC colorBufferDesc = { 0 };
         params.m_buffer.D3D11->colorBuffer->GetDesc(&colorBufferDesc);
         DXGI_FORMAT shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -1355,7 +1356,8 @@ namespace renderkit {
             shaderResourceViewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
             break;
         default:
-            std::cerr << "osvr::renderkit::RenderManagerD3D11Base::PresentEye - unknown render target texture format. Defaulting to DXGI_FORMAT_R8G8B8A8_UNORM." << std::endl;
+            // @todo re-enable this log when this code is moved to registration (and use the logger API that hasn't been merged yet)
+            //std::cerr << "osvr::renderkit::RenderManagerD3D11Base::PresentEye - unknown render target texture format. Defaulting to DXGI_FORMAT_R8G8B8A8_UNORM." << std::endl;
             shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
             break;
         }
