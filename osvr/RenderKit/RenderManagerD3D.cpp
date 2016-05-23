@@ -239,11 +239,6 @@ namespace renderkit {
             return false;
         }
 
-        // Save and restore (in Finalize) the current rendering state
-        // so we don't clobber end-user settings here.
-        m_D3D11Context->OMGetRenderTargets(m_numStashedViews,
-          m_stashedRenderTargetViews, &m_stashedDepthStencilView);
-
         // We want to render to the on-screen display now.  The user will have
         // switched this to their views.
         m_D3D11Context->OMSetRenderTargets(
@@ -267,19 +262,6 @@ namespace renderkit {
             vblanks = 1;
         }
         m_displays[display].m_swapChain->Present(vblanks, 0);
-
-        // Restore the render target views to what they were before we
-        // changed them.
-        m_D3D11Context->OMSetRenderTargets(m_numStashedViews,
-          m_stashedRenderTargetViews, m_stashedDepthStencilView);
-        for (size_t i = 0; i < m_numStashedViews; i++) {
-          if (m_stashedRenderTargetViews[i]) {
-            m_stashedRenderTargetViews[i]->Release();
-          }
-        }
-        if (m_stashedDepthStencilView) {
-          m_stashedDepthStencilView->Release();
-        }
 
         return true;
     }
