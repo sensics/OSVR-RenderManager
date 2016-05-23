@@ -412,6 +412,32 @@ namespace renderkit {
           return ret;
         }
 
+        // Provide info about which adapter we're using
+        // @todo Later, could check to make sure it matches what we need/expect
+        if (m_D3D11device) {
+          IDXGIDevice *dxgiDevice = nullptr;
+          m_D3D11device->QueryInterface(__uuidof(IDXGIDevice),
+            reinterpret_cast<void **>(&dxgiDevice));
+          if (dxgiDevice) {
+            IDXGIAdapter *adapter;
+            HRESULT hr = dxgiDevice->GetAdapter(&adapter);
+            dxgiDevice->Release();
+            if (!FAILED(hr)) {
+              DXGI_ADAPTER_DESC desc;
+              hr = adapter->GetDesc(&desc);
+              if (!FAILED(hr)) {
+                std::string msg = "RenderManagerD3D11Base::OpenDisplay(): "
+                  "Using display adapter ";
+                std::wstring wname = desc.Description;
+                std::string name(wname.begin(), wname.end());
+                msg += name;
+                if (m_log) m_log->info() << msg;
+              }
+              adapter->Release();
+            }
+          }
+        }
+
         //==================================================================
         // Create the vertex buffer we're going to use to render quads in
         // the Present mode and also set up the vertex and shader programs
