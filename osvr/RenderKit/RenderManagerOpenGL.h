@@ -147,7 +147,6 @@ namespace renderkit {
         bool constructRenderBuffers();
 
         // Classes and structures needed to do our rendering.
-        bool m_sdl_initialized = false;
         class DisplayInfo {
           public:
             SDL_Window* m_window = nullptr; //< The window we're rendering into
