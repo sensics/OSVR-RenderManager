@@ -936,6 +936,81 @@ namespace renderkit {
         return true;
     }
 
+    bool RenderManager::PresentSolidColor(
+      const std::array<float, 3> & color) {
+      // All public methods that use internal state should be guarded
+      // by a mutex.
+      std::lock_guard<std::mutex> lock(m_mutex);
+
+      return PresentSolidColorInternal(color);
+    }
+
+    bool RenderManager::PresentSolidColorInternal(
+      const std::array<float, 3> & color) {
+      // Make sure we're doing okay.
+      if (!doingOkay()) {
+        std::cerr
+          << "RenderManager::PresentSolidColorInternal(): Display not opened."
+          << std::endl;
+        return false;
+      }
+
+      // Initialize the presentation for the whole frame.
+      if (!PresentFrameInitialize()) {
+        std::cerr << "RenderManager::PresentSolidColorInternal(): "
+          "PresentFrameInitialize() failed."
+          << std::endl;
+        return false;
+      }
+
+      // Render into each display, setting up the display beforehand and
+      // finalizing it after.
+      for (size_t display = 0; display < GetNumDisplays(); display++) {
+
+        // Set up the appropriate display before setting up its eye(s).
+        if (!PresentDisplayInitialize(display)) {
+          std::cerr << "RenderManager::PresentSolidColorInternal(): "
+            "PresentDisplayInitialize() failed."
+            << std::endl;
+          return false;
+        }
+
+        // Render for each eye, setting up the appropriate projection
+        // and viewport.
+        for (size_t eyeInDisplay = 0; eyeInDisplay < GetNumEyesPerDisplay();
+          eyeInDisplay++) {
+
+          // Figure out which overall eye this is.
+          size_t eye = eyeInDisplay + display * GetNumEyesPerDisplay();
+
+          if (!SolidColorEye(eye, color)) {
+            std::cerr << "RenderManager::PresentSolidColorInternal(): "
+              "PresentEye failed."
+              << std::endl;
+            return false;
+          }
+        }
+
+        // We're done with this display.
+        if (!PresentDisplayFinalize(display)) {
+          std::cerr << "RenderManager::PresentSolidColorInternal(): "
+            "PresentDisplayFinalize failed."
+            << std::endl;
+          return false;
+        }
+      }
+
+      // Finalize the rendering for the whole frame.
+      if (!PresentFrameFinalize()) {
+        std::cerr << "RenderManager::PresentSolidColorInternal(): "
+          "PresentFrameFinalize failed."
+          << std::endl;
+        return false;
+      }
+
+      return true;
+    }
+
     bool RenderManager::UpdateDistortionMeshes(
         DistortionMeshType type //< Type of mesh to produce
         ,

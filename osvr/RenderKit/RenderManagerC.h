@@ -125,6 +125,11 @@ osvrRenderManagerFinishRegisterRenderBuffers(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_CBool appWillNotOverwriteBeforeNewPresent);
 
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
+osvrRenderManagerPresentSolidColor(
+    OSVR_RenderManager renderManager,
+    float rgb[3]);
+
 OSVR_EXTERN_C_END
 
 #endif

@@ -130,13 +130,14 @@ namespace renderkit {
             XMFLOAT2 TexG;
             XMFLOAT2 TexB;
         };
-        // @todo release these in destructor
-        Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
-        Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;
-        Microsoft::WRL::ComPtr<ID3D11SamplerState> m_renderTextureSamplerState;
-        Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizerState;
-        Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbPerObjectBuffer;
-        ID3D11InputLayout* m_vertexLayout;
+        // We do not need to release these in destructor because they auto-release.
+        Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader = nullptr;
+        Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader = nullptr;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> m_renderTextureSamplerState = nullptr;
+        Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterizerState = nullptr;
+        Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbPerObjectBuffer = nullptr;
+        // @todo We need to release this in the destructor, or change to a WRL pointer
+        ID3D11InputLayout* m_vertexLayout = nullptr;
 
         struct DistortionMeshBuffer {
             /// Used to render quads for present mode
@@ -147,7 +148,6 @@ namespace renderkit {
             Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
             /// Backing data for indexBuffer
             std::vector<UINT16> indices;
-
         };
 
         // @todo One per eye/display combination in case of multiple displays

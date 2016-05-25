@@ -113,3 +113,15 @@ OSVR_ReturnCode osvrRenderManagerFinishRegisterRenderBuffers(
     delete state;
     return success ? OSVR_RETURN_SUCCESS : OSVR_RETURN_FAILURE;
 }
+
+OSVR_ReturnCode osvrRenderManagerPresentSolidColor(
+  OSVR_RenderManager renderManager,
+  float rgb[3]) {
+  auto rm = reinterpret_cast<osvr::renderkit::RenderManager*>(renderManager);
+
+  std::array<float, 3> color = { rgb[0], rgb[1], rgb[2] };
+  bool success = rm->PresentSolidColor(color);
+
+  return success ? OSVR_RETURN_SUCCESS : OSVR_RETURN_FAILURE;
+}
+

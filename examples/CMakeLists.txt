@@ -82,7 +82,7 @@ if(OSVRRM_HAVE_D3D11_SUPPORT)
 	# steadiness of the rendering in the absence of motion.
 	add_executable(SpinCubeD3D SpinCubeD3D.cpp ${COMMON_D3D_SOURCES})
 	target_link_libraries(SpinCubeD3D PRIVATE osvrRM::osvrRenderManagerCpp vendored-vrpn vendored-quat)
-    target_compile_features(SpinCubeD3D PRIVATE cxx_range_for)
+        target_compile_features(SpinCubeD3D PRIVATE cxx_range_for)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
@@ -216,3 +216,16 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND NOT APPLE)
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 endif()
+
+#-----------------------------------------------------------------------------
+# Program that changes the solid color sent to a display.
+add_executable(SolidColor SolidColor.cpp)
+target_link_libraries(SolidColor PRIVATE osvrRM::osvrRenderManagerCpp vendored-vrpn vendored-quat)
+target_compile_features(SolidColor PRIVATE cxx_range_for)
+
+if(OSVRRM_INSTALL_EXAMPLES)
+	install(TARGETS
+		SolidColor
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+

@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
 
     // Get an OSVR client context to use to access the devices
     // that we need.
-    osvr::clientkit::ClientContext context("org.RenderManager.SpinCubeD3D");
+    osvr::clientkit::ClientContext context("org.RenderManager.RestartD3D");
 
     // Construct button devices and connect them to a callback
     // that will set the "quit" variable to true when it is
