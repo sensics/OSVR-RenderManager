@@ -474,6 +474,17 @@ namespace renderkit {
                                      std::vector<OSVR_ViewportDescription>(),
                              bool flipInY = false);
 
+        /// @brief Sends solid color to all eyes and displays.
+        ///
+        /// Sends a solid color to be displayed on every eye and
+        /// display.
+        /// Uses the various Render* functions below to call subclasses.
+        ///  NOTE: Most subclasses will NOT override this function.
+        ///  @param[in] color The colors to present.
+        ///  @return Returns true on success and false on failure.
+        bool OSVR_RENDERMANAGER_EXPORT
+          PresentSolidColor(const std::array<float,3> &color);
+
         ///-------------------------------------------------------------
         /// @brief Get rendering-time statistics
         ///
@@ -814,6 +825,9 @@ namespace renderkit {
                 normalizedCroppingViewports =
                     std::vector<OSVR_ViewportDescription>(),
             bool flipInY = false);
+
+        virtual bool PresentSolidColorInternal(
+          const std::array<float, 3> & color);
 
         virtual bool UpdateDistortionMeshesInternal(
             DistortionMeshType type //< Type of mesh to produce
@@ -1385,6 +1399,12 @@ namespace renderkit {
             // for none)
         };
         virtual bool PresentEye(PresentEyeParameters params) = 0;
+
+        /// @brief Set the specified eye to the specified color
+        /// @param eye[in] The eye to set.
+        /// @param color[in] The color to set, RGB, 0-1 for each.
+        /// @return True on success, false on failure.
+        virtual bool SolidColorEye(size_t eye, std::array<float, 3> color) = 0;
 
         /// @brief Finalize presentation for a new display
         virtual bool

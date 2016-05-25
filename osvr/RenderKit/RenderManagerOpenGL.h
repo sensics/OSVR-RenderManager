@@ -223,6 +223,7 @@ namespace renderkit {
         bool PresentFrameInitialize() override { return true; }
         bool PresentDisplayInitialize(size_t display) override;
         bool PresentEye(PresentEyeParameters params) override;
+        bool SolidColorEye(size_t eye, std::array<float, 3> color) override;
         bool PresentDisplayFinalize(size_t display) override;
         bool PresentFrameFinalize() override;
 

@@ -69,6 +69,8 @@ namespace renderkit {
         bool PresentDisplayFinalize(size_t display) override;
         bool PresentFrameFinalize() override;
 
+        bool SolidColorEye(size_t eye, std::array<float, 3> color) override;
+
         friend RenderManager OSVR_RENDERMANAGER_EXPORT*
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,

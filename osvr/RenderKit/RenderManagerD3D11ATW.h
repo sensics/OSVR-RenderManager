@@ -417,6 +417,10 @@ namespace osvr {
             bool PresentDisplayFinalize(size_t display) override { return true; }
             bool PresentFrameFinalize() override { return true; }
 
+            bool SolidColorEye(size_t eye, std::array<float, 3> color) override {
+              return mRenderManager->SolidColorEye(eye, color);
+            }
+
             //===================================================================
             // The distortion mesh is applied after time warp, so needs to be
             // passed on down to the harnessed RenderManager to handle it.

@@ -1008,5 +1008,38 @@ namespace renderkit {
         return true;
     }
 
+    bool RenderManagerOpenGL::SolidColorEye(
+          size_t eye, std::array<float, 3> color) {
+
+      // Construct the OpenGL viewport based on which eye this is.
+      OSVR_ViewportDescription viewportDesc;
+      if (!ConstructViewportForPresent(
+        eye, viewportDesc,
+        m_params.m_displayConfiguration.getSwapEyes())) {
+        std::cerr << "RenderManagerOpenGL::SolidColorEye(): Could not "
+          "construct viewport"
+          << std::endl;
+        return false;
+      }
+      // Adjust the viewport based on how much the display window is
+      // rotated with respect to the rendering window.
+      viewportDesc = RotateViewport(viewportDesc);
+      glViewport(static_cast<GLint>(viewportDesc.left),
+        static_cast<GLint>(viewportDesc.lower),
+        static_cast<GLsizei>(viewportDesc.width),
+        static_cast<GLsizei>(viewportDesc.height));
+      if (checkForGLError(
+        "RenderManagerOpenGL::SolidColorEye after glViewport")) {
+        return false;
+      }
+
+      // Clear to the specified color
+      glClearColor(color[0], color[1], color[2], 1);
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      return true;
+    }
+
+
 } // namespace renderkit
 } // namespace osvr
