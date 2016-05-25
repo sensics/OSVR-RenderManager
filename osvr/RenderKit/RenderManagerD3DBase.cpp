@@ -1066,7 +1066,7 @@ namespace renderkit {
         }
 
         //-----------------------------------------------------------------
-        // @todo Record all state we change and re-set it to what it was
+        // Record all state we change and re-set it to what it was
         // originally so we don't mess with client rendering.
         // We make use of the util::finally() lambda function to put
         // things back no matter how we exit this function, whether at
