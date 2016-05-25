@@ -164,6 +164,9 @@ osvr::renderkit::RenderManager* GetNewRenderManager(
     std::cout << "Deleting old RenderManager" << std::endl;
     delete render;
     render = nullptr;
+
+    // Wait a bit to give any HMD time to cycle
+    vrpn_SleepMsecs(500);
   }
 
   // Open Direct3D and set up the context for rendering to
@@ -494,13 +497,12 @@ int main(int argc, char* argv[]) {
 
         // Print timing info
         struct timeval nowFrames;
-        vrpn_gettimeofday(&nowFrames, nullptr);
+        vrpn_gettimeofday(&nowFrames);
         double duration = vrpn_TimevalDurationSeconds(nowFrames, startFrames);
         countFrames++;
         if (duration >= 2.0) {
             std::cout << "Rendering at " << countFrames / duration << " fps"
                       << std::endl;
-            startFrames = nowFrames;
             countFrames = 0;
 
             std::cout << "Creating new RenderManager" << std::endl;
@@ -518,6 +520,7 @@ int main(int argc, char* argv[]) {
                 << std::endl;
               return 201;
             }
+            vrpn_gettimeofday(&startFrames);
         }
     }
 
