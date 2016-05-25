@@ -128,6 +128,12 @@ else()
 endif()
 
 #-----------------------------------------------------------------------------
+# SDL init/quit handler code that makes sure we only do it once.
+if (SDL2_FOUND)
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerSDLInitQuit.cpp osvr/RenderKit/RenderManagerSDLInitQuit.h )
+endif()
+
+#-----------------------------------------------------------------------------
 # OpenGL library as a stand-alone renderer not wrapping D3D
 if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND SDL2_FOUND)
 	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)

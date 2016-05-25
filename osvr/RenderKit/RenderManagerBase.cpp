@@ -2767,7 +2767,7 @@ namespace renderkit {
 #endif
         } else if (p.m_renderLibrary == "OpenGL") {
             if (p.m_directMode) {
-// nVidia DirectMode is currently only implemented under Direct3D11,
+// DirectMode is currently only implemented under Direct3D11,
 // so we wrap this with an OpenGL renderer.
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL) && !defined(RM_USE_OPENGLES20)
                 // Set the parameters on the harnessed renderer to not apply the

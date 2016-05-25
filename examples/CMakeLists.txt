@@ -58,9 +58,7 @@ if(OSVRRM_HAVE_D3D11_SUPPORT)
 			RenderManagerD3DTest2D
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
-endif()
 
-if(OSVRRM_HAVE_D3D11_SUPPORT)
 	#-----------------------------------------------------------------------------
 	# Latency test program
 	add_executable(LatencyTestD3DExample LatencyTestD3DExample.cpp ${COMMON_D3D_2D_SOURCES})
@@ -78,9 +76,7 @@ if(OSVRRM_HAVE_D3D11_SUPPORT)
 			RenderManagerD3DHeadSpaceExample
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
-endif()
 
-if(OSVRRM_HAVE_D3D11_SUPPORT)
 	#-----------------------------------------------------------------------------
 	# D3D program that spins the world cube at a constant rate, useful for testing the
 	# steadiness of the rendering in the absence of motion.
@@ -91,6 +87,20 @@ if(OSVRRM_HAVE_D3D11_SUPPORT)
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
 			SpinCubeD3D
+			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	endif()
+
+	#-----------------------------------------------------------------------------
+	# D3D program that restarts the RenderManager every once in a while.  For
+	# the display, it spins the world cube at a constant rate, useful for testing the
+	# steadiness of the rendering in the absence of motion.
+	add_executable(RestartD3D RestartD3D.cpp ${COMMON_D3D_SOURCES})
+	target_link_libraries(RestartD3D PRIVATE osvrRM::osvrRenderManagerCpp vendored-vrpn vendored-quat D3D11)
+    target_compile_features(RestartD3D PRIVATE cxx_range_for)
+
+	if(OSVRRM_INSTALL_EXAMPLES)
+		install(TARGETS
+			RestartD3D
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
 endif()

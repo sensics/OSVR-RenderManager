@@ -1,10 +1,10 @@
 /** @file
-@brief Source file implementing nVidia-based OSVR direct-to-device rendering
-interface
+@brief Source file implementing D3D rendering to a window.
 
 @date 2015
 
 @author
+Russ Taylor <russ@sensics.com>
 Sensics, Inc.
 <http://sensics.com/osvr>
 */
@@ -25,6 +25,7 @@ Sensics, Inc.
 
 #include "RenderManagerD3D.h"
 #include "GraphicsLibraryD3D11.h"
+#include "RenderManagerSDLInitQuit.h"
 #include <iostream>
 #include "SDL_syswm.h"
 #include <d3d11.h>
@@ -36,7 +37,7 @@ namespace renderkit {
     RenderManagerD3D11::RenderManagerD3D11(
         OSVR_ClientContext context,
         ConstructorParameters p)
-        : RenderManagerD3D11Base(context, p) {}
+        : RenderManagerD3D11Base(context, p) { }
 
     RenderManagerD3D11::~RenderManagerD3D11() {
         for (size_t i = 0; i < m_displays.size(); i++) {
@@ -48,7 +49,6 @@ namespace renderkit {
             /// @todo Clean up anything else we need to
             m_displayOpen = false;
         }
-        SDL_Quit();
     }
 
     RenderManager::OpenResults RenderManagerD3D11::OpenDisplay(void) {
@@ -75,7 +75,7 @@ namespace renderkit {
         // Use SDL to get us a window.
 
         // Initialize the SDL video subsystem.
-        if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+        if (!SDLInitQuit()) {
             std::cerr << "RenderManagerD3D11::openD3D11Context: Could not "
                          "initialize SDL"
                       << std::endl;

@@ -35,6 +35,7 @@ Sensics, Inc.
 #endif
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
+#include "RenderManagerSDLInitQuit.h"
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -174,7 +175,6 @@ namespace renderkit {
         }
         delete m_buffers.OpenGL;
         delete m_library.OpenGL;
-        SDL_Quit();
     }
 
     bool RenderManagerOpenGL::RenderPathSetup() {
@@ -246,14 +246,11 @@ namespace renderkit {
 
     bool RenderManagerOpenGL::addOpenGLContext(GLContextParams p) {
         // Initialize the SDL video subsystem.
-        if (!m_sdl_initialized) {
-            if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-                std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not "
-                             "initialize SDL"
-                          << std::endl;
-                return false;
-            }
-            m_sdl_initialized = true;
+        if (!osvr::renderkit::SDLInitQuit()) {
+            std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not "
+                          "initialize SDL"
+                      << std::endl;
+            return false;
         }
 
         // Figure out the flags we want

@@ -25,6 +25,7 @@
 
 // Internal Includes
 #include <osvr/RenderKit/RenderManager.h>
+#include <osvr/RenderKit/RenderManagerSDLInitQuit.h>
 #include <osvr/ClientKit/Context.h>
 
 // Library/third-party includes
@@ -522,7 +523,7 @@ int main(int argc, char* argv[]) {
 
     // Use SDL to open a window and then get an OpenGL context for us.
     // Note: This window is not the one that will be used for rendering.
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    if (!osvr::renderkit::SDLInitQuit()) {
       std::cerr << "Could not initialize SDL"
         << std::endl;
       return 100;
