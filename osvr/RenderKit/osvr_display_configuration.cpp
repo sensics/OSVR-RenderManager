@@ -64,6 +64,8 @@ inline void parseDistortionMonoPointMeshes(
         Json::Value builtInData;
         if (builtIn.asString() == "OSVR_HDK_13_V1") {
             builtInString = osvr_display_config_built_in_osvr_hdk13_v1;
+        } else if (builtIn.asString() == "OSVR_HDK_13_V2") {
+            builtInString = osvr_display_config_built_in_osvr_hdk13_v2;
         } else {
             std::cerr
                 << "OSVRDisplayConfiguration::parse(): ERROR: Unrecognized "
