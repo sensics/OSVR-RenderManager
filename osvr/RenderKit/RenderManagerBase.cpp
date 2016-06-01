@@ -427,7 +427,10 @@ namespace renderkit {
     }
 
     RenderManager::~RenderManager() {
-        if (m_log) m_log->info("RenderManager deconstructed");
+        if (m_log) {
+          m_log->info("RenderManager deconstructed");
+          m_log->flush();
+        }
 
         // Unregister any remaining callback handlers for devices that
         // are set to update our transformation matrices.
