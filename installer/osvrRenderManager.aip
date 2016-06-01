@@ -8,10 +8,10 @@
     <ROW Property="ARPURLINFOABOUT" Value="www.sensics.com"/>
     <ROW Property="CTRLS" Value="1"/>
     <ROW Property="Manufacturer" Value="Sensics"/>
-    <ROW Property="ProductCode" Value="1033:{7AB9C566-8804-47DB-AD6D-DA9E3935EE8B} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{66D8C123-CA95-44F1-80CD-DD7C01048D52} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="osvrRenderManager"/>
-    <ROW Property="ProductVersion" Value="0.6.44" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.6.49" Type="32"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{98A7C733-56CF-4BAB-B82F-27C975BFA621}"/>
     <ROW Property="VIEWREADME" Value="1" Type="4"/>
@@ -25,6 +25,8 @@
   <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
     <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1"/>
     <ROW Directory="D3D11demos_Dir" Directory_Parent="SHORTCUTDIR" DefaultDir="D3D11D~1|D3D11 demos"/>
+    <ROW Directory="DK2_1_Dir" Directory_Parent="Servers_Dir" DefaultDir="DK2"/>
+    <ROW Directory="DK2_Dir" Directory_Parent="APPDIR" DefaultDir="DK2"/>
     <ROW Directory="DirectModecontrols_Dir" Directory_Parent="SHORTCUTDIR" DefaultDir="DIRECT~1|DirectMode controls"/>
     <ROW Directory="NewFolder_Dir" Directory_Parent="APPDIR" DefaultDir="lib"/>
     <ROW Directory="OpenGLdemos_Dir" Directory_Parent="SHORTCUTDIR" DefaultDir="OPENGL~1|OpenGL demos"/>
@@ -39,80 +41,83 @@
     <ROW Directory="server_Dir" Directory_Parent="APPDIR" DefaultDir="server"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCompsComponent">
-    <ROW Component="AdjustableRenderingDelayD3D.exe" ComponentId="{2C995CFF-9A97-439D-A05A-4D45BD51C630}" Directory_="APPDIR" Attributes="256" KeyPath="AdjustableRenderingDelayD3D.exe"/>
-    <ROW Component="AdjustableRenderingDelayOpenGL.exe" ComponentId="{5A668A38-E2D1-4292-9C24-809CAE9C3498}" Directory_="APPDIR" Attributes="256" KeyPath="AdjustableRenderingDelayOpenGL.exe"/>
-    <ROW Component="CurrentControlSet" ComponentId="{CE6FD662-D61D-4316-BBE7-574DD88A6EFD}" Directory_="APPDIR" Attributes="260" KeyPath="CurrentControlSet"/>
-    <ROW Component="D3D11demos" ComponentId="{FB507C1F-C80C-48D6-B80A-7F1B62A9B699}" Directory_="D3D11demos_Dir" Attributes="0"/>
-    <ROW Component="DirectModeDebugging.exe" ComponentId="{5547288D-BB96-4BF3-B5A1-E13287D49D8D}" Directory_="APPDIR" Attributes="256" KeyPath="DirectModeDebugging.exe"/>
-    <ROW Component="DirectModecontrols" ComponentId="{C3B1F070-08CC-4595-A2E0-CE5960A3D0DA}" Directory_="DirectModecontrols_Dir" Attributes="0"/>
-    <ROW Component="DisableOSVRDirectMode.exe" ComponentId="{DFF468A5-5E48-441A-8394-7ADACD0C6FF2}" Directory_="APPDIR" Attributes="256" KeyPath="DisableOSVRDirectMode.exe"/>
-    <ROW Component="DisableOSVRDirectModeAMD.exe" ComponentId="{8B1F01AF-746B-437D-9BF6-61C322F9683E}" Directory_="APPDIR" Attributes="256" KeyPath="DisableOSVRDirectModeAMD.exe"/>
-    <ROW Component="EnableOSVRDirectMode.exe" ComponentId="{CBD69CEB-54F0-4CFB-A2E7-082C78A620EA}" Directory_="APPDIR" Attributes="256" KeyPath="EnableOSVRDirectMode.exe"/>
-    <ROW Component="EnableOSVRDirectModeAMD.exe" ComponentId="{30DC967A-CDAA-42EC-AD19-3946535E3323}" Directory_="APPDIR" Attributes="256" KeyPath="EnableOSVRDirectModeAMD.exe"/>
-    <ROW Component="GraphicsLibraryD3D11.h" ComponentId="{41FABC5B-0A2B-49FF-90A0-E156A37BE9C2}" Directory_="RenderKit_Dir" Attributes="0" KeyPath="GraphicsLibraryD3D11.h" Type="0"/>
-    <ROW Component="LatencyTestD3DExample.exe" ComponentId="{F5A95ABD-DE1D-44E9-93C3-FD4D95F59CA0}" Directory_="APPDIR" Attributes="256" KeyPath="LatencyTestD3DExample.exe"/>
-    <ROW Component="OpenGLdemos" ComponentId="{5AA819BD-3A61-4DE8-8B0F-25DC23504971}" Directory_="OpenGLdemos_Dir" Attributes="0"/>
-    <ROW Component="ProductInformation" ComponentId="{F4B8B3E7-A298-47D3-84E3-5CF1E37640AB}" Directory_="APPDIR" Attributes="4" KeyPath="Version"/>
-    <ROW Component="README.txt" ComponentId="{110F2BEB-CB59-432E-B17D-948249663705}" Directory_="APPDIR" Attributes="0" KeyPath="README.txt"/>
-    <ROW Component="RenderManagerD3DATWDoubleBufferExample.e" ComponentId="{5C227572-E502-451D-96AC-2B1E06689EE9}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DATWDoubleBufferExample.exe"/>
-    <ROW Component="RenderManagerD3DExample3D.exe" ComponentId="{7EC3522B-8635-4D1E-B0F8-F75E5AB72E5E}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DExample3D.exe"/>
-    <ROW Component="RenderManagerD3DHeadSpaceExample.exe" ComponentId="{442725E8-C431-4A63-8255-9D12D01ED05A}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DHeadSpaceExample.exe"/>
-    <ROW Component="RenderManagerD3DPresentExample3D.exe" ComponentId="{E7F8ACAE-1F0C-4BAA-AB29-F1771DA8C028}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DPresentExample3D.exe"/>
-    <ROW Component="RenderManagerD3DPresentMakeDeviceExample" ComponentId="{B0B02342-88FC-421B-8F4D-FC54816EE2B8}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DPresentMakeDeviceExample3D.exe"/>
-    <ROW Component="RenderManagerD3DPresentSideBySideExample" ComponentId="{5DCFF0E2-2737-4E7C-A916-FAA5738255AF}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DPresentSideBySideExample.exe"/>
-    <ROW Component="RenderManagerD3DTest2D.exe" ComponentId="{56CF72DE-8504-49C2-B9A1-871608349E5C}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DTest2D.exe"/>
-    <ROW Component="RenderManagerOpenGLCoreExample.exe" ComponentId="{E98250BC-CE94-4634-8FF4-15CC05AA06AA}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLCoreExample.exe"/>
-    <ROW Component="RenderManagerOpenGLExample.exe" ComponentId="{55054B1C-5AD8-43C5-9530-EBCC5C64CBC2}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLExample.exe"/>
-    <ROW Component="RenderManagerOpenGLHeadSpaceExample.exe" ComponentId="{6AC6E486-7A87-49A8-B09C-E741B69F19DE}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLHeadSpaceExample.exe"/>
-    <ROW Component="RenderManagerOpenGLPresentExample.exe" ComponentId="{4A83C880-699F-4286-867B-DD9907B5E51C}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLPresentExample.exe"/>
-    <ROW Component="RenderManagerOpenGLPresentSideBySideExam" ComponentId="{76732CAC-14FC-4E79-BFEE-DB42F348F82A}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLPresentSideBySideExample.exe"/>
-    <ROW Component="RenderManagerOpenGLSharedContextExample." ComponentId="{5A429C4D-47C0-42DC-9FC6-594CE5EC52AA}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLSharedContextExample.exe"/>
-    <ROW Component="SDL2.dll" ComponentId="{1F50E21C-47D2-4637-887B-8B179C528345}" Directory_="APPDIR" Attributes="256" KeyPath="SDL2.dll"/>
-    <ROW Component="SHORTCUTDIR" ComponentId="{BB57D717-D084-44CA-BB8F-83DA771867E9}" Directory_="SHORTCUTDIR" Attributes="0"/>
-    <ROW Component="SYSTEM" ComponentId="{7B0F1EFE-9C89-40A5-90D9-131D065A9C2D}" Directory_="APPDIR" Attributes="260" KeyPath="SYSTEM"/>
-    <ROW Component="Servers" ComponentId="{1636F80D-D116-45C2-83C5-9FF4DFE5B8AC}" Directory_="Servers_Dir" Attributes="0"/>
-    <ROW Component="SpinCubeD3D.exe" ComponentId="{2BECE73B-5B85-4DF2-B86E-E44D72CC3C7D}" Directory_="APPDIR" Attributes="256" KeyPath="SpinCubeD3D.exe"/>
-    <ROW Component="SpinCubeOpenGL.exe" ComponentId="{1BADBC4B-FF37-45C2-94B8-9ACA0AA86BE4}" Directory_="APPDIR" Attributes="256" KeyPath="SpinCubeOpenGL.exe"/>
-    <ROW Component="com_osvr_Multiserver.dll" ComponentId="{6FE009AE-8875-44BA-BFF9-12F30D578300}" Directory_="osvrpluginkit0_Dir" Attributes="256" KeyPath="com_osvr_Multiserver.dll"/>
-    <ROW Component="d3dcompiler_47.dll" ComponentId="{08513ECC-480F-4B6F-BE4B-A17C99334CE8}" Directory_="APPDIR" Attributes="256" KeyPath="d3dcompiler_47.dll"/>
-    <ROW Component="functionality.dll" ComponentId="{0BCD3281-E6B4-4918-9518-7C371B3FFFF6}" Directory_="APPDIR" Attributes="256" KeyPath="functionality.dll"/>
-    <ROW Component="functionality.dll_1" ComponentId="{ADE60011-68E6-430B-BE33-7A947983AE48}" Directory_="bin_Dir" Attributes="256" KeyPath="functionality.dll_1"/>
-    <ROW Component="glew32.dll" ComponentId="{CA09B454-8AA3-4E53-B918-C7D6680314E2}" Directory_="APPDIR" Attributes="256" KeyPath="glew32.dll"/>
-    <ROW Component="gtest.dll" ComponentId="{6B9AD9F1-C76C-4BFF-A338-FC42B90C8A38}" Directory_="APPDIR" Attributes="256" KeyPath="gtest.dll"/>
-    <ROW Component="gtest.dll_1" ComponentId="{1853628F-3528-446D-99A0-F5A95B0EDE19}" Directory_="bin_Dir" Attributes="256" KeyPath="gtest.dll_1"/>
-    <ROW Component="gtest_main.dll" ComponentId="{ABA30236-8548-489A-A92A-BE5ABE02447A}" Directory_="APPDIR" Attributes="256" KeyPath="gtest_main.dll"/>
-    <ROW Component="gtest_main.dll_1" ComponentId="{981C7EB3-4F45-477A-AF47-3D8AEE8E2919}" Directory_="bin_Dir" Attributes="256" KeyPath="gtest_main.dll_1"/>
-    <ROW Component="nondirectmode_window.json" ComponentId="{D7F15250-DC53-41CA-9FD5-ABD1D1E0BE7A}" Directory_="bin_Dir" Attributes="0" KeyPath="nondirectmode_window.json" Type="0"/>
-    <ROW Component="nvlddmkm" ComponentId="{5009A4E0-AAE6-4714-A010-66D09B36D409}" Directory_="APPDIR" Attributes="260" KeyPath="nvlddmkm"/>
-    <ROW Component="osvrClient.dll" ComponentId="{E01A049D-FBBB-4D13-A7C5-B3E05F4320DA}" Directory_="APPDIR" Attributes="256" KeyPath="osvrClient.dll"/>
-    <ROW Component="osvrClient.dll_1" ComponentId="{E1FD765B-7C50-4C1B-A954-B0AA95320345}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrClient.dll_1"/>
-    <ROW Component="osvrClientKit.dll" ComponentId="{53A79CCF-C719-408D-BE06-C4BF73C7BB0B}" Directory_="APPDIR" Attributes="256" KeyPath="osvrClientKit.dll"/>
-    <ROW Component="osvrClientKit.dll_1" ComponentId="{A61F3C2F-437E-4449-8443-44F19EDBB04D}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrClientKit.dll_1"/>
-    <ROW Component="osvrCommon.dll" ComponentId="{2614BABD-B930-4421-BBB9-F771C55C8EC6}" Directory_="APPDIR" Attributes="256" KeyPath="osvrCommon.dll"/>
-    <ROW Component="osvrCommon.dll_1" ComponentId="{C0DB4440-A37C-4A9A-9FAF-4B920D54C57E}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrCommon.dll_1"/>
-    <ROW Component="osvrConnection.dll" ComponentId="{77BE736C-BD3E-40E4-AD09-966150E2AB78}" Directory_="APPDIR" Attributes="256" KeyPath="osvrConnection.dll"/>
-    <ROW Component="osvrConnection.dll_1" ComponentId="{96D664DA-CB2D-4A46-B78C-E115C3E6D7D7}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrConnection.dll_1"/>
-    <ROW Component="osvrJointClientKit.dll" ComponentId="{9606ED3D-FAB7-467B-9843-CD51768B8B69}" Directory_="APPDIR" Attributes="256" KeyPath="osvrJointClientKit.dll"/>
-    <ROW Component="osvrJointClientKit.dll_1" ComponentId="{FF93E119-A84D-4B3D-8B73-E1611F39187A}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrJointClientKit.dll_1"/>
-    <ROW Component="osvrPluginHost.dll" ComponentId="{251B14AE-6280-47B4-BDCA-1E666F73B1CB}" Directory_="APPDIR" Attributes="256" KeyPath="osvrPluginHost.dll"/>
-    <ROW Component="osvrPluginHost.dll_1" ComponentId="{AF1330B3-2722-4809-ABB8-BBAB3252BD76}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrPluginHost.dll_1"/>
-    <ROW Component="osvrPluginKit.dll" ComponentId="{93FFAC04-4164-412B-AD63-9E926BB17ABE}" Directory_="APPDIR" Attributes="256" KeyPath="osvrPluginKit.dll"/>
-    <ROW Component="osvrPluginKit.dll_1" ComponentId="{9AE5BCAB-55E2-4D58-A51B-47E1B6DC57F3}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrPluginKit.dll_1"/>
-    <ROW Component="osvrRenderManager.dll" ComponentId="{64EED68C-CAC8-4A9B-8FB4-D84456C3AFBC}" Directory_="APPDIR" Attributes="256" KeyPath="osvrRenderManager.dll"/>
-    <ROW Component="osvrRenderManager.lib" ComponentId="{867EAFA0-E333-48A7-A346-64DF866B9455}" Directory_="NewFolder_Dir" Attributes="0" KeyPath="osvrRenderManager.lib" Type="0"/>
-    <ROW Component="osvrServer.dll" ComponentId="{E6D3EA39-37D4-4D99-8A6D-3A20ED1F256F}" Directory_="APPDIR" Attributes="256" KeyPath="osvrServer.dll"/>
-    <ROW Component="osvrServer.dll_1" ComponentId="{99BCFC33-CB44-4B7D-BBB7-A53802B5E284}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrServer.dll_1"/>
-    <ROW Component="osvrUSBSerial.dll" ComponentId="{2679DC85-CC5A-42F1-A8BE-AEE63E5C5577}" Directory_="APPDIR" Attributes="256" KeyPath="osvrUSBSerial.dll"/>
-    <ROW Component="osvrUSBSerial.dll_1" ComponentId="{C12A5EF2-F8F6-46D1-AF98-12EAA681056B}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrUSBSerial.dll_1"/>
-    <ROW Component="osvrUtil.dll" ComponentId="{6BEAC45E-A5C5-4885-B172-F35EACD32939}" Directory_="APPDIR" Attributes="256" KeyPath="osvrUtil.dll"/>
-    <ROW Component="osvrUtil.dll_1" ComponentId="{77CD8E6D-286C-4799-AB58-C88C9571EA64}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrUtil.dll_1"/>
-    <ROW Component="osvrVRPNServer.dll" ComponentId="{69DBD932-A28B-42FA-B785-C22AABC80996}" Directory_="APPDIR" Attributes="256" KeyPath="osvrVRPNServer.dll"/>
-    <ROW Component="osvrVRPNServer.dll_1" ComponentId="{BC419E47-BC5C-4FA8-97CA-BE1A666A2682}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrVRPNServer.dll_1"/>
-    <ROW Component="osvr_server.exe" ComponentId="{9AE49621-2F67-454C-A4B7-A9A26AFE8A2C}" Directory_="bin_Dir" Attributes="256" KeyPath="osvr_server.exe"/>
-    <ROW Component="services" ComponentId="{A833430F-ABB3-4B0C-AE57-AD135F438230}" Directory_="APPDIR" Attributes="260" KeyPath="services"/>
+    <ROW Component="AdjustableRenderingDelayD3D.exe" ComponentId="{3FDEAA59-5ADE-47E3-AD9F-0F77F4FA864D}" Directory_="APPDIR" Attributes="256" KeyPath="AdjustableRenderingDelayD3D.exe"/>
+    <ROW Component="AdjustableRenderingDelayOpenGL.exe" ComponentId="{1F06E1FC-5F82-47FE-9C63-0F70E7FF39C5}" Directory_="APPDIR" Attributes="256" KeyPath="AdjustableRenderingDelayOpenGL.exe"/>
+    <ROW Component="CurrentControlSet" ComponentId="{A62B8084-FAAA-48FB-A810-99C0D57951C4}" Directory_="APPDIR" Attributes="260" KeyPath="CurrentControlSet"/>
+    <ROW Component="D3D11demos" ComponentId="{3D0523AD-A6C4-4091-A46E-F3E630CB667E}" Directory_="D3D11demos_Dir" Attributes="0"/>
+    <ROW Component="DK2" ComponentId="{E6E53436-3542-4533-A762-7CBF9014687A}" Directory_="DK2_1_Dir" Attributes="0"/>
+    <ROW Component="DirectModeDebugging.exe" ComponentId="{9FBEA838-3DFF-4375-9A9A-DC23EC56321C}" Directory_="APPDIR" Attributes="256" KeyPath="DirectModeDebugging.exe"/>
+    <ROW Component="DirectModecontrols" ComponentId="{6351CC9A-7A4F-4CB1-B44B-08FA6A8B9745}" Directory_="DirectModecontrols_Dir" Attributes="0"/>
+    <ROW Component="DisableOSVRDirectMode.exe" ComponentId="{F87CB3C4-344C-4BB0-AE17-C8A46C8A68C3}" Directory_="APPDIR" Attributes="256" KeyPath="DisableOSVRDirectMode.exe"/>
+    <ROW Component="DisableOSVRDirectModeAMD.exe" ComponentId="{4580C09B-0548-4DDA-B50D-75B8A27AF3CC}" Directory_="APPDIR" Attributes="256" KeyPath="DisableOSVRDirectModeAMD.exe"/>
+    <ROW Component="EnableOSVRDirectMode.exe" ComponentId="{1B0C6412-EFA6-456A-84AD-15BCC0D6E8A6}" Directory_="APPDIR" Attributes="256" KeyPath="EnableOSVRDirectMode.exe"/>
+    <ROW Component="EnableOSVRDirectModeAMD.exe" ComponentId="{5C5E418C-9775-464B-AA05-2B70DE426D90}" Directory_="APPDIR" Attributes="256" KeyPath="EnableOSVRDirectModeAMD.exe"/>
+    <ROW Component="GraphicsLibraryD3D11.h" ComponentId="{D48A1C07-EE8B-47AC-9E1F-C089493A1929}" Directory_="RenderKit_Dir" Attributes="0" KeyPath="GraphicsLibraryD3D11.h" Type="0"/>
+    <ROW Component="LatencyTestD3DExample.exe" ComponentId="{3729D55F-63B9-4A92-9980-C1ECD0001C2C}" Directory_="APPDIR" Attributes="256" KeyPath="LatencyTestD3DExample.exe"/>
+    <ROW Component="Oculus_with_xbox.json" ComponentId="{332EB723-3E1B-4BA9-8763-625A9B49AF4D}" Directory_="DK2_Dir" Attributes="0" KeyPath="vrpn_Oculus.cfg" Type="0"/>
+    <ROW Component="OpenGLdemos" ComponentId="{91DA43E8-2E03-442A-9E0E-BE7C5026674C}" Directory_="OpenGLdemos_Dir" Attributes="0"/>
+    <ROW Component="ProductInformation" ComponentId="{D67DCF1E-B711-45CF-A3E4-5728F467A58A}" Directory_="APPDIR" Attributes="4" KeyPath="Version"/>
+    <ROW Component="README.txt" ComponentId="{66B380C6-DF7F-4B50-8EEB-8D211BB65291}" Directory_="APPDIR" Attributes="0" KeyPath="README.txt"/>
+    <ROW Component="RenderManagerD3DATWDoubleBufferExample.e" ComponentId="{CEAFF929-DDE5-4B4C-A443-D400698D43A2}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DATWDoubleBufferExample.exe"/>
+    <ROW Component="RenderManagerD3DExample3D.exe" ComponentId="{F9D97BAA-1610-455A-8C75-0BD5B8CD9801}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DExample3D.exe"/>
+    <ROW Component="RenderManagerD3DHeadSpaceExample.exe" ComponentId="{69D5C048-2A3D-4441-9CDA-FF41856454F9}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DHeadSpaceExample.exe"/>
+    <ROW Component="RenderManagerD3DPresentExample3D.exe" ComponentId="{0B5EF319-5859-4994-AFE7-FE1F332222CA}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DPresentExample3D.exe"/>
+    <ROW Component="RenderManagerD3DPresentMakeDeviceExample" ComponentId="{925E6948-C50B-4755-B52F-2B900EE4F721}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DPresentMakeDeviceExample3D.exe"/>
+    <ROW Component="RenderManagerD3DPresentSideBySideExample" ComponentId="{0609D1AC-2263-49DA-A8AE-0525A2926446}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DPresentSideBySideExample.exe"/>
+    <ROW Component="RenderManagerD3DTest2D.exe" ComponentId="{B70F53F9-0BFE-4F72-A4B2-5D898B852E74}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerD3DTest2D.exe"/>
+    <ROW Component="RenderManagerOpenGLCoreExample.exe" ComponentId="{6C769046-B6EA-4CEA-BF38-3236EA7FB41A}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLCoreExample.exe"/>
+    <ROW Component="RenderManagerOpenGLExample.exe" ComponentId="{52A5F759-9CAB-4EFB-9C66-8F26161041C8}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLExample.exe"/>
+    <ROW Component="RenderManagerOpenGLHeadSpaceExample.exe" ComponentId="{5217B7A9-5525-4C96-83BA-442EF659D178}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLHeadSpaceExample.exe"/>
+    <ROW Component="RenderManagerOpenGLPresentExample.exe" ComponentId="{70D3B3CF-8189-43EE-A278-1EAB7A95F180}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLPresentExample.exe"/>
+    <ROW Component="RenderManagerOpenGLPresentSideBySideExam" ComponentId="{7DA875FB-79F3-4E63-A4B7-263F8379F45F}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLPresentSideBySideExample.exe"/>
+    <ROW Component="RenderManagerOpenGLSharedContextExample." ComponentId="{33F26713-5D95-4CF6-8A08-4D8F18C45353}" Directory_="APPDIR" Attributes="256" KeyPath="RenderManagerOpenGLSharedContextExample.exe"/>
+    <ROW Component="SDL2.dll" ComponentId="{347BFA53-CF0D-4CE0-99A2-9B1BD945DF36}" Directory_="APPDIR" Attributes="256" KeyPath="SDL2.dll"/>
+    <ROW Component="SHORTCUTDIR" ComponentId="{DE26F36B-F490-41A3-86C2-32D8B7AA41E5}" Directory_="SHORTCUTDIR" Attributes="0"/>
+    <ROW Component="SYSTEM" ComponentId="{8BAF98C8-0BF2-4BAB-BADF-82C54CBBFC27}" Directory_="APPDIR" Attributes="260" KeyPath="SYSTEM"/>
+    <ROW Component="Servers" ComponentId="{C4B62C3D-4EF1-4512-A9BF-40009DAF67D4}" Directory_="Servers_Dir" Attributes="0"/>
+    <ROW Component="SpinCubeD3D.exe" ComponentId="{0AE984F6-7052-48E1-9328-E09EAD853F1A}" Directory_="APPDIR" Attributes="256" KeyPath="SpinCubeD3D.exe"/>
+    <ROW Component="SpinCubeOpenGL.exe" ComponentId="{3DAF8C9F-3112-4049-BBA0-149BE9D7E739}" Directory_="APPDIR" Attributes="256" KeyPath="SpinCubeOpenGL.exe"/>
+    <ROW Component="com_osvr_Multiserver.dll" ComponentId="{B26EECE2-17FB-434A-A0DC-01E6DA140766}" Directory_="osvrpluginkit0_Dir" Attributes="256" KeyPath="com_osvr_Multiserver.dll"/>
+    <ROW Component="d3dcompiler_47.dll" ComponentId="{946D51B0-E906-413E-A5D9-443E4BC6E90E}" Directory_="APPDIR" Attributes="256" KeyPath="d3dcompiler_47.dll"/>
+    <ROW Component="functionality.dll" ComponentId="{5493FF34-9C2A-4FFF-B9AB-A1CB222AFBCA}" Directory_="APPDIR" Attributes="256" KeyPath="functionality.dll"/>
+    <ROW Component="functionality.dll_1" ComponentId="{2A004846-A85F-4017-AEB9-2D10B8BF5D3C}" Directory_="bin_Dir" Attributes="256" KeyPath="functionality.dll_1"/>
+    <ROW Component="glew32.dll" ComponentId="{35C45664-D07D-4BAB-8821-0E10CFA2B5B5}" Directory_="APPDIR" Attributes="256" KeyPath="glew32.dll"/>
+    <ROW Component="gtest.dll" ComponentId="{648272CB-C4A1-49E5-98E7-B02406B5C821}" Directory_="APPDIR" Attributes="256" KeyPath="gtest.dll"/>
+    <ROW Component="gtest.dll_1" ComponentId="{716AFE53-849B-45AA-9F36-67AF69B83887}" Directory_="bin_Dir" Attributes="256" KeyPath="gtest.dll_1"/>
+    <ROW Component="gtest_main.dll" ComponentId="{B002B41B-DA4B-4606-A89D-5EA30ABEA158}" Directory_="APPDIR" Attributes="256" KeyPath="gtest_main.dll"/>
+    <ROW Component="gtest_main.dll_1" ComponentId="{C5D9D002-404B-4294-992C-C24D260FA398}" Directory_="bin_Dir" Attributes="256" KeyPath="gtest_main.dll_1"/>
+    <ROW Component="nondirectmode_window.json" ComponentId="{A0B8ADF3-F1EA-4E57-B591-EE46752723D7}" Directory_="bin_Dir" Attributes="0" KeyPath="nondirectmode_window.json" Type="0"/>
+    <ROW Component="nvlddmkm" ComponentId="{147CC281-4885-4455-98B7-700740BBD790}" Directory_="APPDIR" Attributes="260" KeyPath="nvlddmkm"/>
+    <ROW Component="osvrClient.dll" ComponentId="{805C0F6E-12B2-4C7E-821B-F728761D9D83}" Directory_="APPDIR" Attributes="256" KeyPath="osvrClient.dll"/>
+    <ROW Component="osvrClient.dll_1" ComponentId="{528E269A-1DE4-4AAD-9D92-B4090105031E}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrClient.dll_1"/>
+    <ROW Component="osvrClientKit.dll" ComponentId="{C1690362-ABB6-43F9-81D3-5341D11B8D6E}" Directory_="APPDIR" Attributes="256" KeyPath="osvrClientKit.dll"/>
+    <ROW Component="osvrClientKit.dll_1" ComponentId="{F62BED3F-7C78-4FB4-BA2E-1CD30F9638FC}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrClientKit.dll_1"/>
+    <ROW Component="osvrCommon.dll" ComponentId="{21B03D36-A718-4A0B-89C3-0D3EB7DA7970}" Directory_="APPDIR" Attributes="256" KeyPath="osvrCommon.dll"/>
+    <ROW Component="osvrCommon.dll_1" ComponentId="{2A6ED652-7809-46FE-A7E3-7434FEA64455}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrCommon.dll_1"/>
+    <ROW Component="osvrConnection.dll" ComponentId="{18532A68-7DE7-46EA-9985-6EF18F2CF680}" Directory_="APPDIR" Attributes="256" KeyPath="osvrConnection.dll"/>
+    <ROW Component="osvrConnection.dll_1" ComponentId="{528871C3-321F-4A68-AFB9-708CDA74FBBB}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrConnection.dll_1"/>
+    <ROW Component="osvrJointClientKit.dll" ComponentId="{E1C8206E-E5D6-4189-AEC5-E7ABDA2136E3}" Directory_="APPDIR" Attributes="256" KeyPath="osvrJointClientKit.dll"/>
+    <ROW Component="osvrJointClientKit.dll_1" ComponentId="{7230C0D9-1591-42EA-8DEB-165C0329399B}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrJointClientKit.dll_1"/>
+    <ROW Component="osvrPluginHost.dll" ComponentId="{91D5B801-7B0D-4EE0-A714-6475A493C4A8}" Directory_="APPDIR" Attributes="256" KeyPath="osvrPluginHost.dll"/>
+    <ROW Component="osvrPluginHost.dll_1" ComponentId="{F1151569-2D6A-4F83-AAF0-33C9BFF0E8C0}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrPluginHost.dll_1"/>
+    <ROW Component="osvrPluginKit.dll" ComponentId="{3EDBAC02-3348-4FB0-85F4-F854E5F35244}" Directory_="APPDIR" Attributes="256" KeyPath="osvrPluginKit.dll"/>
+    <ROW Component="osvrPluginKit.dll_1" ComponentId="{D452484A-3634-4991-B257-4494B21A5966}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrPluginKit.dll_1"/>
+    <ROW Component="osvrRenderManager.dll" ComponentId="{5F1770AE-C7C6-4F26-B0D7-37B361B3F91A}" Directory_="APPDIR" Attributes="256" KeyPath="osvrRenderManager.dll"/>
+    <ROW Component="osvrRenderManager.lib" ComponentId="{F1D0CE46-2D24-42F9-BED9-1B7EA6DD183B}" Directory_="NewFolder_Dir" Attributes="0" KeyPath="osvrRenderManager.lib" Type="0"/>
+    <ROW Component="osvrServer.dll" ComponentId="{7E651A23-D738-49F9-B4FB-665B075DC944}" Directory_="APPDIR" Attributes="256" KeyPath="osvrServer.dll"/>
+    <ROW Component="osvrServer.dll_1" ComponentId="{B18B876A-598A-4013-B5EA-875BB007ACBC}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrServer.dll_1"/>
+    <ROW Component="osvrUSBSerial.dll" ComponentId="{C615F7BE-8D9F-4253-999A-E0B88BF70DBD}" Directory_="APPDIR" Attributes="256" KeyPath="osvrUSBSerial.dll"/>
+    <ROW Component="osvrUSBSerial.dll_1" ComponentId="{EDFEF55D-7041-4605-BA2D-1A08A43DFCFD}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrUSBSerial.dll_1"/>
+    <ROW Component="osvrUtil.dll" ComponentId="{DCF4B0C1-8AF4-4835-955A-3BB0E9028FCD}" Directory_="APPDIR" Attributes="256" KeyPath="osvrUtil.dll"/>
+    <ROW Component="osvrUtil.dll_1" ComponentId="{B7DB0164-EF46-4AEF-9D5D-BC820A861E4F}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrUtil.dll_1"/>
+    <ROW Component="osvrVRPNServer.dll" ComponentId="{4CC9EA0B-6B82-416B-A245-B79B1642E503}" Directory_="APPDIR" Attributes="256" KeyPath="osvrVRPNServer.dll"/>
+    <ROW Component="osvrVRPNServer.dll_1" ComponentId="{875B4784-72F9-4298-8D4F-888BBD1E818A}" Directory_="bin_Dir" Attributes="256" KeyPath="osvrVRPNServer.dll_1"/>
+    <ROW Component="osvr_server.exe" ComponentId="{056BACBD-A236-4460-9CCA-4C7B597C6912}" Directory_="bin_Dir" Attributes="256" KeyPath="osvr_server.exe"/>
+    <ROW Component="services" ComponentId="{173F865C-01AD-47B9-AB71-29FA41718318}" Directory_="APPDIR" Attributes="260" KeyPath="services"/>
+    <ROW Component="vrpn_server.exe" ComponentId="{9A8438DF-F747-4832-8AEF-66228EC81700}" Directory_="DK2_Dir" Attributes="256" KeyPath="vrpn_server.exe"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
-    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AdjustableRenderingDelayD3D.exe AdjustableRenderingDelayOpenGL.exe CurrentControlSet D3D11demos DirectModeDebugging.exe DirectModecontrols DisableOSVRDirectMode.exe DisableOSVRDirectModeAMD.exe EnableOSVRDirectMode.exe EnableOSVRDirectModeAMD.exe GraphicsLibraryD3D11.h LatencyTestD3DExample.exe OpenGLdemos ProductInformation README.txt RenderManagerD3DATWDoubleBufferExample.e RenderManagerD3DExample3D.exe RenderManagerD3DHeadSpaceExample.exe RenderManagerD3DPresentExample3D.exe RenderManagerD3DPresentMakeDeviceExample RenderManagerD3DPresentSideBySideExample RenderManagerD3DTest2D.exe RenderManagerOpenGLCoreExample.exe RenderManagerOpenGLExample.exe RenderManagerOpenGLHeadSpaceExample.exe RenderManagerOpenGLPresentExample.exe RenderManagerOpenGLPresentSideBySideExam RenderManagerOpenGLSharedContextExample. SDL2.dll SHORTCUTDIR SYSTEM Servers SpinCubeD3D.exe SpinCubeOpenGL.exe com_osvr_Multiserver.dll d3dcompiler_47.dll functionality.dll functionality.dll_1 glew32.dll gtest.dll gtest.dll_1 gtest_main.dll gtest_main.dll_1 nondirectmode_window.json nvlddmkm osvrClient.dll osvrClient.dll_1 osvrClientKit.dll osvrClientKit.dll_1 osvrCommon.dll osvrCommon.dll_1 osvrConnection.dll osvrConnection.dll_1 osvrJointClientKit.dll osvrJointClientKit.dll_1 osvrPluginHost.dll osvrPluginHost.dll_1 osvrPluginKit.dll osvrPluginKit.dll_1 osvrRenderManager.dll osvrRenderManager.lib osvrServer.dll osvrServer.dll_1 osvrUSBSerial.dll osvrUSBSerial.dll_1 osvrUtil.dll osvrUtil.dll_1 osvrVRPNServer.dll osvrVRPNServer.dll_1 osvr_server.exe services"/>
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Description" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AdjustableRenderingDelayD3D.exe AdjustableRenderingDelayOpenGL.exe CurrentControlSet D3D11demos DK2 DirectModeDebugging.exe DirectModecontrols DisableOSVRDirectMode.exe DisableOSVRDirectModeAMD.exe EnableOSVRDirectMode.exe EnableOSVRDirectModeAMD.exe GraphicsLibraryD3D11.h LatencyTestD3DExample.exe Oculus_with_xbox.json OpenGLdemos ProductInformation README.txt RenderManagerD3DATWDoubleBufferExample.e RenderManagerD3DExample3D.exe RenderManagerD3DHeadSpaceExample.exe RenderManagerD3DPresentExample3D.exe RenderManagerD3DPresentMakeDeviceExample RenderManagerD3DPresentSideBySideExample RenderManagerD3DTest2D.exe RenderManagerOpenGLCoreExample.exe RenderManagerOpenGLExample.exe RenderManagerOpenGLHeadSpaceExample.exe RenderManagerOpenGLPresentExample.exe RenderManagerOpenGLPresentSideBySideExam RenderManagerOpenGLSharedContextExample. SDL2.dll SHORTCUTDIR SYSTEM Servers SpinCubeD3D.exe SpinCubeOpenGL.exe com_osvr_Multiserver.dll d3dcompiler_47.dll functionality.dll functionality.dll_1 glew32.dll gtest.dll gtest.dll_1 gtest_main.dll gtest_main.dll_1 nondirectmode_window.json nvlddmkm osvrClient.dll osvrClient.dll_1 osvrClientKit.dll osvrClientKit.dll_1 osvrCommon.dll osvrCommon.dll_1 osvrConnection.dll osvrConnection.dll_1 osvrJointClientKit.dll osvrJointClientKit.dll_1 osvrPluginHost.dll osvrPluginHost.dll_1 osvrPluginKit.dll osvrPluginKit.dll_1 osvrRenderManager.dll osvrRenderManager.lib osvrServer.dll osvrServer.dll_1 osvrUSBSerial.dll osvrUSBSerial.dll_1 osvrUtil.dll osvrUtil.dll_1 osvrVRPNServer.dll osvrVRPNServer.dll_1 osvr_server.exe services vrpn_server.exe"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
@@ -128,6 +133,9 @@
     <ROW File="GraphicsLibraryOpenGL.h" Component_="GraphicsLibraryD3D11.h" FileName="GRAPHI~2.H|GraphicsLibraryOpenGL.h" Attributes="0" SourcePath="..\osvr\RenderKit\GraphicsLibraryOpenGL.h" SelfReg="false" NextFile="RenderManagerOpenGLCoreExample.exe"/>
     <ROW File="LatencyTestD3DExample.exe" Component_="LatencyTestD3DExample.exe" FileName="LATENC~1.EXE|LatencyTestD3DExample.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\LatencyTestD3DExample.exe" SelfReg="false" NextFile="GraphicsLibraryD3D11.h" DigSign="true"/>
     <ROW File="MonoPointMeshTypes.h" Component_="GraphicsLibraryD3D11.h" FileName="MONOPO~1.H|MonoPointMeshTypes.h" Attributes="0" SourcePath="..\osvr\RenderKit\MonoPointMeshTypes.h" SelfReg="false" NextFile="RGBPointMeshTypes.h"/>
+    <ROW File="Oculus.json" Component_="Oculus_with_xbox.json" FileName="OCULUS~1.JSO|Oculus.json" Attributes="0" SourcePath="DK2\Oculus.json" SelfReg="false" NextFile="Oculus_ATW.json"/>
+    <ROW File="Oculus_ATW.json" Component_="Oculus_with_xbox.json" FileName="OCULUS~2.JSO|Oculus_ATW.json" Attributes="0" SourcePath="DK2\Oculus_ATW.json" SelfReg="false" NextFile="Oculus_ATW_sleep.json"/>
+    <ROW File="Oculus_ATW_sleep.json" Component_="Oculus_with_xbox.json" FileName="OCULUS~3.JSO|Oculus_ATW_sleep.json" Attributes="0" SourcePath="DK2\Oculus_ATW_sleep.json" SelfReg="false"/>
     <ROW File="README.txt" Component_="README.txt" FileName="README.txt" Attributes="0" SourcePath="README.txt" SelfReg="false" NextFile="osvrJointClientKit.dll"/>
     <ROW File="RGBPointMeshTypes.h" Component_="GraphicsLibraryD3D11.h" FileName="RGBPOI~1.H|RGBPointMeshTypes.h" Attributes="0" SourcePath="..\osvr\RenderKit\RGBPointMeshTypes.h" SelfReg="false" NextFile="directmode_HDK1.3_built_in.json"/>
     <ROW File="RenderKitGraphicsTransforms.h" Component_="GraphicsLibraryD3D11.h" FileName="RENDER~2.H|RenderKitGraphicsTransforms.h" Attributes="0" SourcePath="..\osvr\RenderKit\RenderKitGraphicsTransforms.h" SelfReg="false" NextFile="RenderManagerD3DHeadSpaceExample.exe"/>
@@ -147,7 +155,7 @@
     <ROW File="RenderManagerOpenGLHeadSpaceExample.exe" Component_="RenderManagerOpenGLHeadSpaceExample.exe" FileName="RENDE~10.EXE|RenderManagerOpenGLHeadSpaceExample.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\RenderManagerOpenGLHeadSpaceExample.exe" SelfReg="false" NextFile="RenderKitGraphicsTransforms.h" DigSign="true"/>
     <ROW File="RenderManagerOpenGLPresentExample.exe" Component_="RenderManagerOpenGLPresentExample.exe" FileName="RENDER~1.EXE|RenderManagerOpenGLPresentExample.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\RenderManagerOpenGLPresentExample.exe" SelfReg="false" NextFile="SDL2.dll" DigSign="true"/>
     <ROW File="RenderManagerOpenGLPresentSideBySideExample.exe" Component_="RenderManagerOpenGLPresentSideBySideExam" FileName="RENDER~9.EXE|RenderManagerOpenGLPresentSideBySideExample.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\RenderManagerOpenGLPresentSideBySideExample.exe" SelfReg="false" NextFile="RenderManagerOpenGLHeadSpaceExample.exe" DigSign="true"/>
-    <ROW File="RenderManagerOpenGLSharedContextExample.exe" Component_="RenderManagerOpenGLSharedContextExample." FileName="RENDE~13.EXE|RenderManagerOpenGLSharedContextExample.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\RenderManagerOpenGLSharedContextExample.exe" SelfReg="false" DigSign="true"/>
+    <ROW File="RenderManagerOpenGLSharedContextExample.exe" Component_="RenderManagerOpenGLSharedContextExample." FileName="RENDE~13.EXE|RenderManagerOpenGLSharedContextExample.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\RenderManagerOpenGLSharedContextExample.exe" SelfReg="false" NextFile="vrpn_server.exe" DigSign="true"/>
     <ROW File="SDL2.dll" Component_="SDL2.dll" FileName="SDL2.dll" Attributes="0" SourcePath="..\..\..\..\..\..\..\..\..\Packages\SDL\SDL2-2.0.3\lib\x64\SDL2.dll" SelfReg="false" NextFile="functionality.dll"/>
     <ROW File="SpinCubeD3D.exe" Component_="SpinCubeD3D.exe" FileName="SPINCU~1.EXE|SpinCubeD3D.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\SpinCubeD3D.exe" SelfReg="false" NextFile="nondirectmode_window.json" DigSign="true"/>
     <ROW File="SpinCubeOpenGL.exe" Component_="SpinCubeOpenGL.exe" FileName="SPINCU~2.EXE|SpinCubeOpenGL.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-RenderManager\bin\Release\SpinCubeOpenGL.exe" SelfReg="false" NextFile="RenderManagerD3DPresentSideBySideExample.exe" DigSign="true"/>
@@ -201,9 +209,11 @@
     <ROW File="osvr_compiler_tests.h" Component_="GraphicsLibraryD3D11.h" FileName="OSVR_C~1.H|osvr_compiler_tests.h" Attributes="0" SourcePath="..\osvr\RenderKit\osvr_compiler_tests.h" SelfReg="false" NextFile="directmode_HDK1.2.json"/>
     <ROW File="osvr_display_configuration.h" Component_="GraphicsLibraryD3D11.h" FileName="OSVR_D~1.H|osvr_display_configuration.h" Attributes="0" SourcePath="..\osvr\RenderKit\osvr_display_configuration.h" SelfReg="false" NextFile="RenderManagerOpenGLPresentExample.exe"/>
     <ROW File="osvr_server.exe" Component_="osvr_server.exe" FileName="OSVR_S~1.EXE|osvr_server.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\OSVR-Core\bin\Release\osvr_server.exe" SelfReg="false" NextFile="functionality.dll_1" DigSign="true"/>
+    <ROW File="vrpn_Oculus.cfg" Component_="Oculus_with_xbox.json" FileName="VRPN_O~1.CFG|vrpn_Oculus.cfg" Attributes="0" SourcePath="DK2\vrpn_Oculus.cfg" SelfReg="false" NextFile="Oculus.json"/>
+    <ROW File="vrpn_server.exe" Component_="vrpn_server.exe" FileName="VRPN_S~1.EXE|vrpn_server.exe" Attributes="0" SourcePath="C:\tmp\vs2013_64\vrpn\server_src\RelWithDebInfo\vrpn_server.exe" SelfReg="false" NextFile="vrpn_Oculus.cfg" DigSign="true"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
-    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" PackageFolder="." PackageFileName="osvrRenderManager_0_6_44_unsigned" Languages="en" InstallationType="4" UseLargeSchema="true" MsiPackageType="x64"/>
+    <ROW BuildKey="DefaultBuild" BuildName="DefaultBuild" BuildOrder="1" BuildType="0" PackageFolder="." PackageFileName="osvrRenderManager_0_6_49_unsigned_intel" Languages="en" InstallationType="4" UseLargeSchema="true" MsiPackageType="x64"/>
     <ATTRIBUTE name="CurrentBuild" value="DefaultBuild"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
@@ -264,6 +274,7 @@
     <ROW Directory_="DirectModecontrols_Dir" Component_="DirectModecontrols" ManualDelete="false"/>
     <ROW Directory_="D3D11demos_Dir" Component_="D3D11demos" ManualDelete="false"/>
     <ROW Directory_="OpenGLdemos_Dir" Component_="OpenGLdemos" ManualDelete="false"/>
+    <ROW Directory_="DK2_1_Dir" Component_="DK2" ManualDelete="false"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiCustActComponent">
     <ROW Action="AI_DpiContentScale" Type="1" Source="aicustact.dll" Target="DpiContentScale"/>
@@ -318,6 +329,9 @@
     <ROW Shortcut="DisableOSVRDirectModeAMD" Directory_="DirectModecontrols_Dir" Name="DISABL~1|DisableOSVRDirectModeAMD" Component_="DisableOSVRDirectModeAMD.exe" Target="[#DisableOSVRDirectModeAMD.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
     <ROW Shortcut="EnableOSVRDirectMode" Directory_="DirectModecontrols_Dir" Name="ENABLE~2|EnableOSVRDirectModeNVidia" Component_="EnableOSVRDirectMode.exe" Target="[#EnableOSVRDirectMode.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
     <ROW Shortcut="EnableOSVRDirectModeAMD" Directory_="DirectModecontrols_Dir" Name="ENABLE~1|EnableOSVRDirectModeAMD" Component_="EnableOSVRDirectModeAMD.exe" Target="[#EnableOSVRDirectModeAMD.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
+    <ROW Shortcut="OSVRserver" Directory_="DK2_1_Dir" Name="2OSVRS~1|2 OSVR server" Component_="osvr_server.exe" Target="[#osvr_server.exe]" Arguments="../../DK2/Oculus.json" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="bin_Dir"/>
+    <ROW Shortcut="OSVRserver1" Directory_="DK2_1_Dir" Name="2OSVRS~3|2 OSVR server ATW" Component_="osvr_server.exe" Target="[#osvr_server.exe]" Arguments="../../DK2/Oculus_ATW.json" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="bin_Dir"/>
+    <ROW Shortcut="OSVRserverATW1" Directory_="DK2_1_Dir" Name="2OSVRS~4|2 OSVR server ATW Sleep" Component_="osvr_server.exe" Target="[#osvr_server.exe]" Arguments="../../DK2/Oculus_ATW_sleep.json" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="bin_Dir"/>
     <ROW Shortcut="README" Directory_="SHORTCUTDIR" Name="README" Component_="README.txt" Target="[#README.txt]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
     <ROW Shortcut="RenderManagerD3DATWDoubleBufferExample" Directory_="D3D11demos_Dir" Name="RENDER~6|RenderManagerD3DATWDoubleBufferExample" Component_="RenderManagerD3DATWDoubleBufferExample.e" Target="[#RenderManagerD3DATWDoubleBufferExample.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
     <ROW Shortcut="RenderManagerD3DExample3D" Directory_="D3D11demos_Dir" Name="RENDER~1|RenderManagerD3DExample3D" Component_="RenderManagerD3DExample3D.exe" Target="[#RenderManagerD3DExample3D.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
@@ -336,6 +350,8 @@
     <ROW Shortcut="SpinCubeOpenGL" Directory_="OpenGLdemos_Dir" Name="SPINCU~1|SpinCubeOpenGL" Component_="SpinCubeOpenGL.exe" Target="[#SpinCubeOpenGL.exe]" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
     <ROW Shortcut="SpinCubeOpenGL1" Directory_="OpenGLdemos_Dir" Name="SPINCU~2|SpinCubeOpenGL reverse" Component_="SpinCubeOpenGL.exe" Target="[#SpinCubeOpenGL.exe]" Arguments="-0.5" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="APPDIR"/>
     <ROW Shortcut="Uninstall" Directory_="SHORTCUTDIR" Name="UNINST~1|Uninstall" Component_="osvrRenderManager.lib" Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" Hotkey="0" Icon_="SystemFoldermsiexec.exe" IconIndex="0" ShowCmd="1"/>
+    <ROW Shortcut="VRPNserver" Directory_="DK2_1_Dir" Name="1VRPNS~1|1 VRPN server" Component_="vrpn_server.exe" Target="[#vrpn_server.exe]" Arguments="-f vrpn_Oculus.cfg 3884" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="DK2_Dir"/>
+    <ROW Shortcut="VRPNserver1" Directory_="DK2_1_Dir" Name="1VRPNS~3|1 VRPN server Sleep" Component_="vrpn_server.exe" Target="[#vrpn_server.exe]" Arguments="-f vrpn_Oculus.cfg -millisleep 1 3884" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="DK2_Dir"/>
     <ROW Shortcut="include" Directory_="SHORTCUTDIR" Name="include" Component_="osvrRenderManager.lib" Target="[include_Dir]" Hotkey="0" IconIndex="0" ShowCmd="1"/>
     <ROW Shortcut="lib" Directory_="SHORTCUTDIR" Name="lib" Component_="osvrRenderManager.lib" Target="[NewFolder_Dir]" Hotkey="0" IconIndex="0" ShowCmd="1"/>
     <ROW Shortcut="osvr_serverOSVRHDK11.2directmode" Directory_="Servers_Dir" Name="OSVR_S~1.3DI|osvr_server OSVR HDK1.3 directmode" Component_="osvr_server.exe" Target="[#osvr_server.exe]" Arguments="directmode_HDK1.3.json" Hotkey="0" IconIndex="0" ShowCmd="1" WkDir="bin_Dir"/>
