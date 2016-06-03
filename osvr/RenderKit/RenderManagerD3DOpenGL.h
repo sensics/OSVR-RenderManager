@@ -136,7 +136,7 @@ namespace renderkit {
           const std::vector<OSVR_ViewportDescription>& normalizedCroppingViewports =
           std::vector<OSVR_ViewportDescription>(),
           bool flipInY = false) override;
-        bool SolidColorEye(size_t eye, std::array<float, 3> color) override {
+        bool SolidColorEye(size_t eye, const RGBColorf &color) override {
           return m_D3D11Renderer->SolidColorEye(eye, color);
         }
 

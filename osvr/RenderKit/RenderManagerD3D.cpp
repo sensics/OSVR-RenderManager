@@ -283,12 +283,8 @@ namespace renderkit {
     }
 
     bool RenderManagerD3D11::SolidColorEye(
-      size_t eye, std::array<float, 3> color) {
-      FLOAT colorRGBA[4];
-      for (size_t i = 0; i < color.size(); i++) {
-        colorRGBA[i] = color[i];
-      }
-      colorRGBA[4] = 1;
+        size_t eye, const RGBColorf &color) {
+      FLOAT colorRGBA[4] = { color.r, color.g, color.b, 1 };
       size_t d = GetDisplayUsedByEye(eye);
       m_D3D11Context->ClearRenderTargetView(
         m_displays[d].m_renderTargetView,

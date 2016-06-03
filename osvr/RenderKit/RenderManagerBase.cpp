@@ -937,7 +937,7 @@ namespace renderkit {
     }
 
     bool RenderManager::PresentSolidColor(
-      const std::array<float, 3> & color) {
+        const RGBColorf &color) {
       // All public methods that use internal state should be guarded
       // by a mutex.
       std::lock_guard<std::mutex> lock(m_mutex);
@@ -946,7 +946,7 @@ namespace renderkit {
     }
 
     bool RenderManager::PresentSolidColorInternal(
-      const std::array<float, 3> & color) {
+        const RGBColorf &color) {
       // Make sure we're doing okay.
       if (!doingOkay()) {
         std::cerr
