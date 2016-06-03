@@ -417,7 +417,7 @@ namespace osvr {
             bool PresentDisplayFinalize(size_t display) override { return true; }
             bool PresentFrameFinalize() override { return true; }
 
-            bool SolidColorEye(size_t eye, std::array<float, 3> color) override {
+            bool SolidColorEye(size_t eye, const RGBColorf &color) override {
               return mRenderManager->SolidColorEye(eye, color);
             }
 

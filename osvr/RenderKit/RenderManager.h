@@ -113,6 +113,13 @@ namespace renderkit {
         // presented.
     } RenderTimingInfo;
 
+    /// @brief Simple structure for representing a float based RGB color
+    typedef struct {
+        float r;
+        float g;
+        float b;
+    } RGBColorf;
+
     /// @brief Describes the parameters for a display callback handler.
     ///
     /// Description of the type of a Display callback handler.  The user defines
@@ -483,7 +490,7 @@ namespace renderkit {
         ///  @param[in] color The colors to present.
         ///  @return Returns true on success and false on failure.
         bool OSVR_RENDERMANAGER_EXPORT
-          PresentSolidColor(const std::array<float,3> &color);
+          PresentSolidColor(const RGBColorf &color);
 
         ///-------------------------------------------------------------
         /// @brief Get rendering-time statistics
@@ -827,7 +834,7 @@ namespace renderkit {
             bool flipInY = false);
 
         virtual bool PresentSolidColorInternal(
-          const std::array<float, 3> & color);
+          const RGBColorf& color);
 
         virtual bool UpdateDistortionMeshesInternal(
             DistortionMeshType type //< Type of mesh to produce
@@ -1404,7 +1411,7 @@ namespace renderkit {
         /// @param eye[in] The eye to set.
         /// @param color[in] The color to set, RGB, 0-1 for each.
         /// @return True on success, false on failure.
-        virtual bool SolidColorEye(size_t eye, std::array<float, 3> color) = 0;
+        virtual bool SolidColorEye(size_t eye, const RGBColorf &color) = 0;
 
         /// @brief Finalize presentation for a new display
         virtual bool

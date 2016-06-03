@@ -1009,7 +1009,7 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::SolidColorEye(
-          size_t eye, std::array<float, 3> color) {
+          size_t eye, const RGBColorf &color) {
 
       // Construct the OpenGL viewport based on which eye this is.
       OSVR_ViewportDescription viewportDesc;
@@ -1034,7 +1034,7 @@ namespace renderkit {
       }
 
       // Clear to the specified color
-      glClearColor(color[0], color[1], color[2], 1);
+      glClearColor(color.r, color.g, color.b, 1);
       glClear(GL_COLOR_BUFFER_BIT);
 
       return true;

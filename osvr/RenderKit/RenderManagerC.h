@@ -84,6 +84,14 @@ typedef struct OSVR_ViewportDescription {
     double height; //< Last pixel on the right of the viewport in pixels
 } OSVR_ViewportDescription;
 
+// ========================================================================
+// Float representation of an rgb color (without alpha)
+typedef struct OSVR_RGB {
+    float r;
+    float g;
+    float b;
+} OSVR_RGB_FLOAT;
+
 typedef enum {
     OSVR_OPEN_STATUS_FAILURE,
     OSVR_OPEN_STATUS_PARTIAL,
@@ -126,9 +134,9 @@ osvrRenderManagerFinishRegisterRenderBuffers(
     OSVR_CBool appWillNotOverwriteBeforeNewPresent);
 
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
-osvrRenderManagerPresentSolidColor(
+osvrRenderManagerPresentSolidColorf(
     OSVR_RenderManager renderManager,
-    float rgb[3]);
+    OSVR_RGB_FLOAT rgb);
 
 OSVR_EXTERN_C_END
 

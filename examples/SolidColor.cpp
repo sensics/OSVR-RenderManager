@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
         float c = static_cast<float>(loops - floor(loops));
 
         // Set up the vector of colors to render
-        std::array<float, 3> color = { c, c, c };
+        osvr::renderkit::RGBColorf color = { c, c, c };
 
         // Color each buffer using the specified information.
         if (!render->PresentSolidColor(color)) {
