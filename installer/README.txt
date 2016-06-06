@@ -3,6 +3,8 @@ IMPORTANT: This installer only includes sample applications and the libraries an
 IMPORTANT: Using DirectMode requires
 	nVidia driver version 364.64 or higher (364.47 and 364.51 have a bug preventing it from working).
 	or AMD Crimson drivers (tested with version 16.1).
+	or Intel drivers (tested with version 20.19.15.4409, but OpenGL Interop
+	  requires a version after 6/6/2016).
 
 FAQ: If you have multiple GPUs not in SLI mode, you need to select "Activate all displays" instead of "SLI Disabled" in the nVidia Control Panel under "Configure SLI, Surround, PhysX" to make DirectMode work.
 
@@ -11,7 +13,10 @@ Step 1: Run an OSVR server (obtained from an OSVR Core install) with a compatibl
    these are older-format files run against an older server, but should still work.)
   osvr_server_nondirectmode_window: Displays in a window that can be moved around.
   osvr_server_*: Configurations for various HMDs and modes
-  NOTE: As of version 6.36, AMD DirectMode will only work in Landscape mode.
+  To use an Oculus DK2 with the raw VRPN drivers, uninstall the SDK, then run
+    1) Either of the DK2/1 VRPN server shorcuts (sleep or no sleep)
+    2) Any of the DK2/OSVR server shorcuts (standard, ATW, ATW sleep)
+  NOTE: As of version 6.48, AMD DirectMode will only work in Landscape mode.
         The only current configuration file that works with AMD is OSVR HDK 1.2 landscape directmode.
         You can also edit the other configuration files to make the rotation 0 rather than 90.
 
@@ -39,6 +44,14 @@ Source code for RenderManager, including example programs, is available at:
   https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.48:
+ *ftr DirectMode on Intel GPUs
+ *ftr Waits on rendering completion before time warp/ATW, avoiding tearing
+  ftr Example configuration files for DK2 devices using the raw VRPN driver
+  ftr Reduced vertex count in distortion shader resulting in faster loads
+  bug Fixed crash in ATW in some application
+  bug Turning off DirectMode in config no longer pulls display out of DirectMode
+  bug Removed non-Core calls from OpenGL code, enabling use on MesaGL
 0.6.43:
  *ftr Asynchronous time warp is working on all DirectRender configurations
  *ftr Client-side per-eye prediction added to reduce judder and latency
