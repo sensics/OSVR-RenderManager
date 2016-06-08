@@ -103,6 +103,15 @@ typedef enum {
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrDestroyRenderManager(OSVR_RenderManager renderManager);
 
+/// This function reads all of the rendering parameters from the
+/// underlying RenderManager.  It caches this information locally
+/// until the next call, and returns the number that it has cached.
+/// Use the graphics-library-specific osvrRenderManagerGetRenderInfo
+/// function (for example, osvrRenderManagerGetRenderInfoD3D11) to
+/// read each entry that has been cached.
+/// @brief Reads all of the RenderInfos and caches them.
+/// @return Number of RenderInfos cached.
+/// @todo Make this actually cache, for now it does not.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetNumRenderInfo(
     OSVR_RenderManager renderManager, OSVR_RenderParams renderParams,
     OSVR_RenderInfoCount* numRenderInfoOut);
@@ -113,20 +122,34 @@ osvrRenderManagerGetDoingOkay(OSVR_RenderManager renderManager);
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerGetDefaultRenderParams(OSVR_RenderParams* renderParamsOut);
 
+/// This function is used to bracket the start of the presentation of render
+/// buffers for a single frame.  Between this function and the associated
+/// Finish call below, graphics-library-specific Present calls should be made
+/// (for example, osvrRenderManagerPresentRenderBufferD3D11). All buffers
+/// must be registered before they are presented.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerStartPresentRenderBuffers(
     OSVR_RenderManagerPresentState* presentStateOut);
 
+/// This function is used to bracket the end of the presentation of render
+/// buffers for a single frame.  This sequence starts with the Start function.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerFinishPresentRenderBuffers(
     OSVR_RenderManager renderManager,
     OSVR_RenderManagerPresentState presentState, OSVR_RenderParams renderParams,
     OSVR_CBool shouldFlipY);
 
+/// This function is used to bracket the start of the registration of render
+/// buffers.  Between this function and the associated Finish call below,
+/// graphics-library-specific Register calls should be made
+/// (for example, osvrRenderManagerRegisterRenderBufferD3D11). All buffers
+/// must be registered before they are presented.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerStartRegisterRenderBuffers(
     OSVR_RenderManagerRegisterBufferState* registerBufferStateOut);
 
+/// This function is used to bracket the end of the registration of render
+/// buffers for a single frame.  This sequence starts with the Start function.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerFinishRegisterRenderBuffers(
     OSVR_RenderManager renderManager,
