@@ -59,7 +59,7 @@ namespace renderkit {
     }
 
     bool OSVR_Projection_to_OpenGL(double* OpenGL_out,
-                                   OSVR_ProjectionMatrix projection_in) {
+                                   const OSVR_ProjectionMatrix& projection_in) {
         if (OpenGL_out == nullptr) {
             std::cerr << "OSVR_Projection_to_OpenGL called with NULL pointer"
                       << std::endl;
@@ -126,7 +126,7 @@ namespace renderkit {
         return true;
     }
 
-    bool OSVR_Projection_to_D3D(float D3D_out[16], OSVR_ProjectionMatrix proj) {
+    bool OSVR_Projection_to_D3D(float D3D_out[16], const OSVR_ProjectionMatrix& proj) {
         /// @todo Check that this order is correct.
 
         // Here, we need to make sure that we're putting elements into the

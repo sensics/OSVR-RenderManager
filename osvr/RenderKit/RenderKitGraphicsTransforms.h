@@ -89,10 +89,10 @@ namespace renderkit {
 
     /// @brief Produce OpenGL Projection matrix from 4x4 projection matrix
     bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_OpenGL(
-        double* OpenGL_out, OSVR_ProjectionMatrix projection_in);
+        double* OpenGL_out, const OSVR_ProjectionMatrix& projection_in);
     /// @brief Produce Direct3D Projection matrix from 4x4 projection matrix
     bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_D3D(
-        float D3D_out[16], OSVR_ProjectionMatrix projection_in);
+        float D3D_out[16], const OSVR_ProjectionMatrix& projection_in);
 
     //=========================================================================
     // Routines to turn the OSVR viewpoint descriptor into appropriate values
