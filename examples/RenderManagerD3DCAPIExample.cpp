@@ -439,32 +439,44 @@ int main(int argc, char* argv[]) {
                        depthStencilViews[i]);
         }
 
-        // Send the rendered results to the screen
-        OSVR_RenderManagerPresentState presentState;
-        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
-          &presentState))) {
-          std::cerr << "Could not start presenting render buffers" << std::endl;
-          return 201;
-        }
-        OSVR_ViewportDescription fullView;
-        fullView.left = fullView.lower = 0;
-        fullView.width = fullView.height = 1;
-        for (size_t i = 0; i < numRenderInfo; i++) {
-          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
-            presentState, renderBuffers[i], renderInfo[i], fullView))) {
-            std::cerr << "Could not present render buffer " << i << std::endl;
-            return 202;
+        // Every other second, we show a black screen to test how
+        // a game engine might blank it between scenes.  Every even
+        // second, we display the video.
+        end = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed_sec = end - start;
+        int secs = static_cast<int>(elapsed_sec.count());
+
+        if (secs % 2 == 0) {
+          // Send the rendered results to the screen
+          OSVR_RenderManagerPresentState presentState;
+          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
+            &presentState))) {
+            std::cerr << "Could not start presenting render buffers" << std::endl;
+            return 201;
           }
-        }
-        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
-          render, presentState, renderParams, false))) {
-          std::cerr << "Could not finish presenting render buffers" << std::endl;
-          return 203;
+          OSVR_ViewportDescription fullView;
+          fullView.left = fullView.lower = 0;
+          fullView.width = fullView.height = 1;
+          for (size_t i = 0; i < numRenderInfo; i++) {
+            if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
+              presentState, renderBuffers[i], renderInfo[i], fullView))) {
+              std::cerr << "Could not present render buffer " << i << std::endl;
+              return 202;
+            }
+          }
+          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
+            render, presentState, renderParams, false))) {
+            std::cerr << "Could not finish presenting render buffers" << std::endl;
+            return 203;
+          }
+        } else {
+          // send a black screen.
+          OSVR_RGB_FLOAT black;
+          black.r = black.g = black.b = 0;
+          osvrRenderManagerPresentSolidColorf(render, black);
         }
 
         // Timing information
-        end = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_sec = end - start;
         if (elapsed_sec.count() >= 2) {
             std::chrono::duration<double, std::micro> elapsed_usec =
                 end - start;
@@ -479,9 +491,6 @@ int main(int argc, char* argv[]) {
 
     // Clean up after ourselves.
     // @todo
-
-    // Close the Renderer interface cleanly.
-    delete render;
 
     return 0;
 }
