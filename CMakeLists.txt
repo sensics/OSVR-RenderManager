@@ -70,6 +70,7 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/RenderManagerBase.cpp
 	osvr/RenderKit/RenderManagerC.cpp
 	osvr/RenderKit/RenderKitGraphicsTransforms.cpp
+	osvr/RenderKit/RenderKitGraphicsTransformsC.cpp
 	osvr/RenderKit/osvr_display_configuration.cpp
 	osvr/RenderKit/VendorIdTools.h
   osvr/RenderKit/osvr_display_config_built_in_osvr_hdks.h
@@ -218,6 +219,7 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/MonoPointMeshTypes.h
 	osvr/RenderKit/RGBPointMeshTypes.h
 	osvr/RenderKit/RenderKitGraphicsTransforms.h
+	osvr/RenderKit/RenderKitGraphicsTransformsC.h
 	osvr/RenderKit/osvr_display_configuration.h
 	osvr/RenderKit/osvr_compiler_tests.h
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"

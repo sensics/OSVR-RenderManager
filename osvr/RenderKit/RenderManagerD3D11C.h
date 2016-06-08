@@ -77,12 +77,17 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerOpenDisplayD3D11(OSVR_RenderManagerD3D11 renderManager,
                                   OSVR_OpenResultsD3D11* openResultsOut);
 
+/// This function must be bracketed by osvrRenderManagerStartPresentRenderBuffers
+/// and osvrRenderManagerFinishPresentRenderBuffers.
+/// All buffers must be registered before they are presented.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerPresentRenderBufferD3D11(
     OSVR_RenderManagerPresentState presentState, OSVR_RenderBufferD3D11 buffer,
     OSVR_RenderInfoD3D11 renderInfoUsed,
     OSVR_ViewportDescription normalizedCroppingViewport);
 
+/// This function must be bracketed by osvrRenderManagerStartRegisterRenderBuffers
+/// and osvrRenderManagerFinishPresentRegisterBuffers.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerRegisterRenderBufferD3D11(
     OSVR_RenderManagerRegisterBufferState registerBufferState,

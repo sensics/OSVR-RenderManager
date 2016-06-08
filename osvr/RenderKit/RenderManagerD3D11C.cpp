@@ -118,6 +118,8 @@ osvrCreateRenderManagerD3D11(OSVR_ClientContext clientContext,
                                        renderManagerD3D11Out);
 }
 
+/// @todo Make this read from a cache, and remove the need for a renderParams
+/// to be passed in.
 OSVR_ReturnCode osvrRenderManagerGetRenderInfoD3D11(
     OSVR_RenderManager renderManager, OSVR_RenderInfoCount renderInfoIndex,
     OSVR_RenderParams renderParams, OSVR_RenderInfoD3D11* renderInfoOut) {

@@ -17,6 +17,11 @@ if(OSVRRM_HAVE_D3D11_SUPPORT)
 	target_link_libraries(AdjustableRenderingDelayD3D PRIVATE osvrRM::osvrRenderManagerCpp)
     target_compile_features(AdjustableRenderingDelayD3D PRIVATE cxx_range_for)
 
+	# D3D Example program using the C API
+	add_executable(RenderManagerD3DCAPIExample RenderManagerD3DCAPIExample.cpp ${COMMON_D3D_SOURCES})
+	target_link_libraries(RenderManagerD3DCAPIExample PRIVATE osvrRM::osvrRenderManagerCpp)
+    target_compile_features(RenderManagerD3DCAPIExample PRIVATE cxx_range_for)
+
 	# D3D Example program
 	add_executable(RenderManagerD3DExample3D RenderManagerD3DExample3D.cpp ${COMMON_D3D_SOURCES})
 	target_link_libraries(RenderManagerD3DExample3D PRIVATE osvrRM::osvrRenderManagerCpp)
