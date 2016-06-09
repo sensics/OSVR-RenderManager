@@ -53,6 +53,7 @@ OSVR_EXTERN_C_BEGIN
 typedef void* OSVR_RenderManager;
 typedef void* OSVR_RenderManagerPresentState;
 typedef void* OSVR_RenderManagerRegisterBufferState;
+typedef void* OSVR_RenderInfoCollection;
 typedef size_t OSVR_RenderInfoCount;
 
 // @todo could we use this for the C++ API as well?
@@ -103,6 +104,7 @@ typedef enum {
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrDestroyRenderManager(OSVR_RenderManager renderManager);
 
+/// DEPRECATED - use the RenderInfoCollection API for your specific graphics API instead.
 /// This function reads all of the rendering parameters from the
 /// underlying RenderManager.  It caches this information locally
 /// until the next call, and returns the number that it has cached.
@@ -160,6 +162,21 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerPresentSolidColorf(
     OSVR_RenderManager renderManager,
     OSVR_RGB_FLOAT rgb);
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
+osvrRenderManagerGetRenderInfoCollection(
+    OSVR_RenderManager renderManager,
+    OSVR_RenderParams renderParams,
+    OSVR_RenderInfoCollection* renderInfoCollectionOut);
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
+osvrRenderManagerReleaseRenderInfoCollection(
+    OSVR_RenderInfoCollection renderInfoCollection);
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
+osvrRenderManagerGetNumRenderInfoInCollection(
+    OSVR_RenderInfoCollection renderInfoCollection,
+    OSVR_RenderInfoCount* countOut);
 
 OSVR_EXTERN_C_END
 

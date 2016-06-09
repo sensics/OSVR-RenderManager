@@ -127,3 +127,43 @@ OSVR_ReturnCode osvrRenderManagerPresentSolidColorf(
   return success ? OSVR_RETURN_SUCCESS : OSVR_RETURN_FAILURE;
 }
 
+OSVR_ReturnCode osvrRenderManagerGetRenderInfoCollection(
+    OSVR_RenderManager renderManager,
+    OSVR_RenderParams renderParams,
+    OSVR_RenderInfoCollection* renderInfoCollectionOut) {
+
+    if (renderManager && renderInfoCollectionOut) {
+        osvr::renderkit::RenderManager::RenderParams _renderParams;
+        ConvertRenderParams(renderParams, _renderParams);
+        auto rm = reinterpret_cast<osvr::renderkit::RenderManager*>(renderManager);
+        RenderManagerRenderInfoCollection* ret = new RenderManagerRenderInfoCollection();
+        ret->renderInfo = rm->GetRenderInfo(_renderParams);
+        (*renderInfoCollectionOut) =
+            reinterpret_cast<OSVR_RenderInfoCollection*>(ret);
+        return OSVR_RETURN_SUCCESS;
+    }
+    return OSVR_RETURN_FAILURE;
+}
+
+OSVR_ReturnCode osvrRenderManagerReleaseRenderInfoCollection(
+    OSVR_RenderInfoCollection renderInfoCollection) {
+
+    if (renderInfoCollection) {
+        auto ri = reinterpret_cast<RenderManagerRenderInfoCollection*>(renderInfoCollection);
+        delete ri;
+        return OSVR_RETURN_SUCCESS;
+    }
+    return OSVR_RETURN_FAILURE;
+}
+
+OSVR_ReturnCode osvrRenderManagerGetNumRenderInfoInCollection(
+    OSVR_RenderInfoCollection renderInfoCollection,
+    OSVR_RenderInfoCount* countOut) {
+
+    if (renderInfoCollection && countOut) {
+        auto ri = reinterpret_cast<RenderManagerRenderInfoCollection*>(renderInfoCollection);
+        (*countOut) = ri->renderInfo.size();
+        return OSVR_RETURN_SUCCESS;
+    }
+    return OSVR_RETURN_FAILURE;
+}

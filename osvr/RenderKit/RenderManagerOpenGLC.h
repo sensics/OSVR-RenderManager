@@ -86,6 +86,11 @@ osvrRenderManagerRegisterRenderBufferOpenGL(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_RenderBufferOpenGL renderBuffer);
 
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionOpenGL(
+    OSVR_RenderInfoCollection renderInfoCollection,
+    OSVR_RenderInfoCount index,
+    OSVR_RenderInfoOpenGL* renderInfoOut);
+
 OSVR_EXTERN_C_END
 
 #endif // INCLUDED_RenderManagerOpenGLC_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6
