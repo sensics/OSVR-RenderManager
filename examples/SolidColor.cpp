@@ -32,8 +32,10 @@
 #include <osvr/RenderKit/RenderManager.h>
 
 // Library/third-party includes
+#ifdef _WIN32
 #include <windows.h>
 #include <initguid.h>
+#endif
 #include <vrpn_Shared.h>
 #include <quat.h>
 
