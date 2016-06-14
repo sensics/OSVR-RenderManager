@@ -262,7 +262,6 @@ void DrawHead(
     glLoadIdentity();
     glMultMatrixd(modelView);
 
-
     /// Draw a small cube in front of us.
     glTranslated(0, 0, -0.25);
     draw_cube(0.005);
