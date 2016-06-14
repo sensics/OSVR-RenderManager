@@ -86,6 +86,7 @@ osvrRenderManagerRegisterRenderBufferOpenGL(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_RenderBufferOpenGL renderBuffer);
 
+/// Gets a given OSVR_RenderInfoOpenGL from an OSVR_RenderInfoCollection.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionOpenGL(
     OSVR_RenderInfoCollection renderInfoCollection,
     OSVR_RenderInfoCount index,

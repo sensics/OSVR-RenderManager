@@ -94,6 +94,7 @@ osvrRenderManagerRegisterRenderBufferD3D11(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_RenderBufferD3D11 renderBuffer);
 
+/// Gets an OSVR_RenderInfoD3D11 from a given OSVR_RenderInfoCollection.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionD3D11(
     OSVR_RenderInfoCollection renderInfoCollection,
     OSVR_RenderInfoCount index,

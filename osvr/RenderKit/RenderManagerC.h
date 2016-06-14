@@ -163,16 +163,23 @@ osvrRenderManagerPresentSolidColorf(
     OSVR_RenderManager renderManager,
     OSVR_RGB_FLOAT rgb);
 
+/// This function gets all of the RenderInfo collection in one atomic call.
+/// Use osvrRenderManagerGetNumRenderInfoInCollection to get the size of the
+/// collection, and API-specific methods to get a given render info for that
+/// graphics API. Finally, use osvrRenderManagerReleaseRenderInfoCollection
+/// when you're done.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerGetRenderInfoCollection(
     OSVR_RenderManager renderManager,
     OSVR_RenderParams renderParams,
     OSVR_RenderInfoCollection* renderInfoCollectionOut);
 
+/// Releases the OSVR_RenderInfoCollection.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerReleaseRenderInfoCollection(
     OSVR_RenderInfoCollection renderInfoCollection);
 
+/// Get the size of the OSVR_RenderInfoCollection.
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerGetNumRenderInfoInCollection(
     OSVR_RenderInfoCollection renderInfoCollection,
