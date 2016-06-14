@@ -119,11 +119,11 @@ namespace renderkit {
         D3D_out[(2 * 4) + 1] = static_cast<float>((proj.top + proj.bottom) /
                                                (proj.top - proj.bottom));
         D3D_out[(2 * 4) + 2] =
-            -static_cast<float>(proj.farClip / (proj.farClip - proj.nearClip));
+            static_cast<float>(proj.farClip / (proj.nearClip - proj.farClip));
         D3D_out[(2 * 4) + 3] = -1;
 
-        D3D_out[(3 * 4) + 2] = -static_cast<float>((proj.nearClip * proj.farClip) /
-                                                (proj.farClip - proj.nearClip));
+        D3D_out[(3 * 4) + 2] = static_cast<float>((proj.nearClip * proj.farClip) /
+                                                (proj.nearClip - proj.farClip));
 
         // Per Microsoft documentation: "In D3DX, the _34 element of a
         // projection matrix cannot be a negative number. If your application
