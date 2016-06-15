@@ -79,11 +79,11 @@ namespace renderkit {
         // top, and near to far).
         projection[0][0] = (2 * projection_in.nearClip) /
           (projection_in.right - projection_in.left);
-        projection[0][2] = (projection_in.right + projection_in.left) /
-          (projection_in.right - projection_in.left);
         projection[1][1] = (2 * projection_in.nearClip) /
           (projection_in.top - projection_in.bottom);
-        projection[1][2] = (projection_in.top + projection_in.bottom) /
+        projection[2][0] = (projection_in.right + projection_in.left) /
+          (projection_in.right - projection_in.left);
+        projection[2][1] = (projection_in.top + projection_in.bottom) /
           (projection_in.top - projection_in.bottom);
         projection[2][2] = -(projection_in.farClip + projection_in.nearClip) /
           (projection_in.farClip - projection_in.nearClip);
