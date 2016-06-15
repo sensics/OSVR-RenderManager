@@ -69,6 +69,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrCreateRenderManagerD3D11(
     OSVR_RenderManager* renderManagerOut,
     OSVR_RenderManagerD3D11* renderManagerD3D11Out);
 
+/**  DEPRECATED, use the collection render info API instead. */
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoD3D11(
     OSVR_RenderManagerD3D11 renderManager, OSVR_RenderInfoCount renderInfoIndex,
     OSVR_RenderParams renderParams, OSVR_RenderInfoD3D11* renderInfoOut);
@@ -92,6 +93,12 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerRegisterRenderBufferD3D11(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_RenderBufferD3D11 renderBuffer);
+
+/// Gets an OSVR_RenderInfoD3D11 from a given OSVR_RenderInfoCollection.
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+    OSVR_RenderInfoCollection renderInfoCollection,
+    OSVR_RenderInfoCount index,
+    OSVR_RenderInfoD3D11* renderInfoOut);
 
 OSVR_EXTERN_C_END
 
