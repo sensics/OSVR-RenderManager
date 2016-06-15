@@ -105,7 +105,7 @@ namespace renderkit {
         memset(D3D_out, 0, 16*sizeof(D3D_out[0]));
 
         // Construct the matrix using the formula described for the DirectX
-        // off-axis projection, for a right-handled matrix.  This maps X and
+        // off-axis projection, for a left-handled matrix.  This maps X and
         // Y from -1 to 1 as they go from left to right and bottom to top,
         // and it maps Z from 0 to 1 as it goes from near to far.
         D3D_out[(0 * 4) + 0] =
@@ -114,13 +114,13 @@ namespace renderkit {
         D3D_out[(1 * 4) + 1] =
             static_cast<float>(2 * proj.nearClip / (proj.top - proj.bottom));
 
-        D3D_out[(2 * 4) + 0] = static_cast<float>((proj.left + proj.right) /
+        D3D_out[(2 * 4) + 0] = -static_cast<float>((proj.left + proj.right) /
                                                (proj.right - proj.left));
-        D3D_out[(2 * 4) + 1] = static_cast<float>((proj.top + proj.bottom) /
+        D3D_out[(2 * 4) + 1] = -static_cast<float>((proj.top + proj.bottom) /
                                                (proj.top - proj.bottom));
         D3D_out[(2 * 4) + 2] =
-            static_cast<float>(proj.farClip / (proj.nearClip - proj.farClip));
-        D3D_out[(2 * 4) + 3] = -1;
+            -static_cast<float>(proj.farClip / (proj.nearClip - proj.farClip));
+        D3D_out[(2 * 4) + 3] = 1;
 
         D3D_out[(3 * 4) + 2] = static_cast<float>((proj.nearClip * proj.farClip) /
                                                 (proj.nearClip - proj.farClip));
