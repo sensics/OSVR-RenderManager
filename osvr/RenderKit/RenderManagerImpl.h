@@ -27,6 +27,7 @@
 
 // Internal Includes
 #include <osvr/RenderKit/RenderManagerC.h>
+#include <osvr/RenderKit/RenderManager.h>
 
 // Library/third-party includes
 // - none
@@ -45,6 +46,10 @@ typedef struct RenderManagerPresentState {
 typedef struct RenderManagerRegisterBufferState {
     std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
 } RenderManagerRegisterBufferState;
+
+typedef struct RenderManagerRenderInfoCollection {
+    std::vector<osvr::renderkit::RenderInfo> renderInfo;
+} RenderManagerRenderInfoCollection;
 
 inline void
 ConvertViewport(const OSVR_ViewportDescription& viewport,
@@ -192,6 +197,7 @@ template <class OSVR_RenderBufferType>
 OSVR_ReturnCode osvrRenderManagerRegisterRenderBufferImpl(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_RenderBufferType renderBuffer) {
+
     auto state = reinterpret_cast<RenderManagerRegisterBufferState*>(
         registerBufferState);
     osvr::renderkit::RenderBuffer newRenderBuffer;
@@ -199,5 +205,20 @@ OSVR_ReturnCode osvrRenderManagerRegisterRenderBufferImpl(
     state->renderBuffers.push_back(newRenderBuffer);
     return OSVR_RETURN_SUCCESS;
 }
+
+template <class OSVR_RenderInfoType>
+OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionImpl(
+    OSVR_RenderInfoCollection renderInfoCollection,
+    OSVR_RenderInfoCount index,
+    OSVR_RenderInfoType* renderInfoOut) {
+
+    auto ri = reinterpret_cast<RenderManagerRenderInfoCollection*>(renderInfoCollection);
+    if (renderInfoCollection && index >= 0 && index < ri->renderInfo.size() && renderInfoOut) {
+        ConvertRenderInfo(ri->renderInfo[index], *renderInfoOut);
+        return OSVR_RETURN_SUCCESS;
+    }
+    return OSVR_RETURN_FAILURE;
+}
+
 }
 #endif // INCLUDED_RenderManagerImpl_h_GUID_D55DD6BB_14DA_4082_4340_C987D7F22660

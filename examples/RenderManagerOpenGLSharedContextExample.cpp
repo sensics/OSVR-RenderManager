@@ -528,6 +528,12 @@ int main(int argc, char* argv[]) {
         << std::endl;
       return 100;
     }
+#ifdef __APPLE__
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+        SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
     SDL_Window *myWindow = SDL_CreateWindow(
       "Test window, not used", 30, 30, 300, 100,
       SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
