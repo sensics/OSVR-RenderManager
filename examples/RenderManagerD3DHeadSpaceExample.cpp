@@ -61,6 +61,7 @@ static bool quit = false;
 static Cube roomCube(5.0f, true);
 static Cube handCube(0.05f, false);
 static Cube headSpaceCube(0.005f, false);
+static Cube extraCube(0.1f, false);
 static SimpleShader simpleShader;
 
 #ifdef _WIN32
@@ -215,6 +216,27 @@ void DrawWorld(
     // draw room
     simpleShader.use(device, context, xm_projectionD3D, xm_viewD3D, identity);
     roomCube.draw(device, context);
+
+    // We want to draw another cube 1 meter along the -Z axis
+    q_vec_type deltaZ = { 0, 0, -1.0 };
+    q_vec_type deltaZWorld;
+    q_type rot;
+    rot[Q_X] = osvrQuatGetX(&pose.rotation);
+    rot[Q_Y] = osvrQuatGetY(&pose.rotation);
+    rot[Q_Z] = osvrQuatGetZ(&pose.rotation);
+    rot[Q_W] = osvrQuatGetW(&pose.rotation);
+    q_xform(deltaZWorld, rot, deltaZ);
+    pose.translation.data[0] += deltaZWorld[0];
+    pose.translation.data[1] += deltaZWorld[1];
+    pose.translation.data[2] += deltaZWorld[2];
+
+    osvr::renderkit::OSVR_PoseState_to_D3D(viewD3D, pose);
+
+    XMMATRIX xm_viewCubeD3D(viewD3D);
+
+    // draw a small cube
+    simpleShader.use(device, context, xm_projectionD3D, xm_viewCubeD3D, identity);
+    extraCube.draw(device, context);
 }
 
 void DrawHeadSpace(
