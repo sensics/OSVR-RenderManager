@@ -145,24 +145,20 @@ namespace renderkit {
 
         // Move the Pose information into Quatlib data structures so
         // we can operate on it using its functions.
+        // To convert from left-handed to right-handed, we negate
+        // the Z position value and the X and Y orientation values.
+        // This will let us use a right-handed projection matrix.
         q_xyz_quat_type info;
         info.xyz[0] = state_in.translation.data[0];
         info.xyz[1] = state_in.translation.data[1];
-        info.xyz[2] = state_in.translation.data[2];
-        info.quat[Q_X] = osvrQuatGetX(&state_in.rotation);
-        info.quat[Q_Y] = osvrQuatGetY(&state_in.rotation);
+        info.xyz[2] = -state_in.translation.data[2];
+        info.quat[Q_X] = -osvrQuatGetX(&state_in.rotation);
+        info.quat[Q_Y] = -osvrQuatGetY(&state_in.rotation);
         info.quat[Q_Z] = osvrQuatGetZ(&state_in.rotation);
         info.quat[Q_W] = osvrQuatGetW(&state_in.rotation);
 
         double rightHandedMatrix[16];
         q_xyz_quat_to_ogl_matrix(&rightHandedMatrix[0], &info);
-
-        // Negate Z to switch the handedness of the matrix
-        // so that we can use the right-handed projection matrix above.
-        // @todo switch the above matrix to left handed and remove this.
-        for (size_t i = 0; i < 4; i++) {
-            rightHandedMatrix[2 * 4 + i] *= -1;
-        }
 
         // Copy to the output matrix
         for (size_t i = 0; i < 4; i++) {
