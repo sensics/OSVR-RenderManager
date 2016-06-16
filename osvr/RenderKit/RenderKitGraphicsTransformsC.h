@@ -38,12 +38,10 @@ extern "C" {
 
   //=========================================================================
   // Routines to turn the OSVR_PoseState into ModelView matrices for OpenGL
-  // and
-  // Direct3D.  Done in such a way that we don't require the inclusion of the
-  // native API header files (since most apps will not include all of the
-  // libraries).
+  // and Direct3D.  Done in such a way that we don't require the inclusion
+  // of the native API header files (since most apps will not include all
+  // of the libraries).
 
-  ///XXXX Update to match non-C version.
   /// Produce an OpenGL ModelView matrix from an OSVR_PoseState.
   /// Assumes that the world is described in a right-handed fashion and
   /// that we're going to use a right-handed projection matrix.
@@ -64,8 +62,9 @@ extern "C" {
   /// @param OpenGL_out Pointer to 16-element double array that has
   ///        been allocated by the caller.
   /// @return True on success, false on failure (null pointer).
-  bool OSVR_RENDERMANAGER_EXPORT
-  OSVR_PoseState_to_D3D(float D3D_out[16], const OSVR_PoseState& state_in);
+  bool OSVR_RENDERMANAGER_EXPORT OSVR_PoseState_to_D3D(
+    float D3D_out[16], const OSVR_PoseState& state_in);
+
   /// Modify the OSVR_PoseState from OSVR to be appropriate for use
   /// in a Unity application.  OSVR's world is right handed, and Unity's
   /// is left handed.
@@ -83,10 +82,25 @@ extern "C" {
   // native API header files (since most apps will not include all of the
   // libraries).
 
-  /// @brief Produce OpenGL Projection matrix from 4x4 projection matrix
+  /// Produce an OpenGL Projection matrix from an OSVR_ProjectionMatrix.
+  /// Assumes that the world is described in a right-handed fashion and
+  /// that we're going to use a right-handed projection matrix.
+  /// @brief Produce OpenGL Projection matrix from OSVR projection info.
+  /// @param projection_in Input projection description from RenderManager.
+  /// @param OpenGL_out Pointer to 16-element double array that has
+  ///        been allocated by the caller.
+  /// @return True on success, false on failure (null pointer).
   bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_OpenGL(
       double* OpenGL_out, const OSVR_ProjectionMatrix& projection_in);
-  /// @brief Produce Direct3D Projection matrix from 4x4 projection matrix
+
+  /// Produce a D3D Projection matrix from an OSVR_ProjectionMatrix.
+  /// Produces a left-handed projection matrix as is typical
+  /// for D3D applications.
+  /// @brief Produce D3D Projection transform from OSVR projection info
+  /// @param projection_in Input projection description from RenderManager.
+  /// @param D3D_out Pointer to 16-element float array that has
+  ///        been allocated by the caller.
+  /// @return True on success, false on failure (null pointer).
   bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_D3D(
       float D3D_out[16], const OSVR_ProjectionMatrix& projection_in);
 

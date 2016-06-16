@@ -113,21 +113,27 @@ namespace renderkit {
     // native API header files (since most apps will not include all of the
     // libraries).
 
-    /// @brief Produce OpenGL Projection matrix from 4x4 projection matrix
+    /// Produce an OpenGL Projection matrix from an OSVR_ProjectionMatrix.
+    /// Assumes that the world is described in a right-handed fashion and
+    /// that we're going to use a right-handed projection matrix.
+    /// @brief Produce OpenGL Projection matrix from OSVR projection info.
+    /// @param projection_in Input projection description from RenderManager.
+    /// @param OpenGL_out Pointer to 16-element double array that has
+    ///        been allocated by the caller.
+    /// @return True on success, false on failure (null pointer).
     bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_OpenGL(
         double* OpenGL_out, const OSVR_ProjectionMatrix& projection_in);
-    /// @brief Produce Direct3D Projection matrix from 4x4 projection matrix
+
+    /// Produce a D3D Projection matrix from an OSVR_ProjectionMatrix.
+    /// Produces a left-handed projection matrix as is typical
+    /// for D3D applications.
+    /// @brief Produce D3D Projection transform from OSVR projection info
+    /// @param projection_in Input projection description from RenderManager.
+    /// @param D3D_out Pointer to 16-element float array that has
+    ///        been allocated by the caller.
+    /// @return True on success, false on failure (null pointer).
     bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_D3D(
         float D3D_out[16], const OSVR_ProjectionMatrix& projection_in);
-
-    //=========================================================================
-    // Routines to turn the OSVR viewpoint descriptor into appropriate values
-    // for OpenGL and Direct3D (which have different Normalized Device
-    // Coordinates).
-
-    // See
-    // https://msdn.microsoft.com/en-us/library/windows/desktop/bb206341%28v=vs.85%29.aspx
-    /// @todo
 
 } // namespace renderkit
 } // namespace osvr
