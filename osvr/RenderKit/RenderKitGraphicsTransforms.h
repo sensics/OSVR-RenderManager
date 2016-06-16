@@ -37,7 +37,7 @@ namespace osvr {
 namespace renderkit {
 
     //=========================================================================
-    /// Description needed to construct an off-axes projection matrix
+    /// Description needed to construct an off-axis projection matrix
     typedef struct {
         double left;
         double right;
