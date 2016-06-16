@@ -66,6 +66,15 @@ extern "C" {
   /// @return True on success, false on failure (null pointer).
   bool OSVR_RENDERMANAGER_EXPORT
   OSVR_PoseState_to_D3D(float D3D_out[16], const OSVR_PoseState& state_in);
+  /// Modify the OSVR_PoseState from OSVR to be appropriate for use
+  /// in a Unity application.  OSVR's world is right handed, and Unity's
+  /// is left handed.
+  /// @brief Modify OSVR_PoseState for use by Unity.
+  /// @param state_in Input state from RenderManager.
+  /// @param state_out Ouput state for use by Unity
+  /// @return True on success, false on failure (null pointer).
+  bool OSVR_RENDERMANAGER_EXPORT OSVR_PoseState_to_Unity(
+    OSVR_PoseState& state_out, const OSVR_PoseState& state_in);
 
   //=========================================================================
   // Routines to turn the 4x4 projection matrices returned as part of the
