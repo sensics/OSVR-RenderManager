@@ -167,3 +167,45 @@ bool OSVR_PoseState_to_Unity(OSVR_PoseState& state_out,
 
   return true;
 }
+
+bool OSVR_Projection_to_Unreal(float Unreal_out[16],
+        const OSVR_ProjectionMatrix& proj) {
+
+  // Zero all of the elements we're not otherwise filling in.
+  memset(Unreal_out, 0, 16 * sizeof(Unreal_out[0]));
+
+  // The X and Y terms for the matrix, and the divide-by-Z term
+  // all follow the same approach as the D3D matrix used above.
+  // This is a standard left-handed off-axis projection matrix.
+  Unreal_out[(0 * 4) + 0] =
+    static_cast<float>(2 * proj.nearClip / (proj.right - proj.left));
+
+  Unreal_out[(1 * 4) + 1] =
+    static_cast<float>(2 * proj.nearClip / (proj.top - proj.bottom));
+
+  Unreal_out[(2 * 4) + 0] = -static_cast<float>((proj.left + proj.right) /
+    (proj.right - proj.left));
+  Unreal_out[(2 * 4) + 1] = -static_cast<float>((proj.top + proj.bottom) /
+    (proj.top - proj.bottom));
+
+  Unreal_out[(2 * 4) + 3] = 1;
+
+  // The Z terms differ from a standard left-handed projection matrix
+  // because (1) they need to range from Z=0 at the far clipping plane
+  // to Z=1 at the near clipping plane (the opposite of normal) and
+  // (2) There may not actually be a far clipping plane set, indicated
+  // by near and far being the same (in which case, we set Z=0 always).
+  if (proj.nearClip == proj.farClip) {
+    Unreal_out[(2 * 4) + 2] = 0.0f;   // Z value is 0
+    Unreal_out[(3 * 4) + 2] = 1.0f;   // Z homogenous coord = 1
+  } else {
+    Unreal_out[(2 * 4) + 2] =
+      static_cast<float>(proj.nearClip / (proj.nearClip - proj.farClip));
+    Unreal_out[(3 * 4) + 2] =
+      -static_cast<float>((proj.nearClip * proj.farClip) /
+       (proj.nearClip - proj.farClip));
+  }
+
+  return true;
+}
+

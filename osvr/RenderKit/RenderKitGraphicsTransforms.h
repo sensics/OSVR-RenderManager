@@ -135,5 +135,29 @@ namespace renderkit {
     bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_D3D(
         float D3D_out[16], const OSVR_ProjectionMatrix& projection_in);
 
+    /// Produce an Unreal Projection matrix from an OSVR_ProjectionMatrix.
+    /// Produces a left-handed projection matrix whose Z values are
+    /// in the opposite order, with Z=0 at the far clipping plane and
+    /// Z=1 at the near clipping plane.  If there is not a far clipping
+    /// plane defined, then set it to be the same as the near
+    /// clipping plane before calling this function.  If there is not a
+    /// near clipping plane set, then set it to 1 before calling this
+    /// function.
+    /// To put the result into an Unreal FMatrix, do the following:
+    ///   float p[16];
+    ///   OSVR_Projection_to_D3D(p, projection_in);
+    ///   FPlane row1(p[0], p[1], p[2], p[3]);
+    ///   FPlane row2(p[4], p[5], p[6], p[7]);
+    ///   FPlane row3(p[8], p[9], p[10], p[11]);
+    ///   FPlane row4(p[12], p[13], p[14], p[15]);
+    ///   FMatrix ret = FMatrix(row1, row2, row3, row4);
+    /// @brief Produce Unreal Projection transform from OSVR projection info
+    /// @param projection_in Input projection description from RenderManager.
+    /// @param Unreal_out Pointer to 16-element float array that has
+    ///        been allocated by the caller.
+    /// @return True on success, false on failure (null pointer).
+    bool OSVR_RENDERMANAGER_EXPORT OSVR_Projection_to_Unreal(
+      float Unreal_out[16], const OSVR_ProjectionMatrix& projection_in);
+
 } // namespace renderkit
 } // namespace osvr
