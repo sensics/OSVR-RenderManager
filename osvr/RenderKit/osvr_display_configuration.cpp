@@ -48,6 +48,46 @@ OSVRDisplayConfiguration::OSVRDisplayConfiguration(
     parse(display_description);
 }
 
+inline Json::Value
+getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
+                          Json::Value const& distortionObject,
+                          const char* externalFileKey) {
+    Json::Value const& externalFile = distortionObject[externalFileKey];
+    if ((!externalFile.isNull()) && (externalFile.isString())) {
+        // Read a Json value from the external file, then replace the distortion
+        // mesh with that from the file.
+
+        Json::Value externalData;
+        const std::string fn = externalFile.asString();
+        std::ifstream fs{fn};
+        if (!fs) {
+            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
+                         "open external "
+                      << distortionTypeName << " file " << fn << "!\n";
+            throw DisplayConfigurationParseException(
+                "Couldn't open external " + std::string(distortionTypeName) +
+                " file.");
+            /// @todo should we just return a null value here, instead of
+            /// crashing the app?
+            // return Json::Value(Json::nullValue);
+        }
+        if (!reader.parse(fs, externalData, false)) {
+            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
+                         "parse external "
+                      << distortionTypeName << " file " << fn << "!\n";
+            std::cerr << "Errors: " << reader.getFormattedErrorMessages();
+            throw DisplayConfigurationParseException(
+                "Couldn't parse external " + std::string(distortionTypeName) +
+                " file.");
+            /// @todo should we just return a null value here, instead of
+            /// crashing the app?
+            // return Json::Value(Json::nullValue);
+        }
+        return externalData["display"]["hmd"]["distortion"];
+    }
+    return Json::Value(Json::nullValue);
+}
+
 inline void parseDistortionMonoPointMeshes(
     Json::Value const& distortion,
     osvr::renderkit::MonoPointDistortionMeshDescriptions& mesh) {
@@ -93,31 +133,11 @@ inline void parseDistortionMonoPointMeshes(
     // See if we have the name of an external file to parse.  If so, we open it
     // and grab its values to parse, replacing the ones that they sent
     // in.
-    const Json::Value externalFile =
-        distortion["mono_point_samples_external_file"];
-    if ((!externalFile.isNull()) && (externalFile.isString())) {
-        // Read a Json value from the external file, then replace the distortion
-        // mesh with that from the file.
-        Json::Value externalData;
-        std::ifstream fs;
-        fs.open(externalFile.asString().c_str(), std::fstream::in);
-        if (!fs.is_open()) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
-                         "open file "
-                      << externalFile.asString() << "!\n";
-            throw DisplayConfigurationParseException(
-                "Couldn't open external mono point file.");
-        }
-        if (!reader.parse(fs, externalData)) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
-                         "parse file "
-                      << externalFile.asString() << "!\n";
-            std::cerr << "Errors: " << reader.getFormattedErrorMessages();
-            throw DisplayConfigurationParseException(
-                "Couldn't parse external mono point file.");
-        }
-        myDistortion = externalData["display"]["hmd"]["distortion"];
-        fs.close();
+    Json::Value externalDistortion = getExternalDistortionFile(
+        "mono point", reader, distortion, "mono_point_samples_external_file");
+    if (!externalDistortion.isNull()) {
+        /// Successfully loaded external distortion
+        myDistortion = externalDistortion;
     }
 
     const Json::Value eyeArray = myDistortion["mono_point_samples"];
@@ -174,31 +194,11 @@ inline void parseDistortionRGBPointMeshes(
     // See if we have the name of an external file to parse.  If so, we open it
     // and grab its values to parse.  Otherwise, we parse the ones that they
     // sent in.
-    const Json::Value externalFile =
-        distortion["rgb_point_samples_external_file"];
-    if ((!externalFile.isNull()) && (externalFile.isString())) {
-        // Read a Json value from the external file, then replace the distortion
-        // mesh with that from the file.
-        Json::Value externalData;
-        std::ifstream fs;
-        fs.open(externalFile.asString().c_str(), std::fstream::in);
-        if (!fs.is_open()) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
-                         "open file "
-                      << externalFile.asString() << "!\n";
-            throw DisplayConfigurationParseException(
-                "Couldn't open external rgb point file.");
-        }
-        if (!reader.parse(fs, externalData)) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
-                         "parse file "
-                      << externalFile.asString() << "!\n";
-            std::cerr << "Errors: " << reader.getFormattedErrorMessages();
-            throw DisplayConfigurationParseException(
-                "Couldn't parse external rgb point file.");
-        }
-        myDistortion = externalData["display"]["hmd"]["distortion"];
-        fs.close();
+    Json::Value externalDistortion =
+        getExternalDistortionFile("RGB point samples", reader, distortion,
+                                  "rgb_point_samples_external_file");
+    if (!externalDistortion.isNull()) {
+        myDistortion = externalDistortion;
     }
 
     std::array<std::string, 3> names = {
