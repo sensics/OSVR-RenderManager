@@ -52,6 +52,9 @@ inline Json::Value
 getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
                           Json::Value const& distortionObject,
                           const char* externalFileKey) {
+    auto withError = [&] {
+        return Json::Value(Json::nullValue);
+    };
     Json::Value const& externalFile = distortionObject[externalFileKey];
     if ((!externalFile.isNull()) && (externalFile.isString())) {
         // Read a Json value from the external file, then replace the distortion
@@ -61,31 +64,21 @@ getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
         const std::string fn = externalFile.asString();
         std::ifstream fs{fn};
         if (!fs) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
+            std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Couldn't "
                          "open external "
                       << distortionTypeName << " file " << fn << "!\n";
-            throw DisplayConfigurationParseException(
-                "Couldn't open external " + std::string(distortionTypeName) +
-                " file.");
-            /// @todo should we just return a null value here, instead of
-            /// crashing the app?
-            // return Json::Value(Json::nullValue);
+            return withError();
         }
         if (!reader.parse(fs, externalData, false)) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
+            std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Couldn't "
                          "parse external "
                       << distortionTypeName << " file " << fn << "!\n";
             std::cerr << "Errors: " << reader.getFormattedErrorMessages();
-            throw DisplayConfigurationParseException(
-                "Couldn't parse external " + std::string(distortionTypeName) +
-                " file.");
-            /// @todo should we just return a null value here, instead of
-            /// crashing the app?
-            // return Json::Value(Json::nullValue);
+            return withError();
         }
         return externalData["display"]["hmd"]["distortion"];
     }
-    return Json::Value(Json::nullValue);
+    return withError();
 }
 
 /// Given the distortion object of the json config, tries to turn it into a mesh
