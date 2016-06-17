@@ -94,6 +94,9 @@ getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
                       << distortionTypeName << " file " << fn << "!\n";
             return withError();
         }
+        std::cout << "OSVRDisplayConfiguration::parse(): Reading and parsing "
+                     "JSON in external "
+                  << distortionTypeName << " file " << fn << std::endl;
         if (!reader.parse(fs, externalData, false)) {
             std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Couldn't "
                          "parse external "
@@ -101,6 +104,10 @@ getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
             std::cerr << "Errors: " << reader.getFormattedErrorMessages();
             return withError();
         }
+
+        std::cout << "OSVRDisplayConfiguration::parse(): File read and JSON "
+                     "parse complete."
+                  << std::endl;
         return ExternalDistortionReturnValue{
             externalData["display"]["hmd"]["distortion"], std::move(fn)};
     }
@@ -115,6 +122,10 @@ getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
 /// little but just return an empty object: carry on and try your next approach.
 inline osvr::renderkit::MonoPointDistortionMeshDescriptions
 jsonToMonoPointMesh(Json::Value const& distortion, const char* dataSource) {
+
+    std::cout << "OSVRDisplayConfiguration::parse(): Processing JSON data into "
+                 "mono point samples description structure."
+              << std::endl;
     osvr::renderkit::MonoPointDistortionMeshDescriptions mesh;
     Json::Value const& eyeArray = distortion["mono_point_samples"];
     auto withError = [&] {
@@ -162,10 +173,10 @@ jsonToMonoPointMesh(Json::Value const& distortion, const char* dataSource) {
         }
         mesh.push_back(eye);
     }
-    std::cout << "OSVRDisplayConfiguration::parse(): Loaded mono point samples "
-                 "data with "
+    std::cout << "OSVRDisplayConfiguration::parse(): Initial processing "
+                 "complete. Loaded mono point samples data with "
               << mesh[0].size() << " and " << mesh[1].size()
-              << " samples per eye.\n";
+              << " samples per eye, respectively.\n";
     return mesh;
 }
 
