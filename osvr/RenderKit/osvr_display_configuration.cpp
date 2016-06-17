@@ -52,6 +52,7 @@ inline void parseDistortionMonoPointMeshes(
     Json::Value const& distortion,
     osvr::renderkit::MonoPointDistortionMeshDescriptions& mesh) {
     Json::Value myDistortion = distortion;
+    Json::Reader reader;
 
     // See if we have the name of a built-in config to parse.  If so, we open it
     // and grab its values to parse, replacing the ones that they sent
@@ -78,7 +79,6 @@ inline void parseDistortionMonoPointMeshes(
                 "Unrecognized built-in mono point value: " + builtInKey);
         }
 
-        Json::Reader reader;
         if (!reader.parse(builtInString, builtInData)) {
             std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
                          "parse built-in configuration "
@@ -99,7 +99,6 @@ inline void parseDistortionMonoPointMeshes(
         // Read a Json value from the external file, then replace the distortion
         // mesh with that from the file.
         Json::Value externalData;
-        Json::Reader reader;
         std::ifstream fs;
         fs.open(externalFile.asString().c_str(), std::fstream::in);
         if (!fs.is_open()) {
@@ -170,6 +169,7 @@ inline void parseDistortionRGBPointMeshes(
     Json::Value const& distortion,
     osvr::renderkit::RGBPointDistortionMeshDescriptions& mesh) {
     Json::Value myDistortion = distortion;
+    Json::Reader reader;
 
     // See if we have the name of an external file to parse.  If so, we open it
     // and grab its values to parse.  Otherwise, we parse the ones that they
@@ -180,7 +180,6 @@ inline void parseDistortionRGBPointMeshes(
         // Read a Json value from the external file, then replace the distortion
         // mesh with that from the file.
         Json::Value externalData;
-        Json::Reader reader;
         std::ifstream fs;
         fs.open(externalFile.asString().c_str(), std::fstream::in);
         if (!fs.is_open()) {
