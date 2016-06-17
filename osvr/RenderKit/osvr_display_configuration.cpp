@@ -286,6 +286,9 @@ inline void parseDistortionMonoPointMeshes(
                                                      "point distortion mesh "
                                                      "from data provided.");
         }
+        std::cout << "OSVRDisplayConfiguration::parse(): Using "
+                     "distortion method \"mono_point_samples\""
+                  << std::endl;
         mesh = std::move(newMesh);
     }
 }
