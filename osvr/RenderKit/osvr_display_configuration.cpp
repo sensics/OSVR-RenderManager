@@ -88,91 +88,51 @@ getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
     return Json::Value(Json::nullValue);
 }
 
-inline void parseDistortionMonoPointMeshes(
-    Json::Value const& distortion,
-    osvr::renderkit::MonoPointDistortionMeshDescriptions& mesh) {
-    Json::Value myDistortion = distortion;
-    Json::Reader reader;
-
-    // See if we have the name of a built-in config to parse.  If so, we open it
-    // and grab its values to parse, replacing the ones that they sent
-    // in.
-    Json::Value const& builtIn = distortion["mono_point_samples_built_in"];
-    if ((!builtIn.isNull()) && (builtIn.isString())) {
-        // Read a Json value from the built-in config, then replace the
-        // distortion mesh with that from the file.
-        const std::string builtInKey = builtIn.asString();
-        std::string builtInString;
-        Json::Value builtInData;
-        if (builtInKey == "OSVR_HDK_13_V1") {
-            builtInString = osvr_display_config_built_in_osvr_hdk13_v1;
-        } else if (builtInKey == "OSVR_HDK_13_V2") {
-            builtInString = osvr_display_config_built_in_osvr_hdk13_v2;
-        } else if (builtInKey == "OSVR_HDK_20_V1") {
-            builtInString = osvr_display_config_built_in_osvr_hdk20_v1;
-        } else {
-            std::cerr
-                << "OSVRDisplayConfiguration::parse(): ERROR: Unrecognized "
-                   "mono_point_samples_built_in value: "
-                << builtInKey << "!\n";
-            throw DisplayConfigurationParseException(
-                "Unrecognized built-in mono point value: " + builtInKey);
-        }
-
-        if (!reader.parse(builtInString, builtInData, false)) {
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
-                         "parse built-in configuration "
-                      << builtIn.asString() << "!\n";
-            std::cerr << "Errors: " << reader.getFormattedErrorMessages();
-            throw DisplayConfigurationParseException(
-                "Couldn't parse built-in mono point distortion.");
-        }
-        myDistortion = builtInData["display"]["hmd"]["distortion"];
-    }
-
-    // See if we have the name of an external file to parse.  If so, we open it
-    // and grab its values to parse, replacing the ones that they sent
-    // in.
-    Json::Value externalDistortion = getExternalDistortionFile(
-        "mono point", reader, distortion, "mono_point_samples_external_file");
-    if (!externalDistortion.isNull()) {
-        /// Successfully loaded external distortion
-        myDistortion = externalDistortion;
-    }
-
-    const Json::Value eyeArray = myDistortion["mono_point_samples"];
+/// Given the distortion object of the json config, tries to turn it into a mesh
+/// description (without loading external or built-ins - all it cares about is
+/// "mono_point_samples").
+///
+/// If it succeeds, it returns a non-empty value. If it fails, it will squawk a
+/// little but just return an empty object: carry on and try your next approach.
+inline osvr::renderkit::MonoPointDistortionMeshDescriptions
+jsonToMonoPointMesh(Json::Value const& distortion, const char* dataSource) {
+    osvr::renderkit::MonoPointDistortionMeshDescriptions mesh;
+    Json::Value const& eyeArray = distortion["mono_point_samples"];
+    auto withError = [&] {
+        mesh.clear();
+        return mesh;
+    };
     if (eyeArray.isNull() || eyeArray.empty()) {
-        /// @todo A proper "no-op" default should be placed here, instead of
-        /// erroring out.
-        std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't find "
-                     "non-empty distortion mono point distortion!\n";
-        throw DisplayConfigurationParseException(
-            "Couldn't find non-empty mono point distortion.");
+        std::cerr
+            << "OSVRDisplayConfiguration::parse(): Warning: Couldn't find "
+               "non-empty distortion mono point distortion in data from "
+            << dataSource << "!\n";
+        return withError();
     }
-    mesh.clear();
+
     for (auto& pointArray : eyeArray) {
         osvr::renderkit::MonoPointDistortionMeshDescription eye;
         if (pointArray.empty()) {
-            /// @todo A proper "no-op" default should be placed here, instead of
-            /// erroring out.
-            std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Empty "
-                      << " distortion mono point distortion list for eye!\n";
-            throw DisplayConfigurationParseException(
-                "Empty mono point distortion list for eye.");
+            std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Empty "
+                      << " distortion mono point distortion list for eye, in "
+                         "data from "
+                      << dataSource << "!\n";
+            return withError();
         }
+        using Double2 = std::array<double, 2>;
+        using Double2x2 = std::array<Double2, 2>;
         for (auto& elt : pointArray) {
-            std::array<std::array<double, 2>, 2> point;
+            Double2x2 point;
             if ((elt.size() != 2) || (elt[0].size() != 2) ||
                 (elt[1].size() != 2)) {
-                /// @todo A proper "no-op" default should be placed here,
-                /// instead of erroring out.
                 std::cerr
-                    << "OSVRDisplayConfiguration::parse(): ERROR: Malformed"
-                    << " distortion mono point distortion list entry!\n";
-                throw DisplayConfigurationParseException(
-                    "Malformed mono point distortion list entry.");
+                    << "OSVRDisplayConfiguration::parse(): Warning: Malformed"
+                    << " distortion mono point distortion list entry, in data "
+                       "from "
+                    << dataSource << "!\n";
+                return withError();
             }
-            std::array<double, 2> in, out;
+            Double2 in, out;
             in[0] = (elt[0][0].asDouble());
             in[1] = (elt[0][1].asDouble());
             out[0] = (elt[1][0].asDouble());
@@ -182,6 +142,122 @@ inline void parseDistortionMonoPointMeshes(
             eye.push_back(point);
         }
         mesh.push_back(eye);
+    }
+    std::cout << "OSVRDisplayConfiguration::parse(): Loaded mono point samples "
+                 "data with "
+              << mesh[0].size() << " and " << mesh[1].size()
+              << " samples per eye.\n";
+    return mesh;
+}
+
+/// Function split out of parseDistortionMonoPointMeshes, just so that we can
+/// use return false as an easy early-out.
+inline bool parseBuiltInDistortionMonoPointMeshes(
+    Json::Reader& reader, Json::Value const& distortion,
+    osvr::renderkit::MonoPointDistortionMeshDescriptions& mesh) {
+
+    Json::Value const& builtIn = distortion["mono_point_samples_built_in"];
+    if (builtIn.isNull() || (!builtIn.isString())) {
+        return false;
+    }
+    // Read a Json value from the built-in config, then replace the
+    // distortion mesh with that from the file.
+    const std::string builtInKey = builtIn.asString();
+    std::string builtInString;
+    Json::Value builtInData;
+    if (builtInKey == "OSVR_HDK_13_V1") {
+        builtInString = osvr_display_config_built_in_osvr_hdk13_v1;
+    } else if (builtInKey == "OSVR_HDK_13_V2") {
+        builtInString = osvr_display_config_built_in_osvr_hdk13_v2;
+    } else if (builtInKey == "OSVR_HDK_20_V1") {
+        builtInString = osvr_display_config_built_in_osvr_hdk20_v1;
+    } else {
+        std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Unrecognized "
+                     "mono_point_samples_built_in value: "
+                  << builtInKey << "!\n";
+        return false;
+    }
+
+    if (!reader.parse(builtInString, builtInData, false)) {
+        std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Couldn't "
+                     "parse built-in configuration "
+                  << builtIn.asString() << "!\n";
+        std::cerr << "Errors: " << reader.getFormattedErrorMessages();
+        return false;
+    }
+    auto const& myDistortion = builtInData["display"]["hmd"]["distortion"];
+    if (myDistortion.isNull()) {
+        return false;
+    }
+    auto newMesh =
+        jsonToMonoPointMesh(myDistortion, "mono_point_samples_built_in");
+    if (newMesh.empty()) {
+        /// Something couldn't be turned into a mesh, that routine already
+        /// blabbed about it, just return false without touching anything else.
+        return false;
+    }
+    /// OK, we've got a winner!
+    std::cout << "OSVRDisplayConfiguration::parse(): Using distortion method "
+                 "\"mono_point_samples_built_in\": \""
+              << builtInKey << "\"" << std::endl;
+    mesh = std::move(newMesh);
+    return true;
+}
+
+inline void parseDistortionMonoPointMeshes(
+    Json::Value const& distortion,
+    osvr::renderkit::MonoPointDistortionMeshDescriptions& mesh) {
+    Json::Reader reader;
+
+    // See if we have the name of a built-in config to parse.  If so, we open it
+    // and grab its values to parse, replacing the ones that they sent
+    // in.
+    {
+        auto success =
+            parseBuiltInDistortionMonoPointMeshes(reader, distortion, mesh);
+        if (success) {
+            // If we loaded a built-in successfully, no need to look any
+            // further.
+            return;
+        }
+    }
+
+    // See if we have the name of an external file to parse.  If so, we open it
+    // and grab its values to parse, replacing the ones that they sent
+    // in.
+    {
+        Json::Value externalDistortion =
+            getExternalDistortionFile("mono point", reader, distortion,
+                                      "mono_point_samples_external_file");
+        if (!externalDistortion.isNull()) {
+            /// Successfully loaded external distortion JSON
+            auto newMesh = jsonToMonoPointMesh(
+                externalDistortion, "mono_point_samples_external_file");
+
+            if (!newMesh.empty()) {
+                /// and sucessfully turned that JSON into a mesh - return it
+                /// through the out param and get out of here!
+
+                mesh = std::move(newMesh);
+                return;
+            }
+        }
+    }
+
+    // Finally, just try loading the plain-old object itself.
+    {
+        auto newMesh = jsonToMonoPointMesh(distortion, "mono_point_samples");
+
+        if (newMesh.empty()) {
+            /// @todo A proper "no-op" default should be placed here, instead of
+            /// erroring out. Not sure what that would be here, since this is
+            /// the "last resort" option: what happens if this function returns
+            /// without changing mesh?
+            throw DisplayConfigurationParseException("Could not create mono "
+                                                     "point distortion mesh "
+                                                     "from data provided.");
+        }
+        mesh = std::move(newMesh);
     }
 }
 
