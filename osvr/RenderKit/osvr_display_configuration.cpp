@@ -56,7 +56,7 @@ inline void parseDistortionMonoPointMeshes(
     // See if we have the name of a built-in config to parse.  If so, we open it
     // and grab its values to parse, replacing the ones that they sent
     // in.
-    const Json::Value builtIn = distortion["mono_point_samples_built_in"];
+    Json::Value const& builtIn = distortion["mono_point_samples_built_in"];
     if ((!builtIn.isNull()) && (builtIn.isString())) {
         // Read a Json value from the built-in config, then replace the
         // distortion mesh with that from the file.
