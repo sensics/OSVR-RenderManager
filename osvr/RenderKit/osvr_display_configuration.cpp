@@ -39,6 +39,17 @@
 // Included files that define built-in distortion meshes.
 #include "osvr_display_config_built_in_osvr_hdks.h"
 
+struct BuiltInKeysAndData {
+    const char* key;
+    const char* dataString;
+};
+
+static const std::initializer_list<BuiltInKeysAndData>
+    BUILT_IN_MONO_POINT_SAMPLES = {
+        {"OSVR_HDK_13_V1", osvr_display_config_built_in_osvr_hdk13_v1},
+        {"OSVR_HDK_13_V2", osvr_display_config_built_in_osvr_hdk13_v2},
+        {"OSVR_HDK_20_V1", osvr_display_config_built_in_osvr_hdk20_v1}};
+
 OSVRDisplayConfiguration::OSVRDisplayConfiguration() {
     // do nothing
 }
@@ -156,25 +167,30 @@ inline bool parseBuiltInDistortionMonoPointMeshes(
     // Read a Json value from the built-in config, then replace the
     // distortion mesh with that from the file.
     const std::string builtInKey = builtIn.asString();
+    bool found = false;
     std::string builtInString;
-    Json::Value builtInData;
-    if (builtInKey == "OSVR_HDK_13_V1") {
-        builtInString = osvr_display_config_built_in_osvr_hdk13_v1;
-    } else if (builtInKey == "OSVR_HDK_13_V2") {
-        builtInString = osvr_display_config_built_in_osvr_hdk13_v2;
-    } else if (builtInKey == "OSVR_HDK_20_V1") {
-        builtInString = osvr_display_config_built_in_osvr_hdk20_v1;
-    } else {
+    /// Check against each entry in the known built ins (registered in a table
+    /// at the top of this file)
+    for (auto& knownEntry : BUILT_IN_MONO_POINT_SAMPLES) {
+        if (builtInKey == knownEntry.key) {
+            builtInString = knownEntry.dataString;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        // didn't find a match
         std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Unrecognized "
                      "mono_point_samples_built_in value: "
                   << builtInKey << "!\n";
         return false;
     }
 
+    Json::Value builtInData;
     if (!reader.parse(builtInString, builtInData, false)) {
         std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Couldn't "
                      "parse built-in configuration "
-                  << builtIn.asString() << "!\n";
+                  << builtInKey << "!\n";
         std::cerr << "Errors: " << reader.getFormattedErrorMessages();
         return false;
     }
