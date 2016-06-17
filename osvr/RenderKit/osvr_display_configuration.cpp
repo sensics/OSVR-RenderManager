@@ -119,7 +119,7 @@ inline void parseDistortionMonoPointMeshes(
                 "Unrecognized built-in mono point value: " + builtInKey);
         }
 
-        if (!reader.parse(builtInString, builtInData)) {
+        if (!reader.parse(builtInString, builtInData, false)) {
             std::cerr << "OSVRDisplayConfiguration::parse(): ERROR: Couldn't "
                          "parse built-in configuration "
                       << builtIn.asString() << "!\n";
