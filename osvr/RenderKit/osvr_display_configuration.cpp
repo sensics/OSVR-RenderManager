@@ -35,6 +35,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <utility>
 
 // Included files that define built-in distortion meshes.
 #include "osvr_display_config_built_in_osvr_hdks.h"
@@ -59,20 +60,33 @@ OSVRDisplayConfiguration::OSVRDisplayConfiguration(
     parse(display_description);
 }
 
-inline Json::Value
+struct ExternalDistortionReturnValue {
+    ExternalDistortionReturnValue() : distortion(Json::nullValue) {}
+    ExternalDistortionReturnValue(Json::Value const& val, std::string&& fn)
+        : distortion(val), filename(std::move(fn)) {}
+
+    /// returns whether we have a valid return value in here.
+    explicit operator bool() const { return !distortion.isNull(); }
+
+    /// Distortion object from descriptor: valid iff not null.
+    Json::Value distortion;
+
+    /// Filename loaded from, if valid.
+    std::string filename;
+};
+
+inline ExternalDistortionReturnValue
 getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
                           Json::Value const& distortionObject,
                           const char* externalFileKey) {
-    auto withError = [&] {
-        return Json::Value(Json::nullValue);
-    };
+    auto withError = [&] { return ExternalDistortionReturnValue{}; };
     Json::Value const& externalFile = distortionObject[externalFileKey];
     if ((!externalFile.isNull()) && (externalFile.isString())) {
         // Read a Json value from the external file, then replace the distortion
         // mesh with that from the file.
 
         Json::Value externalData;
-        const std::string fn = externalFile.asString();
+        std::string fn = externalFile.asString();
         std::ifstream fs{fn};
         if (!fs) {
             std::cerr << "OSVRDisplayConfiguration::parse(): Warning: Couldn't "
@@ -87,7 +101,8 @@ getExternalDistortionFile(const char* distortionTypeName, Json::Reader& reader,
             std::cerr << "Errors: " << reader.getFormattedErrorMessages();
             return withError();
         }
-        return externalData["display"]["hmd"]["distortion"];
+        return ExternalDistortionReturnValue{
+            externalData["display"]["hmd"]["distortion"], std::move(fn)};
     }
     return withError();
 }
@@ -235,18 +250,23 @@ inline void parseDistortionMonoPointMeshes(
     // and grab its values to parse, replacing the ones that they sent
     // in.
     {
-        Json::Value externalDistortion =
+        auto externalDistortion =
             getExternalDistortionFile("mono point", reader, distortion,
                                       "mono_point_samples_external_file");
-        if (!externalDistortion.isNull()) {
+        if (externalDistortion) {
             /// Successfully loaded external distortion JSON
-            auto newMesh = jsonToMonoPointMesh(
-                externalDistortion, "mono_point_samples_external_file");
+            auto newMesh =
+                jsonToMonoPointMesh(externalDistortion.distortion,
+                                    "mono_point_samples_external_file");
 
             if (!newMesh.empty()) {
                 /// and sucessfully turned that JSON into a mesh - return it
                 /// through the out param and get out of here!
 
+                std::cout << "OSVRDisplayConfiguration::parse(): Using "
+                             "distortion method "
+                             "\"mono_point_samples_external_file\": \""
+                          << externalDistortion.filename << "\"" << std::endl;
                 mesh = std::move(newMesh);
                 return;
             }
@@ -279,11 +299,11 @@ inline void parseDistortionRGBPointMeshes(
     // See if we have the name of an external file to parse.  If so, we open it
     // and grab its values to parse.  Otherwise, we parse the ones that they
     // sent in.
-    Json::Value externalDistortion =
+    auto externalDistortion =
         getExternalDistortionFile("RGB point samples", reader, distortion,
                                   "rgb_point_samples_external_file");
-    if (!externalDistortion.isNull()) {
-        myDistortion = externalDistortion;
+    if (externalDistortion) {
+        myDistortion = externalDistortion.distortion;
     }
 
     std::array<std::string, 3> names = {
