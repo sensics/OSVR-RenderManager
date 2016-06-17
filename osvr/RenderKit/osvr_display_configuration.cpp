@@ -75,7 +75,7 @@ inline void parseDistortionMonoPointMeshes(
                    "mono_point_samples_built_in value: "
                 << builtInKey << "!\n";
             throw DisplayConfigurationParseException(
-                "Couldn't open external mono point file.");
+                "Unrecognized built-in mono point value: " + builtInKey);
         }
 
         Json::Reader reader;
@@ -85,7 +85,7 @@ inline void parseDistortionMonoPointMeshes(
                       << builtIn.asString() << "!\n";
             std::cerr << "Errors: " << reader.getFormattedErrorMessages();
             throw DisplayConfigurationParseException(
-                "Couldn't parse external mono point file.");
+                "Couldn't parse built-in mono point distortion.");
         }
         myDistortion = builtInData["display"]["hmd"]["distortion"];
     }
