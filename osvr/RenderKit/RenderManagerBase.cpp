@@ -1795,7 +1795,7 @@ namespace renderkit {
 
         /// Translate so that the origin moves to the location of
         /// the lower-left corner.
-        Eigen::Affine3f translate(Eigen::Translation3f(
+        Eigen::Isometry3f translate(Eigen::Translation3f(
             static_cast<float>(normalizedCroppingViewport.left),
             static_cast<float>(normalizedCroppingViewport.lower), 0.0f));
 
@@ -1806,10 +1806,8 @@ namespace renderkit {
             static_cast<float>(normalizedCroppingViewport.height), 1.0f));
 
         /// Compute the full matrix by multiplying the parts.
-        Eigen::Projective3f full = translate * scale;
-
-        // Store the result.
-        memcpy(outMatrix.data, full.matrix().data(), sizeof(outMatrix.data));
+        Eigen::Matrix4f::Map(outMatrix.data) =
+            Eigen::Projective3f(translate * scale).matrix();
 
         return true;
     }
