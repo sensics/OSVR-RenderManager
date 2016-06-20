@@ -147,3 +147,11 @@ OSVR_ReturnCode osvrRenderManagerRegisterRenderBufferD3D11(
     return osvrRenderManagerRegisterRenderBufferImpl(registerBufferState,
                                                      renderBuffer);
 }
+
+OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+    OSVR_RenderInfoCollection renderInfoCollection,
+    OSVR_RenderInfoCount index,
+    OSVR_RenderInfoD3D11* renderInfoOut) {
+    return osvrRenderManagerGetRenderInfoFromCollectionImpl(
+        renderInfoCollection, index, renderInfoOut);
+}
