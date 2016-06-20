@@ -707,7 +707,7 @@ namespace renderkit {
             /// render 4x as many pixels (2x in both X and Y).
             float m_renderOverfillFactor;
 
-            /// This inreases the density of the render texture, adding more
+            /// This increases the density of the render texture, adding more
             /// pixels within the texture, so that when it is rendered into
             /// the final buffer with distortion correction it can be
             /// expanded by the distortion without making fat pixels.
