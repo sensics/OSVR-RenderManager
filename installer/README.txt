@@ -44,6 +44,8 @@ Source code for RenderManager, including example programs, is available at:
   https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.49:
+  bug Fixed crash on exit bug when using Intel DirectMode driver
 0.6.48:
  *ftr DirectMode on Intel GPUs
  *ftr Waits on rendering completion before time warp/ATW, avoiding tearing
