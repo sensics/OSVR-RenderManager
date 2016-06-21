@@ -29,7 +29,6 @@
 #include <osvr/ClientKit/Interface.h>
 #include <osvr/RenderKit/RenderManagerC.h>
 #include <osvr/RenderKit/RenderManagerD3D11C.h>
-#include <osvr/RenderKit/RenderKitGraphicsTransformsC.h>
 
 // Library/third-party includes
 #include <windows.h>

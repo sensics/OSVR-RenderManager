@@ -25,6 +25,7 @@
 // Internal Includes
 #include <osvr/RenderKit/RenderManager.h>
 #include <osvr/RenderKit/RenderManagerImpl.h>
+#include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 
 // Library/third-party includes
 /* none */
@@ -166,4 +167,70 @@ OSVR_ReturnCode osvrRenderManagerGetNumRenderInfoInCollection(
         return OSVR_RETURN_SUCCESS;
     }
     return OSVR_RETURN_FAILURE;
+}
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_OpenGL(
+  double* OpenGL_out, const OSVR_PoseState& state_in)
+{
+  if (!osvr::renderkit::OSVR_PoseState_to_OpenGL(
+    OpenGL_out, state_in)) {
+    return OSVR_RETURN_FAILURE;
+  }
+  return OSVR_RETURN_SUCCESS;
+}
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_D3D(
+  float D3D_out[16], const OSVR_PoseState& state_in)
+{
+  if (!osvr::renderkit::OSVR_PoseState_to_D3D(
+    D3D_out, state_in)) {
+    return OSVR_RETURN_FAILURE;
+  }
+  return OSVR_RETURN_SUCCESS;
+}
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_Unity(
+  OSVR_PoseState& state_out, const OSVR_PoseState& state_in)
+{
+  if (!osvr::renderkit::OSVR_PoseState_to_Unity(
+    state_out, state_in)) {
+    return OSVR_RETURN_FAILURE;
+  }
+  return OSVR_RETURN_SUCCESS;
+}
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_OpenGL(
+  double* OpenGL_out, const OSVR_ProjectionMatrix& projection_in)
+{
+  osvr::renderkit::OSVR_ProjectionMatrix proj;
+  ConvertProjection(projection_in, proj);
+  if (!osvr::renderkit::OSVR_Projection_to_OpenGL(
+    OpenGL_out, proj)) {
+    return OSVR_RETURN_FAILURE;
+  }
+  return OSVR_RETURN_SUCCESS;
+}
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_D3D(
+  float D3D_out[16], const OSVR_ProjectionMatrix& projection_in)
+{
+  osvr::renderkit::OSVR_ProjectionMatrix proj;
+  ConvertProjection(projection_in, proj);
+  if (!osvr::renderkit::OSVR_Projection_to_D3D(
+    D3D_out, proj)) {
+    return OSVR_RETURN_FAILURE;
+  }
+  return OSVR_RETURN_SUCCESS;
+}
+
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_Unreal(
+  float Unreal_out[16], const OSVR_ProjectionMatrix& projection_in)
+{
+  osvr::renderkit::OSVR_ProjectionMatrix proj;
+  ConvertProjection(projection_in, proj);
+  if (!osvr::renderkit::OSVR_Projection_to_Unreal(
+    Unreal_out, proj)) {
+    return OSVR_RETURN_FAILURE;
+  }
+  return OSVR_RETURN_SUCCESS;
 }
