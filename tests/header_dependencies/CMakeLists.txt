@@ -2,7 +2,20 @@
 # Ensure all headers include all dependencies
 #
 
-set(IGNORED_HEADERS RenderKit/GraphicsLibraryOpenGL.h)
+set(IGNORED_HEADERS
+        RenderKit/GraphicsLibraryOpenGL.h
+        RenderKit/GraphicsLibraryD3D11.h
+        RenderKit/RenderManagerOpenGL.h
+        RenderKit/RenderManagerD3D.h
+        RenderKit/RenderManagerD3D11ATW.h
+        RenderKit/RenderManagerD3DOpenGL.h
+        RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.h
+        RenderKit/NDA/OSVR-RenderManager-NVIDIA/CheckSuccess.h
+        RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVAPIWrappers.h
+        RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVIDIADriverVersion.h
+        RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.h
+        RenderKit/NDA/OSVR-RenderManager-Intel/RenderManagerIntelD3D.h
+)
 
 # Special cases
 if (NOT OSVRRM_HAVE_D3D11_SUPPORT)
@@ -15,8 +28,6 @@ if (NOT OSVRRM_HAVE_D3D11_SUPPORT)
 		RenderKit/RenderManagerD3DOpenGL.h
 	)
 endif()
-
-# TODO add nvidia and amd header exceptions/dependencies
 
 if (SDL2_FOUND)
 	set(LIBRARIES_RenderKit_RenderManagerSDLInitQuit SDL2::SDL2)
