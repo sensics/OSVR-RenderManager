@@ -26,6 +26,7 @@ Sensics, Inc.
 #include <osvr/Util/Finally.h>
 #include "RenderManagerD3DBase.h"
 #include "GraphicsLibraryD3D11.h"
+#include "ComputeDistortionMesh.h"
 #include <boost/assert.hpp>
 #include <iostream>
 #include <DirectXMath.h>
@@ -873,7 +874,7 @@ namespace renderkit {
 
             // Construct a distortion mesh for this eye using the RenderManager
             // standard, which is an OpenGL-compatible mesh.
-            DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye]);
+            DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye], m_params.m_renderOverfillFactor);
             if (mesh.vertices.empty()) {
                 std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
                              "create mesh for eye " << eye << std::endl;
@@ -895,19 +896,16 @@ namespace renderkit {
                                  // coordinates.
 
                 v.TexR.x = meshVertex.m_texRed[0];
-                    v.TexR.y =
-                        RenderManager::DistortionMeshVertex::flipTexCoord(
-                    meshVertex.m_texRed[1]);
+                    v.TexR.y = DistortionMeshVertex::flipTexCoord(
+                      meshVertex.m_texRed[1]);
 
                 v.TexG.x = meshVertex.m_texGreen[0];
-                    v.TexG.y =
-                        RenderManager::DistortionMeshVertex::flipTexCoord(
-                    meshVertex.m_texGreen[1]);
+                    v.TexG.y = DistortionMeshVertex::flipTexCoord(
+                      meshVertex.m_texGreen[1]);
 
                 v.TexB.x = meshVertex.m_texBlue[0];
-                    v.TexB.y =
-                        RenderManager::DistortionMeshVertex::flipTexCoord(
-                    meshVertex.m_texBlue[1]);
+                    v.TexB.y = DistortionMeshVertex::flipTexCoord(
+                      meshVertex.m_texBlue[1]);
             }
 
             // Copy the index data

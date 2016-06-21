@@ -36,6 +36,7 @@ Sensics, Inc.
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
 #include "RenderManagerSDLInitQuit.h"
+#include "ComputeDistortionMesh.h"
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -682,7 +683,7 @@ namespace renderkit {
             auto & meshBuffer = m_distortionMeshBuffer[eye];
 
             // Compute the distortion mesh
-            DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye]);
+            DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye], m_params.m_renderOverfillFactor);
             if (mesh.vertices.empty()) {
                 std::cerr << "RenderManagerOpenGL::UpdateDistortionMesh: Could "
                              "not create mesh "

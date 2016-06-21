@@ -72,7 +72,15 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/RenderKitGraphicsTransforms.cpp
 	osvr/RenderKit/osvr_display_configuration.cpp
 	osvr/RenderKit/VendorIdTools.h
-  osvr/RenderKit/osvr_display_config_built_in_osvr_hdks.h
+	osvr/RenderKit/osvr_display_config_built_in_osvr_hdks.h
+	osvr/RenderKit/DistortionCorrectTextureCoordinate.h
+	osvr/RenderKit/DistortionParameters.h
+	osvr/RenderKit/UnstructuredMeshInterpolator.cpp
+	osvr/RenderKit/UnstructuredMeshInterpolator.h
+	osvr/RenderKit/ComputeDistortionMesh.cpp
+	osvr/RenderKit/ComputeDistortionMesh.h
+	osvr/RenderKit/DistortionMesh.h
+	osvr/RenderKit/Float2.h
 )
 
 if (WIN32)
