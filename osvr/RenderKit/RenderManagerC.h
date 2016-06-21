@@ -201,7 +201,7 @@ osvrRenderManagerGetNumRenderInfoInCollection(
 ///        been allocated by the caller.
 /// @return True on success, false on failure (null pointer).
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_OpenGL(
-  double* OpenGL_out, const OSVR_PoseState& state_in);
+  double* OpenGL_out, OSVR_PoseState state_in);
 
 /// Produce a D3D ModelView matrix from an OSVR_PoseState.
 /// Handles transitioning from the right-handed OSVR coordinate
@@ -213,7 +213,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_OpenGL(
 ///        been allocated by the caller.
 /// @return True on success, false on failure (null pointer).
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_D3D(
-  float D3D_out[16], const OSVR_PoseState& state_in);
+  float D3D_out[16], OSVR_PoseState state_in);
 
 /// Modify the OSVR_PoseState from OSVR to be appropriate for use
 /// in a Unity application.  OSVR's world is right handed, and Unity's
@@ -223,7 +223,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_D3D(
 /// @param state_out Ouput state for use by Unity
 /// @return True on success, false on failure (null pointer).
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_Unity(
-  OSVR_PoseState& state_out, const OSVR_PoseState& state_in);
+  OSVR_PoseState* state_out, OSVR_PoseState state_in);
 
 //=========================================================================
 // Routines to turn the 4x4 projection matrices returned as part of the
@@ -241,7 +241,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_PoseState_to_Unity(
 ///        been allocated by the caller.
 /// @return True on success, false on failure (null pointer).
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_OpenGL(
-  double* OpenGL_out, const OSVR_ProjectionMatrix& projection_in);
+  double* OpenGL_out, OSVR_ProjectionMatrix projection_in);
 
 /// Produce a D3D Projection matrix from an OSVR_ProjectionMatrix.
 /// Produces a left-handed projection matrix as is typical
@@ -252,7 +252,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_OpenGL(
 ///        been allocated by the caller.
 /// @return True on success, false on failure (null pointer).
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_D3D(
-  float D3D_out[16], const OSVR_ProjectionMatrix& projection_in);
+  float D3D_out[16], OSVR_ProjectionMatrix projection_in);
 
 /// Produce an Unreal Projection matrix from an OSVR_ProjectionMatrix.
 /// Produces a left-handed projection matrix whose Z values are
@@ -276,7 +276,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_D3D(
 ///        been allocated by the caller.
 /// @return True on success, false on failure (null pointer).
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode OSVR_Projection_to_Unreal(
-  float Unreal_out[16], const OSVR_ProjectionMatrix& projection_in);
+  float Unreal_out[16], OSVR_ProjectionMatrix projection_in);
 
 OSVR_EXTERN_C_END
 
