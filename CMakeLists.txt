@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.1.0)
 project(osvrRenderManager)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 #-----------------------------------------------------------------------------
 # Local CMake Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -372,3 +375,11 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 
 	install(TARGETS EnableOSVRDirectModeAMD DisableOSVRDirectModeAMD RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
+
+# Tests
+option(BUILD_TESTS "Build tests" ON)
+if(BUILD_TESTS)
+	set(HEADER_BASE "${CMAKE_CURRENT_SOURCE_DIR}/osvr")
+	add_subdirectory(tests)
+endif()
+
