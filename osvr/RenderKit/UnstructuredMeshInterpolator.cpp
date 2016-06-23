@@ -166,7 +166,7 @@ namespace renderkit {
 
     Float2 UnstructuredMeshInterpolator::interpolateNearestPoints(float xN,
                                                                   float yN) {
-        Float2 ret = {};
+        Float2 ret = {xN, yN};
 
         // Look in the spatial-acceleration grid to see if we can
         // find three points without having to search the entire set of

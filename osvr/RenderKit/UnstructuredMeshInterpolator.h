@@ -66,7 +66,8 @@ namespace renderkit {
         /// Find an interpolation of the value based on the three
         /// nearest non-collinear points in the unstructured mesh.
         /// Attempts to use the spatial acceleration structure to
-        /// speed up the query if it can.
+        /// speed up the query if it can.  If there are not three
+        /// points, just return the original coordinates.
         /// @param xN Normalized x coordinate
         /// @param yN Normalized y coordinate
         /// @return Normalized coordinate interpolated from

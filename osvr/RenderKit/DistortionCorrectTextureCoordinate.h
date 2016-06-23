@@ -260,12 +260,6 @@ namespace renderkit {
             return inCoords;
         }
 
-        const auto& points = distort.m_monoPointSamples[eye];
-
-        if (points.size() < 3) {
-            return inCoords;
-        }
-
         // Find the three non-collinear points in the mesh that are nearest
         // to the normalized point we are trying to look up.  We start by
         // sorting the points based on distance from our location, selecting
@@ -286,12 +280,6 @@ namespace renderkit {
         }
 
         if (eye >= distort.m_rgbPointSamples[color].size()) {
-            return inCoords;
-        }
-
-        const auto& points = distort.m_rgbPointSamples[color][eye];
-
-        if (points.size() < 3) {
             return inCoords;
         }
 
