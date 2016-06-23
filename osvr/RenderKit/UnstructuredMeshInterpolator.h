@@ -29,12 +29,15 @@
 // Internal Includes
 #include "MonoPointMeshTypes.h"
 #include "Float2.h"
+#include "DistortionParameters.h"
 
 // Library/third-party includes
 // - none
 
 // Standard includes
 #include <array>
+#include <vector>
+#include <memory>
 
 namespace osvr {
 namespace renderkit {
@@ -85,15 +88,15 @@ namespace renderkit {
         /// @param points Vector of points to search in.
         /// @return vector of up to three points.
         MonoPointDistortionMeshDescription getNearestPoints(
-                                                            float xN, float yN,
-                                                            const MonoPointDistortionMeshDescription &points);
+          float xN, float yN,
+          const MonoPointDistortionMeshDescription &points);
 
         const MonoPointDistortionMeshDescription m_points;
 
         /// Structure to store points from the m_points array
         /// in a regular mesh covering the range of
         /// normalized texture coordinates from (0,0) to (1,1).
-        ///  It is filled by the constructor and is used by the
+        ///   It is filled by the constructor and is used by the
         /// interpolator to hopefully provide a fast way to get
         /// a list of the three nearest non-collinear points.
         /// If there are not three such points here, the acceleration
@@ -107,9 +110,9 @@ namespace renderkit {
         int m_numSamplesX = 0; //< Size of the grid in X
         int m_numSamplesY = 0; //< Size of the grid in Y
 
-        // Return the index of the closest grid point to a
-        // specified location.  Clamps to the range of
-        // the grid even for points outside it.
+        /// Return the index of the closest grid point to a
+        /// specified location.  Clamps to the range of
+        /// the grid even for points outside it.
         /// @param xN [in] Normalized X coordinate
         /// @param yN [in] Normalized Y coordinate
         /// @param xIndexOut [out] Index of nearest grid point
