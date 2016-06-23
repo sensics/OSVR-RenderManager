@@ -122,8 +122,7 @@ namespace renderkit {
             // mesh coordinates.
             interpolators.emplace_back(new
               UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
-        }
-        else if (distort.m_type ==
+        } else if (distort.m_type ==
                  DistortionParameters::rgb_point_samples) {
             if (distort.m_rgbPointSamples.size() != 3) {
                 std::cerr << "RenderManager::ComputeDistortionMesh: Need 3 "
