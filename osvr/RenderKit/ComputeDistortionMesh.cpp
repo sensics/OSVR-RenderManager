@@ -121,9 +121,8 @@ namespace renderkit {
             // Add a new interpolator to be used when we're finding
             // mesh coordinates.
             interpolators.emplace_back(new
-                                         UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
-        }
-        else if (distort.m_type ==
+              UnstructuredMeshInterpolator(distort.m_monoPointSamples[eye]));
+        } else if (distort.m_type ==
                  DistortionParameters::rgb_point_samples) {
             if (distort.m_rgbPointSamples.size() != 3) {
                 std::cerr << "RenderManager::ComputeDistortionMesh: Need 3 "
@@ -188,7 +187,7 @@ namespace renderkit {
                 // Add a new interpolator to be used when we're finding
                 // mesh coordinates, one per eye.
                 interpolators.emplace_back(new
-                                             UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
+                  UnstructuredMeshInterpolator(distort.m_rgbPointSamples[clr][eye]));
             }
         } else {
             std::cerr << "RenderManager::ComputeDistortionMesh: Unrecognized "
@@ -200,86 +199,86 @@ namespace renderkit {
         // appropriate one.
         switch (type) {
         case SQUARE: {
-                         // Figure out how many quads we should use in each dimension.  The
-                         // minimum is 1.  We have an even number in each.  There are two
-                         // triangles per quad.
-                         int quadsPerSide =
-                             static_cast<int>(std::sqrt(distort.m_desiredTriangles / 2));
-                         if (quadsPerSide < 1) {
-                             quadsPerSide = 1;
-                         }
+              // Figure out how many quads we should use in each dimension.  The
+              // minimum is 1.  We have an even number in each.  There are two
+              // triangles per quad.
+              int quadsPerSide =
+                  static_cast<int>(std::sqrt(distort.m_desiredTriangles / 2));
+              if (quadsPerSide < 1) {
+                  quadsPerSide = 1;
+              }
 
-                         // Figure out how large each quad will be.  Recall that we're
-                         // covering a range of 2 (from -1 to 1) in each dimension, so the
-                         // quads will all be square in texture space.
-                         float quadSide = 2.0f / quadsPerSide;
-                         float quadTexSide = 1.0f / quadsPerSide;
+              // Figure out how large each quad will be.  Recall that we're
+              // covering a range of 2 (from -1 to 1) in each dimension, so the
+              // quads will all be square in texture space.
+              float quadSide = 2.0f / quadsPerSide;
+              float quadTexSide = 1.0f / quadsPerSide;
 
-                         // Compute distorted texture coordinates and use those for each
-                         // vertex, with appropriate spatial location and texture
-                         // coordinates.
+              // Compute distorted texture coordinates and use those for each
+              // vertex, with appropriate spatial location and texture
+              // coordinates.
 
-                         auto const numVertsPerSide = quadsPerSide + 1;
-                         auto const numVertices = numVertsPerSide*numVertsPerSide;
-                         ret.vertices.reserve(numVertices);
+              auto const numVertsPerSide = quadsPerSide + 1;
+              auto const numVertices = numVertsPerSide*numVertsPerSide;
+              ret.vertices.reserve(numVertices);
 
-                         // Generate a grid of vertices with distorted texture coordinates
-                         for (int x = 0; x < numVertsPerSide; x++) {
-                             float xPos = -1 + x * quadSide;
-                             float xTex = x * quadTexSide;
+              // Generate a grid of vertices with distorted texture coordinates
+              for (int x = 0; x < numVertsPerSide; x++) {
+                  float xPos = -1 + x * quadSide;
+                  float xTex = x * quadTexSide;
 
-                             for (int y = 0; y < numVertsPerSide; y++) {
-                                 float yPos = -1 + y * quadSide;
-                                 float yTex = y * quadTexSide;
+                  for (int y = 0; y < numVertsPerSide; y++) {
+                      float yPos = -1 + y * quadSide;
+                      float yTex = y * quadTexSide;
 
-                                 Float2 pos = { xPos, yPos };
-                                 Float2 tex = { xTex, yTex };
+                      Float2 pos = { xPos, yPos };
+                      Float2 tex = { xTex, yTex };
 
-                                 ret.vertices.emplace_back(pos,
-                                                           DistortionCorrectTextureCoordinate(eye, tex, distort, 0, overfillFactor, interpolators),
-                                                           DistortionCorrectTextureCoordinate(eye, tex, distort, 1, overfillFactor, interpolators),
-                                                           DistortionCorrectTextureCoordinate(eye, tex, distort, 2, overfillFactor, interpolators));
-                             }
-                         }
+                      ret.vertices.emplace_back(pos,
+                          DistortionCorrectTextureCoordinate(eye, tex, distort, 0, overfillFactor, interpolators),
+                          DistortionCorrectTextureCoordinate(eye, tex, distort, 1, overfillFactor, interpolators),
+                          DistortionCorrectTextureCoordinate(eye, tex, distort, 2, overfillFactor, interpolators));
+                  }
+              }
 
-                         // Generate a pair of triangles for each quad, wound
-                         // counter-clockwise from the mesh grid
+              // Generate a pair of triangles for each quad, wound
+              // counter-clockwise from the mesh grid
 
-                         // total of quadsPerSide * quadsPerSide * 6 vertices added: reserve
-                         // that space to avoid excess copying during mesh generation.
-                         ret.indices.reserve(quadsPerSide * quadsPerSide * 6);
-                         for (int x = 0; x < quadsPerSide; x++) {
-                             for (int y = 0; y < quadsPerSide; y++) {
-                                 // Grid generated above is in column-major order
-                                 int indexLL = x*numVertsPerSide + y;
-                                 int indexHL = indexLL + numVertsPerSide;
-                                 int indexHH = indexLL + numVertsPerSide + 1;
-                                 int indexLH = indexLL + 1;
+              // total of quadsPerSide * quadsPerSide * 6 vertices added: reserve
+              // that space to avoid excess copying during mesh generation.
+              ret.indices.reserve(quadsPerSide * quadsPerSide * 6);
+              for (int x = 0; x < quadsPerSide; x++) {
+                  for (int y = 0; y < quadsPerSide; y++) {
+                      // Grid generated above is in column-major order
+                      int indexLL = x*numVertsPerSide + y;
+                      int indexHL = indexLL + numVertsPerSide;
+                      int indexHH = indexLL + numVertsPerSide + 1;
+                      int indexLH = indexLL + 1;
 
-                                 // Triangle 1
-                                 ret.indices.emplace_back(indexLL);
-                                 ret.indices.emplace_back(indexHL);
-                                 ret.indices.emplace_back(indexHH);
+                      // Triangle 1
+                      ret.indices.emplace_back(indexLL);
+                      ret.indices.emplace_back(indexHL);
+                      ret.indices.emplace_back(indexHH);
 
-                                 // Triangle 2
-                                 ret.indices.emplace_back(indexLL);
-                                 ret.indices.emplace_back(indexHH);
-                                 ret.indices.emplace_back(indexLH);
-                             }
-                         }
-                     } break;
+                      // Triangle 2
+                      ret.indices.emplace_back(indexLL);
+                      ret.indices.emplace_back(indexHH);
+                      ret.indices.emplace_back(indexLH);
+                  }
+              }
+          } break;
         case RADIAL: {
-                         std::cerr
-                             << "RenderManager::ComputeDistortionMesh: Radial mesh type "
-                             << "not yet implemented" << std::endl;
+              std::cerr
+                  << "RenderManager::ComputeDistortionMesh: Radial mesh type "
+                  << "not yet implemented" << std::endl;
 
-                         // @todo Scale the aspect ratio of the rings around the center of
-                         // projection so that they will be round in the visible display.
-                     } break;
+              // @todo Scale the aspect ratio of the rings around the center of
+              // projection so that they will be round in the visible display.
+          } break;
         default:
-                     std::cerr << "RenderManager::ComputeDistortionMesh: Unsupported "
-                         "mesh type: "
-                         << type << std::endl;
+              std::cerr << "RenderManager::ComputeDistortionMesh: Unsupported "
+                  "mesh type: "
+                  << type << std::endl;
         }
 
         // Clear any created interpolators, freeing up their memory
