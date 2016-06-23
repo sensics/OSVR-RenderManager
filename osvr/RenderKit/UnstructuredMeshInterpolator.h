@@ -131,6 +131,23 @@ namespace renderkit {
         }
     };
 
+    /// This function returns either an empty vector (non-mesh-based
+    /// distortion correction, a vector with one entry per eye (for
+    /// mono mesh-based distortion correction) or a vector with three
+    /// entries per eye (for rgb mesh-based distortion correction).
+    /// It checks its input to make sure that it is valid.
+    /// @brief Helper function to construct an appropriate-length vector
+    ///        of UnstructuredMeshInterpolator depending on distortion
+    ///        type.
+    /// @param params Describes the distortion correction type
+    /// @param eye Which eye to build the vector for.
+    /// @param interpolators Reference to a filled-in vector.
+    /// @return true on success, false (with undefined vector) on failure.
+    bool OSVR_RENDERMANAGER_EXPORT makeUnstructuredMeshInterpolators(
+      const DistortionParameters &params, size_t eye,
+      std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >
+      &interpolators);
+
 } // namespace renderkit
 } // namespace osvr
 

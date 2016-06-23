@@ -262,5 +262,137 @@ namespace renderkit {
         return ret;
     }
 
+    bool makeUnstructuredMeshInterpolators(
+      const DistortionParameters &params,
+      size_t eye,
+      std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >
+      &interpolators)
+    {
+      // Clear the vector of interpolators we are going to write to,
+      // deleting any objects pointed to, so we dont hand back existing
+      // interpolators.
+      interpolators.clear();
+
+      // If we have a distortion type that involves one or more meshes,
+      // construct the meshes and append them to the vector.
+      if (params.m_type ==
+        DistortionParameters::mono_point_samples) {
+        if (params.m_monoPointSamples.size() != 2) {
+          std::cerr << "makeInterpolatorsForParameters: Need 2 "
+            "meshes, found "
+            << params.m_monoPointSamples.size() << std::endl;
+          return false;
+        }
+        // Add a new interpolator to be used when we're finding
+        // mesh coordinates.
+        if (params.m_monoPointSamples[eye].size() < 3) {
+          std::cerr << "makeInterpolatorsForParameters: Need "
+            "3+ points, found "
+            << params.m_monoPointSamples[eye].size()
+            << std::endl;
+          return false;
+        }
+        for (size_t i = 0; i < params.m_monoPointSamples[eye].size();
+          i++) {
+          if (params.m_monoPointSamples[eye][i].size() != 2) {
+            std::cerr
+              << "makeInterpolatorsForParameters: Need 2 "
+              << "points in the mesh, found "
+              << params.m_monoPointSamples[eye][i].size()
+              << std::endl;
+            return false;
+          }
+          if (params.m_monoPointSamples[eye][i][0].size() != 2) {
+            std::cerr
+              << "makeInterpolatorsForParameters: Need 2 "
+              << "values in input point, found "
+              << params.m_monoPointSamples[eye][i][0].size()
+              << std::endl;
+            return false;
+          }
+          if (params.m_monoPointSamples[eye][i][1].size() != 2) {
+            std::cerr
+              << "makeInterpolatorsForParameters: Need 2 "
+              << "values in output point, found "
+              << params.m_monoPointSamples[eye][i][1].size()
+              << std::endl;
+            return false;
+          }
+        }
+        // Add a new interpolator to be used when we're finding
+        // mesh coordinates.
+        interpolators.emplace_back(new
+          UnstructuredMeshInterpolator(params.m_monoPointSamples[eye]));
+      }
+      else if (params.m_type ==
+        DistortionParameters::rgb_point_samples) {
+        if (params.m_rgbPointSamples.size() != 3) {
+          std::cerr << "makeInterpolatorsForParameters: Need 3 "
+            "color meshes, found "
+            << params.m_rgbPointSamples.size() << std::endl;
+          return false;
+        }
+        for (size_t clr = 0; clr < 3; clr++) {
+          if (params.m_rgbPointSamples[clr].size() != 2) {
+            std::cerr << "makeInterpolatorsForParameters: Need 2 "
+              "eye meshes, found "
+              << params.m_rgbPointSamples[clr].size()
+              << std::endl;
+            return false;
+          }
+          // Add a new interpolator to be used when we're finding
+          // mesh coordinates.
+          if (params.m_rgbPointSamples[clr][eye].size() < 3) {
+            std::cerr
+              << "makeInterpolatorsForParameters: Need "
+              "3+ points, found "
+              << params.m_rgbPointSamples[clr][eye].size()
+              << std::endl;
+            return false;
+          }
+          for (size_t i = 0;
+            i < params.m_rgbPointSamples[clr][eye].size(); i++) {
+            if (params.m_rgbPointSamples[clr][eye][i].size() !=
+              2) {
+              std::cerr
+                << "makeInterpolatorsForParameters: Need "
+                "2 points in the mesh, found "
+                << params.m_rgbPointSamples[clr][eye][i].size()
+                << std::endl;
+              return false;
+            }
+            if (params.m_rgbPointSamples[clr][eye][i][0].size() !=
+              2) {
+              std::cerr
+                << "makeInterpolatorsForParameters: Need "
+                "2 values in input point, found "
+                << params.m_rgbPointSamples[clr][eye][i][0]
+                .size()
+                << std::endl;
+              return false;
+            }
+            if (params.m_rgbPointSamples[clr][eye][i][1].size() !=
+              2) {
+              std::cerr
+                << "makeInterpolatorsForParameters: Need "
+                "2 values in output point, found "
+                << params.m_rgbPointSamples[clr][eye][i][1]
+                .size()
+                << std::endl;
+              return false;
+            }
+          }
+
+          // Add a new interpolator to be used when we're finding
+          // mesh coordinates, one per eye.
+          interpolators.emplace_back(new
+            UnstructuredMeshInterpolator(params.m_rgbPointSamples[clr][eye]));
+        }
+      }
+
+      return true;
+    }
+
+
 } // namespace renderkit
 } // namespace osvr
