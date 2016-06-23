@@ -2180,68 +2180,10 @@ namespace renderkit {
         // Construct the distortion parameters based on the local display
         // class.
         // @todo Remove once we get a general polynomial from Core.
-        DistortionParameters distortion;
-        distortion.m_desiredTriangles = 200 * 64;
-
-        if (p.m_displayConfiguration.getDistortionType() ==
-            OSVRDisplayConfiguration::RGB_SYMMETRIC_POLYNOMIALS) {
-            distortion.m_type = osvr::renderkit::
-                DistortionParameters::Type::rgb_symmetric_polynomials;
-            std::vector<float> Ds;
-            Ds.push_back(
-                p.m_displayConfiguration.getDistortionDistanceScaleX());
-            Ds.push_back(
-                p.m_displayConfiguration.getDistortionDistanceScaleY());
-            distortion.m_distortionD = Ds;
-            distortion.m_distortionPolynomialRed =
-                p.m_displayConfiguration.getDistortionPolynomalRed();
-            distortion.m_distortionPolynomialGreen =
-                p.m_displayConfiguration.getDistortionPolynomalGreen();
-            distortion.m_distortionPolynomialBlue =
-                p.m_displayConfiguration.getDistortionPolynomalBlue();
-            for (size_t i = 0; i < p.m_displayConfiguration.getEyes().size();
-                 i++) {
-                std::vector<float> COP = {
-                    static_cast<float>(
-                        p.m_displayConfiguration.getEyes()[i].m_CenterProjX),
-                    static_cast<float>(
-                        p.m_displayConfiguration.getEyes()[i].m_CenterProjY)};
-                distortion.m_distortionCOP = COP;
-                p.m_distortionParameters.push_back(distortion);
-            }
-        } else if (p.m_displayConfiguration.getDistortionType() ==
-                   OSVRDisplayConfiguration::MONO_POINT_SAMPLES) {
-            distortion.m_type = osvr::renderkit::
-                DistortionParameters::Type::mono_point_samples;
-            distortion.m_monoPointSamples =
-                p.m_displayConfiguration.getDistortionMonoPointMeshes();
-            // Push back the same parameter set for both eyes; the parameter has
-            // a vector that has info for each eye, and the code that uses this
-            // will select the right one.
-            // @todo Seems like it might make more sense to pull out the
-            // individual parameter sets here and push back one for each eye,
-            // rather than sending both sets in twice.
-            p.m_distortionParameters.assign(
-                p.m_displayConfiguration.getEyes().size(), distortion);
-        } else if (p.m_displayConfiguration.getDistortionType() ==
-                   OSVRDisplayConfiguration::RGB_POINT_SAMPLES) {
-            distortion.m_type =
-                DistortionParameters::Type::rgb_point_samples;
-            distortion.m_rgbPointSamples =
-                p.m_displayConfiguration.getDistortionRGBPointMeshes();
-            // Push back the same parameter set for both eyes; the parameter has
-            // a vector that has info for each eye, and the code that uses this
-            // will select the right one.
-            // @todo Seems like it might make more sense to pull out the
-            // individual parameter sets here and push back one for each eye,
-            // rather than sending both sets in twice.
-            p.m_distortionParameters.assign(
-                p.m_displayConfiguration.getEyes().size(), distortion);
-        } else {
-            std::cerr << "createRenderManager: Unrecognized distortion "
-                         "correction type ("
-                      << p.m_displayConfiguration.getDistortionTypeString()
-                      << ") in display config file" << std::endl;
+        for (size_t i = 0; i < p.m_displayConfiguration.getEyes().size(); i++) {
+          DistortionParameters distortion(p.m_displayConfiguration, i);
+          distortion.m_desiredTriangles = 200 * 64;
+          p.m_distortionParameters.push_back(distortion);
         }
 #endif
 
