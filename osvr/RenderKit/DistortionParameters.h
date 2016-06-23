@@ -45,52 +45,64 @@ namespace renderkit {
     /// Class that stores one of a set of possible distortion parameters.
     /// The type of parameters is determined by the m_type, and which
     /// other entries are valid depends on the type.
-    /// === Description of mono_point_samples parameters follows
-    /// @todo
-    /// === Description of rgb_symmetric_polynomials parameters follows
+    /// === Description of mono_point_samples parameters follows:
+    /// This describes a mapping from normalized (X,Y) coordinates in
+    /// the physical display ([0,0] at the lower-left corner, [1,1]
+    /// at the upper right) into normalized coordinates in a canonical
+    /// rectangle that has an overfill value of 1 (no additional
+    /// overfill). Values may map outside the range [0,0]-[1,1] due
+    /// to the distortion; they will map initially into the overfill
+    /// area and then eventually beyond if there is insufficient
+    /// overfill.
+    ///   For some distortion-correction approaches, none of the points
+    /// will map outside this range, because all visible display points
+    /// maps to locations that lie within the projected area of the
+    /// canonical screen even with an overfill factor of 1.  This is
+    /// case for the angles_to_config program.
+    ///   This is an unordered set of points, which is stored as a
+    /// vector of elements, each of which has two elements, the first
+    /// of which is the 2D coordinates in normalized physical-screen
+    /// coordinates and the second of which is the 2D coordinates in
+    /// the canonical-screen coordinates.
+    /// === Description of rgb_point_samples parameters follows:
+    ///   This is an array of three mono_point_sample entries, the first
+    /// for red, the second for green, and the third for blue.
+    /// === Description of rgb_symmetric_polynomials parameters follows:
     /// Because distortion correction depends on the lens geometry and the
     /// screen geometry, and may not be directly related to the viewport
     /// size or aspect ratio (for lenses that expand more in one direction
     /// than the other), we need to allow the specification of not only the
     /// radial distortion polynomial coefficients (which scale powers of the
     /// distance from the center of projection to the point), but also the
-    /// space in
-    /// which this is measured.  We specify the space by telling the number
-    /// of unit radii in the space the parameters are defined in lies across
-    /// the
-    /// texture coordinates, which range from 0 to 1.
+    /// space in which this is measured.  We specify the space by telling
+    /// the number of unit radii in the space the parameters are defined
+    /// in lies across the texture coordinates, which range from 0 to 1.
     ///   This can be different for X and Y, as the viewport may be
-    ///   non-square
-    /// and the lens system may make yet a different aspect ratio.  The D[0]
-    /// component tells the width and D[1] tells the height.
+    /// non-square and the lens system may make yet a different aspect ratio.
+    /// The D[0] component tells the width and D[1] tells the height.
     ///   The coefficients for R, G, and B and the Distances for X and Y
-    /// may be specified in any consistent space that
-    /// is desired (scaling all of them linearly will have no impact on the
-    /// result), but lower-left corner of the space (as viewed on the
-    /// screen)
+    /// may be specified in any consistent space that is desired (scaling
+    /// all of them linearly will have no impact on the result), but
+    /// lower-left corner of the space (as viewed on the screen)
     /// must be (0,0) and the far side of the pixels on the top and right
-    /// are
-    /// at the D-specified locations.
+    /// are at the D-specified locations.
     ///   The first coefficient in each polynomial is a constant factor
     /// (multiplied by offset^0, or 1), the second is the linear factor, the
     /// third is quadratic, and so forth.
     /// @todo Turn COP always into the range 0-1, and have it always use the
     /// lower-left corner of the display, even for Direct3D.  Do the
-    /// conversions
-    /// internally.  When this is done, also adjust the
+    /// conversions internally.  When this is done, also adjust the flipping
+    /// in the OpenGL to D3D to suit.
     ///   For a display 10 pixels wide by 8 pixels high that has square
-    ///   pixels
-    /// whose center of projection is in the middle of the image, we would
-    /// get:
+    /// pixels whose center of projection is in the middle of the image,
+    /// we would get:
     /// D = (10, 8); COP = (4.5, 3.5); parameters specified in pixel-unit
     /// offsets.
     ///   For a display that is 6 units wide by 12 units high, but whose
-    ///   optics
-    /// stretch the view horizontally to produce a square viewing image with
-    /// pixels that are stretched in X, we could have:
+    /// optics stretch the view horizontally to produce a square viewing
+    /// image with pixels that are stretched in X, we could have:
     /// D = (12, 12); COP = (5.5, 5.5); parameters specified in vertical
-    /// pixel-sized
-    /// units
+    /// pixel-sized units
     ///   -or-
     /// D = (6,6); COP = (2.5, 2.5); parameters specified in horizontal
     /// pixel-sized units.
@@ -112,7 +124,8 @@ namespace renderkit {
             rgb_symmetric_polynomials
         } Type;
 
-        DistortionParameters(OSVRDisplayConfiguration& osvrParams,
+        OSVR_RENDERMANAGER_EXPORT DistortionParameters(
+              OSVRDisplayConfiguration& osvrParams,
               size_t eye) {
           *this = DistortionParameters();
           if (osvrParams.getDistortionType() ==
@@ -157,7 +170,7 @@ namespace renderkit {
           }
         }
 
-        DistortionParameters() {
+        OSVR_RENDERMANAGER_EXPORT DistortionParameters() {
             m_type = rgb_symmetric_polynomials;
             m_distortionCOP = {0.5f /* X */, 0.5f /* Y */};
             m_distortionD = {1 /* DX */, 1 /* DY */};

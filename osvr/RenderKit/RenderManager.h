@@ -1013,15 +1013,6 @@ namespace renderkit {
             OSVR_ViewportDescription normalizedCroppingViewport,
             matrix16& outMatrix);
 
-        /// Vector of interpolators constructed by the
-        /// ComputeDistortionMesh() function to be used by the
-        /// DistortionCorrectTextureCoordinate() function based on
-        /// the number of meshes needed (1 per color, the mesh is
-        /// computed per eye so we only need to keep those around
-        /// for our current eye)
-        /// when it is using an unstructured grid.
-        std::vector<UnstructuredMeshInterpolator *> m_interpolators;
-
         //=============================================================
         // These methods must be implemented by all derived classes.
         //  They enable the Render() method above to do the generic work

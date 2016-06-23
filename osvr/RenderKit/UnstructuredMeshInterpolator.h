@@ -29,12 +29,15 @@
 // Internal Includes
 #include "MonoPointMeshTypes.h"
 #include "Float2.h"
+#include "DistortionParameters.h"
 
 // Library/third-party includes
 // - none
 
 // Standard includes
 #include <array>
+#include <vector>
+#include <memory>
 
 namespace osvr {
 namespace renderkit {
@@ -57,11 +60,11 @@ namespace renderkit {
         ///        the acceleration mesh structure.
         /// @param numSamplesY Optional parameter describing the size of
         ///        the acceleration mesh structure.
-        UnstructuredMeshInterpolator(
-                                     const MonoPointDistortionMeshDescription& points,
-                                     int numSamplesX = 20,
-                                     int numSamplesY = 20
-                                    );
+        OSVR_RENDERMANAGER_EXPORT UnstructuredMeshInterpolator(
+          const MonoPointDistortionMeshDescription& points,
+          int numSamplesX = 20,
+          int numSamplesY = 20
+        );
 
         /// Find an interpolation of the value based on the three
         /// nearest non-collinear points in the unstructured mesh.
@@ -72,7 +75,8 @@ namespace renderkit {
         /// @param yN Normalized y coordinate
         /// @return Normalized coordinate interpolated from
         ///  unstructured distortion map mesh.
-        Float2 interpolateNearestPoints(float xN, float yN);
+        Float2 OSVR_RENDERMANAGER_EXPORT interpolateNearestPoints(
+          float xN, float yN);
 
     protected:
 
@@ -84,15 +88,15 @@ namespace renderkit {
         /// @param points Vector of points to search in.
         /// @return vector of up to three points.
         MonoPointDistortionMeshDescription getNearestPoints(
-                                                            float xN, float yN,
-                                                            const MonoPointDistortionMeshDescription &points);
+          float xN, float yN,
+          const MonoPointDistortionMeshDescription &points);
 
         const MonoPointDistortionMeshDescription m_points;
 
         /// Structure to store points from the m_points array
         /// in a regular mesh covering the range of
         /// normalized texture coordinates from (0,0) to (1,1).
-        ///  It is filled by the constructor and is used by the
+        ///   It is filled by the constructor and is used by the
         /// interpolator to hopefully provide a fast way to get
         /// a list of the three nearest non-collinear points.
         /// If there are not three such points here, the acceleration
@@ -106,9 +110,9 @@ namespace renderkit {
         int m_numSamplesX = 0; //< Size of the grid in X
         int m_numSamplesY = 0; //< Size of the grid in Y
 
-        // Return the index of the closest grid point to a
-        // specified location.  Clamps to the range of
-        // the grid even for points outside it.
+        /// Return the index of the closest grid point to a
+        /// specified location.  Clamps to the range of
+        /// the grid even for points outside it.
         /// @param xN [in] Normalized X coordinate
         /// @param yN [in] Normalized Y coordinate
         /// @param xIndexOut [out] Index of nearest grid point
@@ -130,6 +134,23 @@ namespace renderkit {
             return true;
         }
     };
+
+    /// This function returns either an empty vector (non-mesh-based
+    /// distortion correction, a vector with one entry per eye (for
+    /// mono mesh-based distortion correction) or a vector with three
+    /// entries per eye (for rgb mesh-based distortion correction).
+    /// It checks its input to make sure that it is valid.
+    /// @brief Helper function to construct an appropriate-length vector
+    ///        of UnstructuredMeshInterpolator depending on distortion
+    ///        type.
+    /// @param params Describes the distortion correction type
+    /// @param eye Which eye to build the vector for.
+    /// @param interpolators Reference to a filled-in vector.
+    /// @return true on success, false (with undefined vector) on failure.
+    bool OSVR_RENDERMANAGER_EXPORT makeUnstructuredMeshInterpolators(
+      const DistortionParameters &params, size_t eye,
+      std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >
+      &interpolators);
 
 } // namespace renderkit
 } // namespace osvr

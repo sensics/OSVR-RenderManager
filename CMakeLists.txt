@@ -220,6 +220,10 @@ endfunction()
 configure_file(RenderManagerBackends.h.in "${CMAKE_CURRENT_BINARY_DIR}/RenderManagerBackends.h")
 
 set (RenderManager_PUBLIC_HEADERS
+	osvr/RenderKit/ComputeDistortionMesh.h
+	osvr/RenderKit/DistortionCorrectTextureCoordinate.h
+	osvr/RenderKit/DistortionMesh.h
+	osvr/RenderKit/DistortionParameters.h
 	osvr/RenderKit/RenderManager.h
 	osvr/RenderKit/RenderManagerC.h
 	osvr/RenderKit/RenderManagerD3D11C.h
