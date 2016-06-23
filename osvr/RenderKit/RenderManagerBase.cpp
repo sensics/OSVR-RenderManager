@@ -2096,87 +2096,6 @@ namespace renderkit {
         }
         p.m_directModeIndex = -1; // -1 means select based on resolution
 
-#if 0
-    // Construct the distortion parameters based on information from the
-    // Core display class.
-
-    /// @todo Implement multiple viewers.
-    /// Get the number of viewers.
-    OSVR_ViewerCount viewers;
-    osvrClientGetNumViewers(display, &viewers);
-    if (viewers != 1) {
-      std::cerr << "RenderManager::createRenderManager(): Multiple viewers not "
-        << "yet implemented" << std::endl;
-      return nullptr;
-    }
-    OSVR_ViewerCount viewer;
-    for (viewer = 0; viewer < viewers; ++viewer) {
-      OSVR_EyeCount eyes;
-      osvrClientGetNumEyesForViewer(display, viewer, &eyes);
-
-      /// @todo Handle multiple display surfaces per eye.
-      OSVR_SurfaceCount surfaces;
-      osvrClientGetNumSurfacesForViewerEye(display, viewer, 0 /* eye */,
-        &surfaces);
-      if (surfaces != 1) {
-        std::cerr << "RenderManager::createRenderManager(): Multiple surfaces "
-          << "per eye not yet implemented" << std::endl;
-        return nullptr;
-      }
-
-      /// Get any radial distortion parameters for each eye.
-      /// If an eye does not have them, use the default parameters
-      /// that don't do distortion and turn off the request for
-      /// distortion.
-      OSVR_EyeCount eye;
-      p.m_distortionCorrection = false;
-      for (eye = 0; eye < eyes; ++eye) {
-        OSVR_RadialDistortionParameters rDP;
-        OSVR_ReturnCode ret;
-        ret = osvrClientGetViewerEyeSurfaceRadialDistortion(display,
-          viewer, eye, 0 /*surface*/, &rDP);
-        if (ret == OSVR_RETURN_SUCCESS) {
-          // Turn on distortion correction and set the parameters for
-          // this eye.  We assume that the parameters are in the space
-          // that is the size of the display.
-          DistortionParameters dP;
-          dP.m_desiredTriangles = 800;
-          std::vector<float> COP;
-          COP.push_back(static_cast<float>(rDP.centerOfProjection.data[0]));
-          COP.push_back(static_cast<float>(rDP.centerOfProjection.data[1]));
-          dP.m_distortionCOP = COP;
-          std::vector<float> K1s;
-          K1s.push_back(static_cast<float>(rDP.k1.data[0]));
-          K1s.push_back(static_cast<float>(rDP.k1.data[1]));
-          K1s.push_back(static_cast<float>(rDP.k1.data[2]));
-          dP.m_distortionK1s = K1s;
-          // Scale the D's so that the K unit for width is with respect
-          // to a unity D and the K value for height is adjusted by
-          // the aspect ratio.
-          std::vector<float> Ds;
-          // @todo Fill in Ds based on display size from Core.
-          //  Get viewport from ViewerEye, getViewerEyeSurface()
-          //  Don't divide by 2 in this case, since the viewport
-          //  is sized for each eye.
-          // @todo Figure out how to handle single vs. multiple eyes
-          //   in the same display.
-          Ds.push_back(1.0f);
-          Ds.push_back(1.0f);
-          //Ds.push_back(static_cast<float>(
-          //  p.m_displayConfiguration.getDisplayWidth()/2));
-          //Ds.push_back(static_cast<float>(
-          //  p.m_displayConfiguration.getDisplayHeight()));
-          dP.m_distortionD = Ds;
-          p.m_distortionParameters.push_back(dP);
-          p.m_distortionCorrection = true;
-        } else {
-          // Push back an empty set of parameters for this eye
-          p.m_distortionParameters.push_back(DistortionParameters());
-        }
-      }
-    }
-
-#else
         // Construct the distortion parameters based on the local display
         // class.
         // @todo Remove once we get a general polynomial from Core.
@@ -2185,7 +2104,6 @@ namespace renderkit {
           distortion.m_desiredTriangles = 200 * 64;
           p.m_distortionParameters.push_back(distortion);
         }
-#endif
 
         // @todo Read the info we need from Core.
 
