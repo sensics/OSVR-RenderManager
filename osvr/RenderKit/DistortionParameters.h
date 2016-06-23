@@ -112,7 +112,8 @@ namespace renderkit {
             rgb_symmetric_polynomials
         } Type;
 
-        DistortionParameters(OSVRDisplayConfiguration& osvrParams,
+        OSVR_RENDERMANAGER_EXPORT DistortionParameters(
+              OSVRDisplayConfiguration& osvrParams,
               size_t eye) {
           *this = DistortionParameters();
           if (osvrParams.getDistortionType() ==
@@ -157,7 +158,7 @@ namespace renderkit {
           }
         }
 
-        DistortionParameters() {
+        OSVR_RENDERMANAGER_EXPORT DistortionParameters() {
             m_type = rgb_symmetric_polynomials;
             m_distortionCOP = {0.5f /* X */, 0.5f /* Y */};
             m_distortionD = {1 /* DX */, 1 /* DY */};

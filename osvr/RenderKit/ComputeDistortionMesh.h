@@ -68,7 +68,9 @@ namespace renderkit {
     ///  @param overfillFactor overfill factor
     ///
     ///  @return Vector of triangles (sets of 3 vertices), empty on failure.
-    DistortionMesh ComputeDistortionMesh(size_t eye, DistortionMeshType type, DistortionParameters distort, float overfillFactor);
+    DistortionMesh OSVR_RENDERMANAGER_EXPORT ComputeDistortionMesh(
+      size_t eye, DistortionMeshType type, DistortionParameters distort,
+      float overfillFactor);
 
 } // namespace osvr
 } // namespace renderkit

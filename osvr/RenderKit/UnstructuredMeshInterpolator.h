@@ -57,11 +57,11 @@ namespace renderkit {
         ///        the acceleration mesh structure.
         /// @param numSamplesY Optional parameter describing the size of
         ///        the acceleration mesh structure.
-        UnstructuredMeshInterpolator(
-                                     const MonoPointDistortionMeshDescription& points,
-                                     int numSamplesX = 20,
-                                     int numSamplesY = 20
-                                    );
+        OSVR_RENDERMANAGER_EXPORT UnstructuredMeshInterpolator(
+          const MonoPointDistortionMeshDescription& points,
+          int numSamplesX = 20,
+          int numSamplesY = 20
+        );
 
         /// Find an interpolation of the value based on the three
         /// nearest non-collinear points in the unstructured mesh.
@@ -72,7 +72,8 @@ namespace renderkit {
         /// @param yN Normalized y coordinate
         /// @return Normalized coordinate interpolated from
         ///  unstructured distortion map mesh.
-        Float2 interpolateNearestPoints(float xN, float yN);
+        Float2 OSVR_RENDERMANAGER_EXPORT interpolateNearestPoints(
+          float xN, float yN);
 
     protected:
 

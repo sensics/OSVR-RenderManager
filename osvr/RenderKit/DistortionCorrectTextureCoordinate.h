@@ -45,30 +45,30 @@ namespace renderkit {
 
     /// @name Forward declarations
     //@{
-    Float2 DistortionCorrectTextureCoordinate(
+    Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectTextureCoordinate(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort, const size_t color,
         const float overfillFactor,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators);
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators);
 
-    Float2 DistortionCorrectNormalizedTextureCoordinate(
+    Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectNormalizedTextureCoordinate(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort, const size_t color,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators);
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators);
 
-    Float2 DistortionCorrectRGBSymmetricPolynomials(
+    Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectRGBSymmetricPolynomials(
         Float2 const& inCoords, const DistortionParameters& distort,
         const size_t color);
 
-    Float2 DistortionCorrectMonoPointSamples(
+    Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectMonoPointSamples(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators);
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators);
 
-    Float2 DistortionCorrectRGBPointSamples(
+    Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectRGBPointSamples(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort, const size_t color,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators);
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators);
     //@}
 
     /// @brief Distortion-correct a texture coordinate in PresentMode
@@ -94,11 +94,11 @@ namespace renderkit {
     ///
     /// @return New coordinates on success, unchanged coordinates on
     /// failure.
-    inline Float2 DistortionCorrectTextureCoordinate(
+    inline Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectTextureCoordinate(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort, const size_t color,
         const float overfillFactor,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators) {
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators) {
         // Check for invalid parameters
         if (color > 2) {
             return inCoords;
@@ -148,10 +148,10 @@ namespace renderkit {
     ///
     /// @return New coordinates on success, unchanged coordinates on
     /// failure.
-    inline Float2 DistortionCorrectNormalizedTextureCoordinate(
+    inline Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectNormalizedTextureCoordinate(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort, const size_t color,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators) {
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators) {
         // Check for invalid parameters
         if (color > 2) {
             return inCoords;
@@ -172,7 +172,7 @@ namespace renderkit {
         }
     }
 
-    inline Float2 DistortionCorrectRGBSymmetricPolynomials(
+    inline Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectRGBSymmetricPolynomials(
         Float2 const& inCoords, const DistortionParameters& distort,
         const size_t color) {
         Float2 ret = inCoords;
@@ -252,10 +252,10 @@ namespace renderkit {
         return ret;
     }
 
-    inline Float2 DistortionCorrectMonoPointSamples(
+    inline Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectMonoPointSamples(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators) {
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators) {
         if (eye >= distort.m_monoPointSamples.size()) {
             return inCoords;
         }
@@ -271,10 +271,10 @@ namespace renderkit {
                                                           inCoords[1]);
     }
 
-    inline Float2 DistortionCorrectRGBPointSamples(
+    inline Float2 OSVR_RENDERMANAGER_EXPORT DistortionCorrectRGBPointSamples(
         const size_t eye, Float2 const& inCoords,
         const DistortionParameters& distort, const size_t color,
-        const std::vector<UnstructuredMeshInterpolator*>& interpolators) {
+        const std::vector< std::unique_ptr<UnstructuredMeshInterpolator> >& interpolators) {
         if (color >= 3) {
             return inCoords;
         }
