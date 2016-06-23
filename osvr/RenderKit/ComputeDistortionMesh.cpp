@@ -46,28 +46,28 @@ namespace renderkit {
         if (distort.m_type ==
             DistortionParameters::rgb_symmetric_polynomials) {
             if (distort.m_distortionPolynomialRed.size() < 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                std::cerr << "ComputeDistortionMesh: Need 2+ "
                     "red polynomial coefficients, found "
                     << distort.m_distortionPolynomialRed.size()
                     << std::endl;
                 return ret;
             }
             if (distort.m_distortionPolynomialGreen.size() < 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                std::cerr << "ComputeDistortionMesh: Need 2+ "
                     "green polynomial coefficients, found "
                     << distort.m_distortionPolynomialGreen.size()
                     << std::endl;
                 return ret;
             }
             if (distort.m_distortionPolynomialBlue.size() < 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2+ "
+                std::cerr << "ComputeDistortionMesh: Need 2+ "
                     "blue polynomial coefficients, found "
                     << distort.m_distortionPolynomialBlue.size()
                     << std::endl;
                 return ret;
             }
             if (distort.m_distortionD.size() != 2) {
-                std::cerr << "RenderManager::ComputeDistortionMesh: Need 2 "
+                std::cerr << "ComputeDistortionMesh: Need 2 "
                     "distortion coefficients, found "
                     << distort.m_distortionD.size() << std::endl;
                 return ret;
@@ -77,8 +77,10 @@ namespace renderkit {
           // Nothing special to do, our interpolator is created below
         } else if (distort.m_type ==
                  DistortionParameters::rgb_point_samples) {
-        } else {
-            std::cerr << "RenderManager::ComputeDistortionMesh: Unrecognized "
+          // Nothing special to do, our interpolator is created below
+        }
+        else {
+            std::cerr << "ComputeDistortionMesh: Unrecognized "
                 << "distortion parameter type" << std::endl;
             return ret;
         }
@@ -167,14 +169,14 @@ namespace renderkit {
           } break;
         case RADIAL: {
               std::cerr
-                  << "RenderManager::ComputeDistortionMesh: Radial mesh type "
+                  << "ComputeDistortionMesh: Radial mesh type "
                   << "not yet implemented" << std::endl;
 
               // @todo Scale the aspect ratio of the rings around the center of
               // projection so that they will be round in the visible display.
           } break;
         default:
-              std::cerr << "RenderManager::ComputeDistortionMesh: Unsupported "
+              std::cerr << "ComputeDistortionMesh: Unsupported "
                   "mesh type: "
                   << type << std::endl;
         }
