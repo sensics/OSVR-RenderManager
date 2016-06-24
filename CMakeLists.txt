@@ -220,6 +220,8 @@ endfunction()
 configure_file(RenderManagerBackends.h.in "${CMAKE_CURRENT_BINARY_DIR}/RenderManagerBackends.h")
 
 set (RenderManager_PUBLIC_HEADERS
+	osvr/RenderKit/Float2.h
+	osvr/RenderKit/UnstructuredMeshInterpolator.h
 	osvr/RenderKit/ComputeDistortionMesh.h
 	osvr/RenderKit/DistortionCorrectTextureCoordinate.h
 	osvr/RenderKit/DistortionMesh.h
