@@ -39,7 +39,7 @@ namespace renderkit {
         OSVR_ClientContext context,
         ConstructorParameters p,
         std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness)
-        : RenderManagerOpenGL(context, p),
+        : RenderManagerOpenGLSDL(context, p),
           m_D3D11Renderer(std::move(D3DToHarness)) {
 
         // Initialize all of the variables that don't have to be done in the

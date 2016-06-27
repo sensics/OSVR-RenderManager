@@ -38,8 +38,41 @@ OSVR_EXTERN_C_BEGIN
 
 typedef void* OSVR_RenderManagerOpenGL;
 
+typedef struct OSVR_OpenGLContextParams {
+    const char* windowTitle;
+    int displayIndex;
+    OSVR_CBool fullScreen;
+    int width;
+    int height;
+    int xPos;
+    int yPos;
+    int bitsPerPixel;
+    unsigned numBuffers;
+    OSVR_CBool visible;
+} OSVR_OpenGLContextParams;
+
+typedef struct OSVR_OpenGLToolkitFunctions {
+    // Should be set to sizeof(OSVR_OpenGLToolkitFunctions) to allow the library
+    // to detect when the client was compiled against an older version which has
+    // fewer members in this struct.
+    size_t size;
+
+    // Pointer which will be passed to all the functions
+    void* data;
+
+    // Functions implementing the toolkit functionality
+    void (*create)(void* data);
+    void (*destroy)(void* data);
+    OSVR_CBool (*addOpenGLContext)(void* data, const OSVR_OpenGLContextParams* p);
+    OSVR_CBool (*removeOpenGLContexts)(void* data);
+    OSVR_CBool (*makeCurrent)(void* data, size_t display);
+    OSVR_CBool (*swapBuffers)(void* data, size_t display);
+    OSVR_CBool (*setVerticalSync)(void* data, OSVR_CBool verticalSync);
+    OSVR_CBool (*handleEvents)(void* data);
+} OSVR_OpenGLToolkitFunctions;
+
 typedef struct OSVR_GraphicsLibraryOpenGL {
-    // intentionally left blank
+    OSVR_OpenGLToolkitFunctions* toolkit;
     int unused;  // C does not allow empty structures
 } OSVR_GraphicsLibraryOpenGL;
 

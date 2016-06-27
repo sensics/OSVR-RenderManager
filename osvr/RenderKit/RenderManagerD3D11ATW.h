@@ -26,7 +26,7 @@ Sensics, Inc.
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManagerD3DBase.h"
-#include "RenderManagerOpenGL.h"
+#include "RenderManagerOpenGLSDL.h"
 #include "GraphicsLibraryD3D11.h"
 
 #include <vector>
