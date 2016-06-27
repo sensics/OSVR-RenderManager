@@ -27,6 +27,7 @@
 #include <osvr/RenderKit/RenderManager.h>
 #include <osvr/RenderKit/RenderManagerImpl.h>
 #include <osvr/RenderKit/RenderManagerOpenGL.h>
+#include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
 
 // Library/third-party includes
 // - none
@@ -41,12 +42,12 @@ ConvertGraphicsLibrary(const OSVR_GraphicsLibraryOpenGL& graphicsLibrary,
   // place to put them.  Otherwise, we leave the device with its
   // default NULL pointer so that it will not think the contents
   // are valid.
-  //if (graphicsLibrary.device != nullptr ||
-  //    graphicsLibrary.context != nullptr) {
-    // osvr::renderkit::GraphicsLibraryOpenGL *glogl = new
-    // osvr::renderkit::GraphicsLibraryOpenGL();
-    // graphicsLibraryOut.OpenGL = glogl;
-  //}
+  if (graphicsLibrary.toolkit != nullptr) {
+    osvr::renderkit::GraphicsLibraryOpenGL *glogl = new
+      osvr::renderkit::GraphicsLibraryOpenGL();
+    glogl->toolkit = graphicsLibrary.toolkit;
+    graphicsLibraryOut.OpenGL = glogl;
+  }
 }
 
 inline void

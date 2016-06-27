@@ -24,6 +24,9 @@ Russ Taylor <russ@sensics.com>
 
 #pragma once
 
+// Defined in RenderManagerOpenGLC.h
+struct OSVR_OpenGLToolkitFunctions;
+
 namespace osvr {
 namespace renderkit {
 
@@ -53,6 +56,12 @@ namespace renderkit {
         /// sure it is current before calling any RenderManager
         /// method.
         bool shareOpenGLContext = false;
+
+        /// A pointer to a structure containing functions pointers which are
+        /// used for making calls to the toolkit (i.e. creating a window or
+        /// setting the OpenGL context). If toolkit is set to nullptr, it
+        /// defaults to using SDL.
+        const OSVR_OpenGLToolkitFunctions* toolkit = nullptr;
     };
 
     /// @brief Describes a OpenGL textures to be rendered

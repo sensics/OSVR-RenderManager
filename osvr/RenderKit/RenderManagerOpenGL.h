@@ -35,7 +35,6 @@ Sensics, Inc.
 
 #ifdef RM_USE_OPENGLES20
   // @todo This presumes we're compiling on Android.
-  #include <SDL.h>
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
 
@@ -68,8 +67,6 @@ Sensics, Inc.
   #else
     #include <GL/gl.h>
   #endif
-  #include <SDL.h>
-  #include <SDL_opengl.h>
 #endif
 
 #include <stdlib.h>
@@ -135,8 +132,23 @@ namespace renderkit {
                 visible = true;
             }
         };
-        bool addOpenGLContext(GLContextParams p);
-        bool removeOpenGLContexts();
+        virtual bool addOpenGLContext(GLContextParams p) = 0;
+        virtual bool removeOpenGLContexts() = 0;
+
+        /// Make the context for display the current context.
+        virtual bool makeCurrent(size_t display) = 0;
+
+        /// Update window after rendering.
+        virtual bool swapBuffers(size_t display) = 0;
+
+        /// Set vertical sync behavior.
+        virtual bool setVerticalSync(bool verticalSync) = 0;
+
+        /// Set vertical sync behavior.
+        virtual bool handleEvents() = 0;
+
+        /// Delete m_programId in destructor.
+        void deleteProgram();
 
         /// Construct the buffers we're going to use in Render() mode, which
         /// we use to actually use the Presentation mode.  This gives us the
@@ -145,16 +157,6 @@ namespace renderkit {
         /// size we need for Asychronous Time Warp and distortion, and keeps
         /// them from being in the same window and so bleeding together.
         bool constructRenderBuffers();
-
-        // Classes and structures needed to do our rendering.
-        class DisplayInfo {
-          public:
-            SDL_Window* m_window = nullptr; //< The window we're rendering into
-        };
-        std::vector<DisplayInfo> m_displays;
-
-        SDL_GLContext
-            m_GLContext; //< The context we use to render to all displays
 
         // Special vertex/fragment shader information for our shader that
         // handles
