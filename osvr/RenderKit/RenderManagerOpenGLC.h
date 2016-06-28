@@ -40,7 +40,6 @@ typedef void* OSVR_RenderManagerOpenGL;
 
 typedef struct OSVR_OpenGLContextParams {
     const char* windowTitle;
-    int displayIndex;
     OSVR_CBool fullScreen;
     int width;
     int height;

@@ -111,7 +111,6 @@ namespace renderkit {
         class GLContextParams {
           public:
             std::string windowTitle; //< Window title
-            int displayIndex;        //< Which display to use (-1 = any)?
             bool fullScreen;         //< Do we want full screen?
             int width;               //< If not full screen, how wide?
             int height;              //< If not full screen, how high?
@@ -122,7 +121,6 @@ namespace renderkit {
             bool visible;            //< Should the window be initially visible?
             GLContextParams() {
                 windowTitle = "OSVR";
-                displayIndex = -1;
                 fullScreen = false;
                 width = 640;
                 height = 480;
@@ -221,7 +219,6 @@ namespace renderkit {
           const osvr::renderkit::RenderManagerOpenGL::GLContextParams& contextParams,
           OSVR_OpenGLContextParams& contextParamsOut) {
           contextParamsOut.windowTitle = contextParams.windowTitle.c_str();
-          contextParamsOut.displayIndex = contextParams.displayIndex;
           contextParamsOut.fullScreen = contextParams.fullScreen;
           contextParamsOut.width = contextParams.width;
           contextParamsOut.height = contextParams.height;
