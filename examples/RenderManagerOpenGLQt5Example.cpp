@@ -23,6 +23,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Internal Includes
+#include <osvr/ClientKit/Context.h>
+#include <osvr/ClientKit/Interface.h>
+#include <osvr/RenderKit/RenderManager.h>
+
 #include <QtCore/QObject>
 #include <QtCore/QDebug>
 #include <QtCore/QTimer>
@@ -33,11 +38,6 @@
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QHBoxLayout>
-
-// Internal Includes
-#include <osvr/ClientKit/Context.h>
-#include <osvr/ClientKit/Interface.h>
-#include <osvr/RenderKit/RenderManager.h>
 
 // Library/third-party includes
 #ifdef _WIN32
@@ -167,16 +167,18 @@ class Qt5ToolkitImpl {
         return true;
     }
     bool makeCurrent(size_t display) {
-        glwidgets.at(display)->makeCurrent();
+        glwidgets.at(static_cast<int>(display))->makeCurrent();
         return true;
     }
     bool swapBuffers(size_t display) {
-        glwidgets.at(display)->swapBuffers();
+        glwidgets.at(static_cast<int>(display))->swapBuffers();
         return true;
     }
     bool setVerticalSync(bool verticalSync) {
+      return true;
     }
     bool handleEvents() {
+      return true;
     }
 };
 
