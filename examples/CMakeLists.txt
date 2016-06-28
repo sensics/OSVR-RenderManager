@@ -1,3 +1,5 @@
+find_package(Qt5Widgets)
+find_package(Qt5OpenGL)
 
 set(COMMON_D3D_SOURCES
 	D3DCube.h
@@ -121,13 +123,13 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND)
 	# OpenGL Example program
 	add_executable(RenderManagerOpenGLExample RenderManagerOpenGLExample.cpp)
 	target_link_libraries(RenderManagerOpenGLExample PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps)
-    target_compile_features(RenderManagerOpenGLExample PRIVATE cxx_range_for)
+  target_compile_features(RenderManagerOpenGLExample PRIVATE cxx_range_for)
 
 	#-----------------------------------------------------------------------------
 	# OpenGL Example program
 	add_executable(RenderManagerOpenGLHeadSpaceExample RenderManagerOpenGLHeadSpaceExample.cpp)
 	target_link_libraries(RenderManagerOpenGLHeadSpaceExample PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps)
-    target_compile_features(RenderManagerOpenGLHeadSpaceExample PRIVATE cxx_range_for)
+  target_compile_features(RenderManagerOpenGLHeadSpaceExample PRIVATE cxx_range_for)
 
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
@@ -135,6 +137,23 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND)
 			RenderManagerOpenGLHeadSpaceExample
 			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	endif()
+
+  if (Qt5Widgets_FOUND AND Qt5OpenGL_FOUND)
+	  #-----------------------------------------------------------------------------
+	  # OpenGL Example program
+	  add_executable(RenderManagerOpenGLQt5Example RenderManagerOpenGLQt5Example.cpp)
+	  target_link_libraries(RenderManagerOpenGLQt5Example
+      PRIVATE osvrRM::osvrRenderManagerCpp convenience_gldeps
+      Qt5::OpenGL Qt5::Widgets)
+    target_compile_features(RenderManagerOpenGLQt5Example PRIVATE cxx_range_for)
+
+	  if(OSVRRM_INSTALL_EXAMPLES)
+		  install(TARGETS
+			  RenderManagerOpenGLQt5Example
+			  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	  endif()
+  endif()
+
  endif()
 endif()
 
