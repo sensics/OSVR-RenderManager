@@ -55,8 +55,11 @@
 //==========================================================================
 // Toolkit object to handle our window creation needs.  We pass it down to
 // the RenderManager and it is to make windows in the same context that
-// we are making them in.  RenderManager will call its functions to make them,
-// and we'll use its functions below to make our own windows.
+// we are making them in.  RenderManager will call its functions to make them.
+//  NOTE: The operative line for our purposes is the one that always asks
+// to share the context: SDL_GL_SHARE_WITH_CURRENT_CONTEXT.  In the built-
+// in RenderManager code, this context is only shared for multiple displays.
+// Our overriding the standard toolkit lets us do this.
 //  NOTE: If you are using a rendering engine, you would replace the methods
 // here to make it use the rendering engine to construct windows in its own
 // context.  The addOpenGLContext() function is the one that should be
