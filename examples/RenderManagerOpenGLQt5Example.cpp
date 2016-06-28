@@ -1,15 +1,17 @@
 /** @file
     @brief Example program that uses the OSVR direct-to-display interface
-           and OpenGL to render a scene with low latency.
+           and OpenGL to render a scene with low latency, using a custom
+           OpenGL window library (in this case, Qt5) rather than the built-in
+           SDL2 library.
 
-    @date 2015
+    @date 2016
 
     @author
-    Russ Taylor <russ@sensics.com>
+    Steffen Kiess
     <http://sensics.com/osvr>
 */
 
-// Copyright 2015 Sensics, Inc.
+// Copyright 2016 Steffen Kiess
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
