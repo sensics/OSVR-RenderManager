@@ -73,6 +73,11 @@ static float yel_col[] = {1.0, 1.0, 0.0};
 static float lightblu_col[] = {0.0, 1.0, 1.0};
 static float pur_col[] = {1.0, 0.0, 1.0};
 
+//==========================================================================
+// Toolkit object to handle our window creation needs.  We pass it down to
+// the RenderManager and it is to make windows in the same context that
+// we are making them in.  RenderManager will call its functions to make them.
+
 class Qt5ToolkitImpl {
     OSVR_OpenGLToolkitFunctions toolkit;
 
@@ -101,7 +106,7 @@ class Qt5ToolkitImpl {
     }
 
     QList<QGLWidget*> glwidgets;
-    QList<QWidget*> dialogs;
+    QList<QWidget*> widgets;
 
   public:
     Qt5ToolkitImpl() {
@@ -125,8 +130,7 @@ class Qt5ToolkitImpl {
     const OSVR_OpenGLToolkitFunctions* getToolkit() const { return &toolkit; }
 
     bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
-        //auto dialog = new QDialog();
-        auto dialog = new QWidget();
+        auto widget = new QWidget();
 
         /*
         qDebug() << "Size:" << p.width << p.height;
@@ -134,35 +138,38 @@ class Qt5ToolkitImpl {
         qDebug() << "Dis:" << p.displayIndex << p.fullScreen;
         // */
 
-        dialog->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+        widget->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
 
-        dialog->setGeometry(p->xPos, p->yPos, p->width, p->height);
+        widget->setGeometry(p->xPos, p->yPos, p->width, p->height);
 
-        dialog->setWindowTitle(p->windowTitle);
+        widget->setWindowTitle(p->windowTitle);
 
-        if (p->fullScreen)
-            dialog->setWindowState(Qt::WindowFullScreen);
+        if (p->fullScreen) {
+          widget->setWindowState(Qt::WindowFullScreen);
+        }
 
-        auto layout = new QHBoxLayout(dialog);
+        auto layout = new QHBoxLayout(widget);
         layout->setMargin(0);
         layout->setSpacing(0);
         auto gl = new QGLWidget(nullptr, glwidgets.size() ? glwidgets.at(0) : nullptr);
         layout->addWidget(gl);
 
-        if (p->visible)
-            dialog->show();
+        if (p->visible) {
+          widget->show();
+        }
 
-        //qDebug() << dialog->geometry();
+        //qDebug() << widget->geometry();
 
         glwidgets.push_back(gl);
-        dialogs.push_back(dialog);
+        widgets.push_back(widget);
 
         return true;
     }
     bool removeOpenGLContexts() {
-        for (auto dialog : dialogs)
-            dialog->deleteLater();
-        dialogs.clear();
+        for (auto widget : widgets) {
+          widget->deleteLater();
+        }
+        widgets.clear();
         glwidgets.clear();
 
         return true;
