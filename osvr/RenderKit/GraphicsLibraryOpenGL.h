@@ -24,8 +24,7 @@ Russ Taylor <russ@sensics.com>
 
 #pragma once
 
-// Defined in RenderManagerOpenGLC.h
-struct OSVR_OpenGLToolkitFunctions;
+#include "RenderManagerOpenGLC.h"
 
 namespace osvr {
 namespace renderkit {
