@@ -162,18 +162,6 @@ public:
       SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
-    // For now, append the display ID to the title.
-    /// @todo Make a different title for each window in the config file
-    char displayId = '0' + static_cast<char>(m_displays.size());
-    std::string windowTitle = p->windowTitle + displayId;
-
-    // For now, move the X position of the second display to the
-    // right of the entire display for the left one.
-    /// @todo Make the config-file entry a vector and read both
-    /// from it.
-    int myXPos = p->xPos;
-    myXPos += p->width * static_cast<int>(m_displays.size());
-
     // Re-use the same context for all created windows.
     // ***** This is the line that makes it share the context. *****
     SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
@@ -181,7 +169,7 @@ public:
     // Push back a new window and context.
     m_displays.push_back(DisplayInfo());
     m_displays.back().m_window = SDL_CreateWindow(
-      windowTitle.c_str(), myXPos, p->yPos, p->width, p->height, flags);
+      p->windowTitle, p->xPos, p->yPos, p->width, p->height, flags);
     if (m_displays.back().m_window == nullptr) {
       std::cerr
         << "RenderManagerOpenGL::addOpenGLContext: Could not get window"
