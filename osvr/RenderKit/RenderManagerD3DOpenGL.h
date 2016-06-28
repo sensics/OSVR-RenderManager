@@ -26,7 +26,7 @@ Sensics, Inc.
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManagerD3DBase.h"
-#include "RenderManagerOpenGLSDL.h"
+#include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryD3D11.h"
 
 #include <vector>
@@ -35,7 +35,7 @@ Sensics, Inc.
 namespace osvr {
 namespace renderkit {
 
-    class RenderManagerD3D11OpenGL : public RenderManagerOpenGLSDL {
+    class RenderManagerD3D11OpenGL : public RenderManagerOpenGL {
       public:
         virtual OSVR_RENDERMANAGER_EXPORT ~RenderManagerD3D11OpenGL();
 

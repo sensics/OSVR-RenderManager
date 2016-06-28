@@ -147,7 +147,7 @@ endif()
 #-----------------------------------------------------------------------------
 # OpenGL library as a stand-alone renderer not wrapping D3D
 if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND SDL2_FOUND)
-	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp osvr/RenderKit/RenderManagerOpenGLSDL.cpp osvr/RenderKit/RenderManagerOpenGLSDL.h osvr/RenderKit/RenderManagerOpenGLCustom.cpp osvr/RenderKit/RenderManagerOpenGLCustom.h)
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
 	message(STATUS " - OpenGL support: enabled")
 	set(RM_USE_OPENGL TRUE)
 	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)

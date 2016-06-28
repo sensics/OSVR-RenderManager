@@ -57,7 +57,9 @@ typedef struct OSVR_OpenGLToolkitFunctions {
     // fewer members in this struct.
     size_t size;
 
-    // Pointer which will be passed to all the functions
+    // Pointer which will be passed to all the functions.  Often used
+    // by static class functions to find out a pointer to the class
+    // instance object.
     void* data;
 
     // Functions implementing the toolkit functionality
@@ -72,7 +74,7 @@ typedef struct OSVR_OpenGLToolkitFunctions {
 } OSVR_OpenGLToolkitFunctions;
 
 typedef struct OSVR_GraphicsLibraryOpenGL {
-    OSVR_OpenGLToolkitFunctions* toolkit;
+    const OSVR_OpenGLToolkitFunctions* toolkit;
 } OSVR_GraphicsLibraryOpenGL;
 
 typedef struct OSVR_RenderBufferOpenGL {

@@ -28,6 +28,7 @@ Sensics, Inc.
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManager.h"
 #include <RenderManagerBackends.h>
+#include "RenderManagerOpenGLC.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -132,20 +133,7 @@ namespace renderkit {
                 visible = true;
             }
         };
-        virtual bool addOpenGLContext(GLContextParams p) = 0;
-        virtual bool removeOpenGLContexts() = 0;
-
-        /// Make the context for display the current context.
-        virtual bool makeCurrent(size_t display) = 0;
-
-        /// Update window after rendering.
-        virtual bool swapBuffers(size_t display) = 0;
-
-        /// Set vertical sync behavior.
-        virtual bool setVerticalSync(bool verticalSync) = 0;
-
-        /// Set vertical sync behavior.
-        virtual bool handleEvents() = 0;
+        OSVR_OpenGLToolkitFunctions m_toolkit;  //< OpenGL windowing toolkit to use
 
         /// Delete m_programId in destructor.
         void deleteProgram();
@@ -228,6 +216,21 @@ namespace renderkit {
         bool SolidColorEye(size_t eye, const RGBColorf &color) override;
         bool PresentDisplayFinalize(size_t display) override;
         bool PresentFrameFinalize() override;
+
+        inline void ConvertContextParams(
+          const osvr::renderkit::RenderManagerOpenGL::GLContextParams& contextParams,
+          OSVR_OpenGLContextParams& contextParamsOut) {
+          contextParamsOut.windowTitle = contextParams.windowTitle.c_str();
+          contextParamsOut.displayIndex = contextParams.displayIndex;
+          contextParamsOut.fullScreen = contextParams.fullScreen;
+          contextParamsOut.width = contextParams.width;
+          contextParamsOut.height = contextParams.height;
+          contextParamsOut.xPos = contextParams.xPos;
+          contextParamsOut.yPos = contextParams.yPos;
+          contextParamsOut.bitsPerPixel = contextParams.bitsPerPixel;
+          contextParamsOut.numBuffers = contextParams.numBuffers;
+          contextParamsOut.visible = contextParams.visible;
+        }
 
         /// See if we had an OpenGL error
         /// @return True if there is an error, false if not.

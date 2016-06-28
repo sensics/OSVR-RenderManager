@@ -54,7 +54,7 @@ inline void
 ConvertGraphicsLibrary(const osvr::renderkit::GraphicsLibrary& graphicsLibrary,
                        OSVR_GraphicsLibraryOpenGL& graphicsLibraryOut) {
     if (graphicsLibrary.OpenGL) {
-        // intentionally left blank
+      graphicsLibraryOut.toolkit = graphicsLibrary.OpenGL->toolkit;
     }
 }
 

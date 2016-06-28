@@ -47,8 +47,6 @@ Russ Taylor <russ@sensics.com>
 #endif
 
 #ifdef RM_USE_OPENGL
-#include "RenderManagerOpenGLCustom.h"
-#include "RenderManagerOpenGLSDL.h"
 #include "GraphicsLibraryOpenGL.h"
 #endif
 
@@ -2224,10 +2222,7 @@ namespace renderkit {
 #endif
             } else {
 #ifdef RM_USE_OPENGL
-              if (p.m_graphicsLibrary.OpenGL && p.m_graphicsLibrary.OpenGL->toolkit)
-                  ret.reset(new RenderManagerOpenGLCustom(contextParameter, p, *p.m_graphicsLibrary.OpenGL->toolkit));
-              else
-                  ret.reset(new RenderManagerOpenGLSDL(contextParameter, p));
+                ret.reset(new RenderManagerOpenGL(contextParameter, p));
 #else
                 std::cerr << "createRenderManager: OpenGL render library not "
                              "compiled in"

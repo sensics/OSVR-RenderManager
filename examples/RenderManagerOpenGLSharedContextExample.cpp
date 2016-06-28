@@ -554,7 +554,6 @@ int main(int argc, char* argv[]) {
     // want to share an OpenGL context.
     osvr::renderkit::GraphicsLibrary myLibrary;
     myLibrary.OpenGL = new osvr::renderkit::GraphicsLibraryOpenGL;
-    myLibrary.OpenGL->shareOpenGLContext = true;
 
     // Open OpenGL and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,

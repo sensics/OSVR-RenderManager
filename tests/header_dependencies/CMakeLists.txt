@@ -7,7 +7,6 @@ set(IGNORED_HEADERS
         RenderKit/GraphicsLibraryOpenGL.h
         RenderKit/GraphicsLibraryD3D11.h
         RenderKit/RenderManagerOpenGL.h
-        RenderKit/RenderManagerOpenGLSDL.h
         RenderKit/RenderManagerD3D.h
         RenderKit/RenderManagerD3D11ATW.h
         RenderKit/RenderManagerD3DOpenGL.h
@@ -33,11 +32,10 @@ endif()
 
 if (SDL2_FOUND)
 	set(LIBRARIES_RenderKit_RenderManagerSDLInitQuit SDL2::SDL2)
-	set(LIBRARIES_RenderKit_RenderManagerOpenGLSDL SDL2::SDL2)
+	set(LIBRARIES_RenderKit_RenderManagerOpenGL SDL2::SDL2)
 else()
 	list(APPEND IGNORED_HEADERS
-		RenderKit/RenderManagerSDLInitQuit.h
-		RenderKit/RenderManagerOpenGLSDL.h)
+		RenderKit/RenderManagerSDLInitQuit.h)
 endif()
 
 set(COMMON_TEST_LIBRARIES osvrRenderManager)

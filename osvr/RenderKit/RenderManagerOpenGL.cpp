@@ -23,6 +23,8 @@ Sensics, Inc.
 // limitations under the License.
 
 #include <RenderManagerBackends.h>
+#include <SDL.h>
+#include "RenderManagerSDLInitQuit.h"
 #ifdef RM_USE_OPENGLES20
   #define glDeleteVertexArrays glDeleteVertexArraysOES
   #define glGenVertexArrays glGenVertexArraysOES
@@ -39,6 +41,211 @@ Sensics, Inc.
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+
+
+//==========================================================================
+// In case the caller does not specify an OpenGL toolkit to use, we use this
+// SDL-based toolkit by default.
+
+class SDLToolkitImpl {
+  OSVR_OpenGLToolkitFunctions toolkit;
+
+  static void createImpl(void* data) {
+  }
+  static void destroyImpl(void* data) {
+    delete ((SDLToolkitImpl*)data);
+  }
+  static OSVR_CBool addOpenGLContextImpl(void* data, const OSVR_OpenGLContextParams* p) {
+    return ((SDLToolkitImpl*)data)->addOpenGLContext(p);
+  }
+  static OSVR_CBool removeOpenGLContextsImpl(void* data) {
+    return ((SDLToolkitImpl*)data)->removeOpenGLContexts();
+  }
+  static OSVR_CBool makeCurrentImpl(void* data, size_t display) {
+    return ((SDLToolkitImpl*)data)->makeCurrent(display);
+  }
+  static OSVR_CBool swapBuffersImpl(void* data, size_t display) {
+    return ((SDLToolkitImpl*)data)->swapBuffers(display);
+  }
+  static OSVR_CBool setVerticalSyncImpl(void* data, OSVR_CBool verticalSync) {
+    return ((SDLToolkitImpl*)data)->setVerticalSync(verticalSync == OSVR_TRUE);
+  }
+  static OSVR_CBool handleEventsImpl(void* data) {
+    return ((SDLToolkitImpl*)data)->handleEvents();
+  }
+
+  // Classes and structures needed to do our rendering.
+  class DisplayInfo {
+  public:
+    SDL_Window* m_window = nullptr; //< The window we're rendering into
+  };
+  std::vector<DisplayInfo> m_displays;
+
+  SDL_GLContext
+    m_GLContext; //< The context we use to render to all displays
+
+public:
+  SDLToolkitImpl() {
+    memset(&toolkit, 0, sizeof(toolkit));
+    toolkit.size = sizeof(toolkit);
+    toolkit.data = this;
+
+    toolkit.create = createImpl;
+    toolkit.destroy = destroyImpl;
+    toolkit.addOpenGLContext = addOpenGLContextImpl;
+    toolkit.removeOpenGLContexts = removeOpenGLContextsImpl;
+    toolkit.makeCurrent = makeCurrentImpl;
+    toolkit.swapBuffers = swapBuffersImpl;
+    toolkit.setVerticalSync = setVerticalSyncImpl;
+    toolkit.handleEvents = handleEventsImpl;
+  }
+
+  ~SDLToolkitImpl() {
+  }
+
+  const OSVR_OpenGLToolkitFunctions* getToolkit() const { return &toolkit; }
+
+  bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
+    // Initialize the SDL video subsystem.
+    if (!osvr::renderkit::SDLInitQuit()) {
+      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not "
+        "initialize SDL"
+        << std::endl;
+      return false;
+    }
+
+    // Figure out the flags we want
+    Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+    if (p->fullScreen) {
+      //        flags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS;
+      flags |= SDL_WINDOW_BORDERLESS;
+    }
+    if (p->visible) {
+      flags |= SDL_WINDOW_SHOWN;
+    }
+    else {
+      flags |= SDL_WINDOW_HIDDEN;
+    }
+
+    // Set the OpenGL attributes we want before opening the window
+    if (p->numBuffers > 1) {
+      SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    }
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+#ifdef __APPLE__
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+      SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
+
+    // For now, append the display ID to the title.
+    /// @todo Make a different title for each window in the config file
+    char displayId = '0' + static_cast<char>(m_displays.size());
+    std::string windowTitle = p->windowTitle + displayId;
+
+    // For now, move the X position of the second display to the
+    // right of the entire display for the left one.
+    /// @todo Make the config-file entry a vector and read both
+    /// from it.
+    int myXPos = p->xPos;
+    myXPos += p->width * static_cast<int>(m_displays.size());
+
+    // If we have multiple displays, re-use the same context.
+    if (m_displays.size() > 0) {
+      // Share the current context
+      SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+    }
+    else {
+      // Replace the current context
+      SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
+    }
+
+    // Push back a new window and context.
+    m_displays.push_back(DisplayInfo());
+    m_displays.back().m_window = SDL_CreateWindow(
+      windowTitle.c_str(), myXPos, p->yPos, p->width, p->height, flags);
+    if (m_displays.back().m_window == nullptr) {
+      std::cerr
+        << "RenderManagerOpenGL::addOpenGLContext: Could not get window"
+        << std::endl;
+      return false;
+    }
+
+    m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
+    if (m_GLContext == nullptr) {
+      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
+        "OpenGL context"
+        << std::endl;
+      return false;
+    }
+
+    return true;
+  }
+  bool removeOpenGLContexts() {
+    if (m_GLContext) {
+      SDL_GL_DeleteContext(m_GLContext);
+      m_GLContext = 0;
+    }
+    while (m_displays.size() > 0) {
+      if (m_displays.back().m_window == nullptr) {
+        std::cerr << "RenderManagerOpenGL::closeOpenGLContext: No "
+          "window pointer"
+          << std::endl;
+        return false;
+      }
+      SDL_DestroyWindow(m_displays.back().m_window);
+      m_displays.back().m_window = nullptr;
+      m_displays.pop_back();
+    }
+    return true;
+  }
+  bool makeCurrent(size_t display) {
+    SDL_GL_MakeCurrent(m_displays[display].m_window, m_GLContext);
+    return true;
+  }
+  bool swapBuffers(size_t display) {
+    SDL_GL_SwapWindow(m_displays[display].m_window);
+    return true;
+  }
+  bool setVerticalSync(bool verticalSync) {
+    if (verticalSync) {
+      if (SDL_GL_SetSwapInterval(1) != 0) {
+        std::cerr << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+          "not set vertical retrace on"
+          << std::endl;
+        return false;
+      }
+    }
+    else {
+      if (SDL_GL_SetSwapInterval(0) != 0) {
+        std::cerr << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+          "not set vertical retrace off"
+          << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+  bool handleEvents() {
+    // Let SDL handle any system events that it needs to.
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+      // If SDL has been given a quit event, what should we do?
+      // We return false to let the app know that something went wrong.
+      if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
 
 //==========================================================================
 // Vertex and fragment shaders to perform our combination of asynchronous
@@ -147,6 +354,16 @@ namespace renderkit {
         m_displayOpen = false;
         m_programId = 0;
 
+        // Set our toolkit pointer based on the one that is
+        // passed it.  If none are passed in, then set it to
+        // use SDL calls.
+        if (p.m_graphicsLibrary.OpenGL && p.m_graphicsLibrary.OpenGL->toolkit) {
+          m_toolkit = *p.m_graphicsLibrary.OpenGL->toolkit;
+        } else {
+          SDLToolkitImpl *SDLToolKit = new SDLToolkitImpl;
+          m_toolkit = *SDLToolKit->getToolkit();
+        }
+
         // Construct the appropriate GraphicsLibrary pointer.
         m_library.OpenGL = new GraphicsLibraryOpenGL;
         m_buffers.OpenGL = new RenderBufferOpenGL;
@@ -154,6 +371,7 @@ namespace renderkit {
 
     RenderManagerOpenGL::~RenderManagerOpenGL() {
         if (m_displayOpen) {
+            deleteProgram();
 
             glDeleteFramebuffers(1, &m_frameBuffer);
             size_t numEyes = GetNumEyes();
@@ -288,7 +506,10 @@ namespace renderkit {
         p.numBuffers = m_params.m_numBuffers;
         p.visible = true;
         for (size_t display = 0; display < GetNumDisplays(); display++) {
-            if (!addOpenGLContext(p)) {
+          OSVR_OpenGLContextParams pC;
+          ConvertContextParams(p, pC);
+          if (!m_toolkit.addOpenGLContext ||
+              !m_toolkit.addOpenGLContext(m_toolkit.data, &pC)) {
                 std::cerr << "RenderManagerOpenGL::OpenDisplay: Cannot get GL "
                              "context "
                           << "for display " << display << std::endl;
@@ -308,7 +529,9 @@ namespace renderkit {
             std::cerr
                 << "RenderManagerOpenGL::OpenDisplay: Can't initialize GLEW"
                 << std::endl;
-            removeOpenGLContexts();
+            if (m_toolkit.removeOpenGLContexts) {
+              m_toolkit.removeOpenGLContexts(m_toolkit.data);
+            }
             ret.status = FAILURE;
             return ret;
         }
@@ -319,7 +542,12 @@ namespace renderkit {
 
         //======================================================
         // Set vertical sync behavior.
-        setVerticalSync(m_params.m_verticalSync);
+        if (!m_toolkit.setVerticalSync ||
+            !m_toolkit.setVerticalSync(m_toolkit.data, m_params.m_verticalSync)
+          ) {
+          std::cerr << "RenderManagerOpenGL::OpenDisplay: can't set vertical"
+            " sync behavior" << std::endl;
+        }
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay after vsync setting");
 
@@ -338,7 +566,9 @@ namespace renderkit {
             GLchar* strInfoLog = new GLchar[infoLogLength + 1];
             glGetShaderInfoLog(vertexShaderId, infoLogLength, NULL, strInfoLog);
 
-            removeOpenGLContexts();
+            if (m_toolkit.removeOpenGLContexts) {
+              m_toolkit.removeOpenGLContexts(m_toolkit.data);
+            }
             std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct vertex shader:"
                       << std::endl << strInfoLog << std::endl;
@@ -355,7 +585,9 @@ namespace renderkit {
             GLchar* strInfoLog = new GLchar[infoLogLength + 1];
             glGetShaderInfoLog(fragmentShaderId, infoLogLength, NULL, strInfoLog);
 
-            removeOpenGLContexts();
+            if (m_toolkit.removeOpenGLContexts) {
+              m_toolkit.removeOpenGLContexts(m_toolkit.data);
+            }
             std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct fragment shader:"
                       << std::endl << strInfoLog << std::endl;
@@ -370,8 +602,10 @@ namespace renderkit {
         glAttachShader(m_programId, fragmentShaderId);
         glLinkProgram(m_programId);
         if (!checkProgramError(m_programId)) {
-            removeOpenGLContexts();
-            std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not link "
+          if (m_toolkit.removeOpenGLContexts) {
+            m_toolkit.removeOpenGLContexts(m_toolkit.data);
+          }
+          std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not link "
                          "shader program "
                       << std::endl;
             ret.status = FAILURE;
@@ -391,8 +625,10 @@ namespace renderkit {
 
         if (!UpdateDistortionMeshesInternal(SQUARE,
                                             m_params.m_distortionParameters)) {
-            removeOpenGLContexts();
-            std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
+          if (m_toolkit.removeOpenGLContexts) {
+            m_toolkit.removeOpenGLContexts(m_toolkit.data);
+          }
+          std::cerr << "RenderManagerOpenGL::OpenDisplay: Could not "
                          "construct distortion mesh"
                       << std::endl;
             ret.status = FAILURE;
@@ -416,8 +652,9 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderDisplayInitialize start");
 
         // Make our OpenGL context current
-        if (!makeCurrent(display)) {
-            return false;
+        if (!m_toolkit.makeCurrent ||
+            !m_toolkit.makeCurrent(m_toolkit.data, display)) {
+              return false;
         }
         checkForGLError("RenderManagerOpenGL::RenderDisplayInitialize end");
         return true;
@@ -558,7 +795,9 @@ namespace renderkit {
         if (numEyes > distort.size()) {
             std::cerr << "RenderManagerD3D11Base::UpdateDistortionMesh: "
                 "Not enough distortion parameters for all eyes" << std::endl;
-            removeOpenGLContexts();
+            if (m_toolkit.removeOpenGLContexts) {
+              m_toolkit.removeOpenGLContexts(m_toolkit.data);
+            }
             return false;
         }
 
@@ -573,7 +812,9 @@ namespace renderkit {
                 std::cerr << "RenderManagerOpenGL::UpdateDistortionMesh: Could "
                              "not create mesh "
                           << "for eye " << eye << std::endl;
-                removeOpenGLContexts();
+                if (m_toolkit.removeOpenGLContexts) {
+                  m_toolkit.removeOpenGLContexts(m_toolkit.data);
+                }
                 return false;
             }
 
@@ -661,8 +902,9 @@ namespace renderkit {
           "RenderManagerOpenGL::PresentDisplayInitialize: start");
 
         // Make our OpenGL context current
-        if (!makeCurrent(display)) {
-            return false;
+        if (!m_toolkit.makeCurrent ||
+          !m_toolkit.makeCurrent(m_toolkit.data, display)) {
+          return false;
         }
         checkForGLError(
           "RenderManagerOpenGL::PresentDisplayInitialize: after making GL current");
@@ -674,15 +916,17 @@ namespace renderkit {
             return false;
         }
 
-        if (!swapBuffers(display)) {
-            return false;
+        if (!m_toolkit.swapBuffers ||
+          !m_toolkit.swapBuffers(m_toolkit.data, display)) {
+          return false;
         }
         return true;
     }
 
     bool RenderManagerOpenGL::PresentFrameFinalize() {
-        if (!handleEvents()) {
-            return false;
+        if (!m_toolkit.handleEvents ||
+          !m_toolkit.handleEvents(m_toolkit.data)) {
+          return false;
         }
 
         return true;

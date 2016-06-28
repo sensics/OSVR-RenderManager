@@ -39,7 +39,7 @@ namespace renderkit {
         OSVR_ClientContext context,
         ConstructorParameters p,
         std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness)
-        : RenderManagerOpenGLSDL(context, p),
+        : RenderManagerOpenGL(context, p),
           m_D3D11Renderer(std::move(D3DToHarness)) {
 
         // Initialize all of the variables that don't have to be done in the
@@ -85,7 +85,9 @@ namespace renderkit {
         m_buffers.OpenGL = nullptr;
         delete m_library.OpenGL;
         m_library.OpenGL = nullptr;
-        removeOpenGLContexts();
+        if (m_toolkit.removeOpenGLContexts) {
+          m_toolkit.removeOpenGLContexts(m_toolkit.data);
+        }
     }
 
     RenderManager::OpenResults RenderManagerD3D11OpenGL::OpenDisplay(void) {
@@ -108,7 +110,10 @@ namespace renderkit {
         // RenderBuffer names.
         GLContextParams p;
         p.visible = false; // Make the context invisible, to not distract
-        if (!addOpenGLContext(p)) {
+        OSVR_OpenGLContextParams pC;
+        ConvertContextParams(p, pC);
+        if (!m_toolkit.addOpenGLContext ||
+            !m_toolkit.addOpenGLContext(m_toolkit.data, &pC)) {
             std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't open GL "
                          "context"
                       << std::endl;
@@ -116,8 +121,10 @@ namespace renderkit {
         }
         glewExperimental = true; // Needed for core profile
         if (glewInit() != GLEW_OK) {
-            removeOpenGLContexts();
-            std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't "
+          if (m_toolkit.removeOpenGLContexts) {
+            m_toolkit.removeOpenGLContexts(m_toolkit.data);
+          }
+          std::cerr << "RenderManagerD3D11OpenGL::OpenDisplay: Can't "
                          "initialize GLEW"
                       << std::endl;
             return ret;
