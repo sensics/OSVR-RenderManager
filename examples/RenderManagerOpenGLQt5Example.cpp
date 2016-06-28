@@ -59,7 +59,6 @@
 
 // This must come after we include <GL/gl.h> so its pointer types are defined.
 #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
-#include <osvr/RenderKit/RenderManagerOpenGLC.h>
 
 void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
                       const OSVR_ButtonReport* report) {
