@@ -47,6 +47,7 @@ Russ Taylor <russ@sensics.com>
 #endif
 
 #ifdef RM_USE_OPENGL
+#include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
 #endif
 
