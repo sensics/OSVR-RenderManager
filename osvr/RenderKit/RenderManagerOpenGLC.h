@@ -73,7 +73,6 @@ typedef struct OSVR_OpenGLToolkitFunctions {
 
 typedef struct OSVR_GraphicsLibraryOpenGL {
     OSVR_OpenGLToolkitFunctions* toolkit;
-    int unused;  // C does not allow empty structures
 } OSVR_GraphicsLibraryOpenGL;
 
 typedef struct OSVR_RenderBufferOpenGL {
