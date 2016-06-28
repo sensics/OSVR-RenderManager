@@ -62,27 +62,27 @@ namespace renderkit {
         params.numBuffers = p.numBuffers;
         params.visible = p.visible;
 
-        return functions.addOpenGLContext(functions.data, &params);
+        return functions.addOpenGLContext(functions.data, &params) != OSVR_TRUE;
     }
 
     bool RenderManagerOpenGLCustom::removeOpenGLContexts() {
-        return functions.removeOpenGLContexts(functions.data);
+        return functions.removeOpenGLContexts(functions.data) != OSVR_TRUE;
     }
 
     bool RenderManagerOpenGLCustom::makeCurrent(size_t display) {
-        return functions.makeCurrent(functions.data, display);
+        return functions.makeCurrent(functions.data, display) != OSVR_TRUE;
     }
 
     bool RenderManagerOpenGLCustom::swapBuffers(size_t display) {
-        return functions.swapBuffers(functions.data, display);
+        return functions.swapBuffers(functions.data, display) != OSVR_TRUE;
     }
 
     bool RenderManagerOpenGLCustom::setVerticalSync(bool verticalSync) {
-        return functions.setVerticalSync(functions.data, verticalSync);
+        return functions.setVerticalSync(functions.data, verticalSync) != OSVR_TRUE;
     }
 
     bool RenderManagerOpenGLCustom::handleEvents() {
-        return functions.handleEvents(functions.data);
+        return functions.handleEvents(functions.data) != OSVR_TRUE;
     }
 
 
