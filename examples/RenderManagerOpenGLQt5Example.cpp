@@ -77,6 +77,8 @@ static float pur_col[] = {1.0, 0.0, 1.0};
 // Toolkit object to handle our window creation needs.  We pass it down to
 // the RenderManager and it is to make windows in the same context that
 // we are making them in.  RenderManager will call its functions to make them.
+// @todo This code crashes when it is used to create two windows.  The
+// standard SDL code is able to create and render to both windows.
 
 class Qt5ToolkitImpl {
     OSVR_OpenGLToolkitFunctions toolkit;
@@ -139,11 +141,8 @@ class Qt5ToolkitImpl {
         // */
 
         widget->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
-
         widget->setGeometry(p->xPos, p->yPos, p->width, p->height);
-
         widget->setWindowTitle(p->windowTitle);
-
         if (p->fullScreen) {
           widget->setWindowState(Qt::WindowFullScreen);
         }
@@ -151,7 +150,20 @@ class Qt5ToolkitImpl {
         auto layout = new QHBoxLayout(widget);
         layout->setMargin(0);
         layout->setSpacing(0);
-        auto gl = new QGLWidget(nullptr, glwidgets.size() ? glwidgets.at(0) : nullptr);
+        QGLWidget *gl;
+        // If we're creating multiple windows, share the context from the
+        // first one and be able to share display lists and objects with
+        // the other widget.
+        // @todo This is not working -- the second window is never exposed
+        // and never drawn to.  If you keep the windows from being
+        // frameless, then the second window's title and region show up but
+        // the glwidget is apparently never exposed.
+        if (glwidgets.size()) {
+          gl = new QGLWidget(glwidgets.at(0)->context(), nullptr, glwidgets.at(0));
+        }
+        else {
+          gl = new QGLWidget();
+        }
         layout->addWidget(gl);
 
         if (p->visible) {
