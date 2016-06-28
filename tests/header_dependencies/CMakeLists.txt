@@ -35,8 +35,7 @@ if (SDL2_FOUND)
 	set(LIBRARIES_RenderKit_RenderManagerOpenGL SDL2::SDL2)
 else()
 	list(APPEND IGNORED_HEADERS
-		RenderKit/RenderManagerSDLInitQuit.h
-		RenderKit/RenderManagerOpenGL.h)
+		RenderKit/RenderManagerSDLInitQuit.h)
 endif()
 
 set(COMMON_TEST_LIBRARIES osvrRenderManager)

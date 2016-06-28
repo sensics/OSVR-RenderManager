@@ -52,6 +52,201 @@
 #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
 #include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 
+//==========================================================================
+// Toolkit object to handle our window creation needs.  We pass it down to
+// the RenderManager and it is to make windows in the same context that
+// we are making them in.  RenderManager will call its functions to make them.
+//  NOTE: The operative line for our purposes is the one that always asks
+// to share the context: SDL_GL_SHARE_WITH_CURRENT_CONTEXT.  In the built-
+// in RenderManager code, this context is only shared for multiple displays.
+// Our overriding the standard toolkit lets us do this.
+//  NOTE: If you are using a rendering engine, you would replace the methods
+// here to make it use the rendering engine to construct windows in its own
+// context.  The addOpenGLContext() function is the one that should be
+// overridden to do this.
+
+class SDLToolkitImpl {
+  OSVR_OpenGLToolkitFunctions toolkit;
+
+  static void createImpl(void* data) {
+  }
+  static void destroyImpl(void* data) {
+    delete ((SDLToolkitImpl*)data);
+  }
+  static OSVR_CBool addOpenGLContextImpl(void* data, const OSVR_OpenGLContextParams* p) {
+    return ((SDLToolkitImpl*)data)->addOpenGLContext(p);
+  }
+  static OSVR_CBool removeOpenGLContextsImpl(void* data) {
+    return ((SDLToolkitImpl*)data)->removeOpenGLContexts();
+  }
+  static OSVR_CBool makeCurrentImpl(void* data, size_t display) {
+    return ((SDLToolkitImpl*)data)->makeCurrent(display);
+  }
+  static OSVR_CBool swapBuffersImpl(void* data, size_t display) {
+    return ((SDLToolkitImpl*)data)->swapBuffers(display);
+  }
+  static OSVR_CBool setVerticalSyncImpl(void* data, OSVR_CBool verticalSync) {
+    return ((SDLToolkitImpl*)data)->setVerticalSync(verticalSync == OSVR_TRUE);
+  }
+  static OSVR_CBool handleEventsImpl(void* data) {
+    return ((SDLToolkitImpl*)data)->handleEvents();
+  }
+
+  // Classes and structures needed to do our rendering.
+  class DisplayInfo {
+  public:
+    SDL_Window* m_window = nullptr; //< The window we're rendering into
+  };
+  std::vector<DisplayInfo> m_displays;
+
+  SDL_GLContext
+    m_GLContext; //< The context we use to render to all displays
+
+public:
+  SDLToolkitImpl() {
+    memset(&toolkit, 0, sizeof(toolkit));
+    toolkit.size = sizeof(toolkit);
+    toolkit.data = this;
+
+    toolkit.create = createImpl;
+    toolkit.destroy = destroyImpl;
+    toolkit.addOpenGLContext = addOpenGLContextImpl;
+    toolkit.removeOpenGLContexts = removeOpenGLContextsImpl;
+    toolkit.makeCurrent = makeCurrentImpl;
+    toolkit.swapBuffers = swapBuffersImpl;
+    toolkit.setVerticalSync = setVerticalSyncImpl;
+    toolkit.handleEvents = handleEventsImpl;
+  }
+
+  ~SDLToolkitImpl() {
+  }
+
+  const OSVR_OpenGLToolkitFunctions* getToolkit() const { return &toolkit; }
+
+  bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
+    // Initialize the SDL video subsystem.
+    if (!osvr::renderkit::SDLInitQuit()) {
+      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not "
+        "initialize SDL"
+        << std::endl;
+      return false;
+    }
+
+    // Figure out the flags we want
+    Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+    if (p->fullScreen) {
+      //        flags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_BORDERLESS;
+      flags |= SDL_WINDOW_BORDERLESS;
+    }
+    if (p->visible) {
+      flags |= SDL_WINDOW_SHOWN;
+    }
+    else {
+      flags |= SDL_WINDOW_HIDDEN;
+    }
+
+    // Set the OpenGL attributes we want before opening the window
+    if (p->numBuffers > 1) {
+      SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    }
+    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, p->bitsPerPixel);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+#ifdef __APPLE__
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+      SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
+
+    // Re-use the same context for all created windows.
+    // ***** This is the line that makes it share the context. *****
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+
+    // Push back a new window and context.
+    m_displays.push_back(DisplayInfo());
+    m_displays.back().m_window = SDL_CreateWindow(
+      p->windowTitle, p->xPos, p->yPos, p->width, p->height, flags);
+    if (m_displays.back().m_window == nullptr) {
+      std::cerr
+        << "RenderManagerOpenGL::addOpenGLContext: Could not get window"
+        << std::endl;
+      return false;
+    }
+
+    m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
+    if (m_GLContext == nullptr) {
+      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
+        "OpenGL context"
+        << std::endl;
+      return false;
+    }
+
+    return true;
+  }
+  bool removeOpenGLContexts() {
+    if (m_GLContext) {
+      SDL_GL_DeleteContext(m_GLContext);
+      m_GLContext = 0;
+    }
+    while (m_displays.size() > 0) {
+      if (m_displays.back().m_window == nullptr) {
+        std::cerr << "RenderManagerOpenGL::closeOpenGLContext: No "
+          "window pointer"
+          << std::endl;
+        return false;
+      }
+      SDL_DestroyWindow(m_displays.back().m_window);
+      m_displays.back().m_window = nullptr;
+      m_displays.pop_back();
+    }
+    return true;
+  }
+  bool makeCurrent(size_t display) {
+    SDL_GL_MakeCurrent(m_displays[display].m_window, m_GLContext);
+    return true;
+  }
+  bool swapBuffers(size_t display) {
+    SDL_GL_SwapWindow(m_displays[display].m_window);
+    return true;
+  }
+  bool setVerticalSync(bool verticalSync) {
+    if (verticalSync) {
+      if (SDL_GL_SetSwapInterval(1) != 0) {
+        std::cerr << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+          "not set vertical retrace on"
+          << std::endl;
+        return false;
+      }
+    }
+    else {
+      if (SDL_GL_SetSwapInterval(0) != 0) {
+        std::cerr << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+          "not set vertical retrace off"
+          << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+  bool handleEvents() {
+    // Let SDL handle any system events that it needs to.
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+      // If SDL has been given a quit event, what should we do?
+      // We return false to let the app know that something went wrong.
+      if (e.window.event == SDL_WINDOWEVENT_CLOSE) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
+
 // normally you'd load the shaders from a file, but in this case, let's
 // just keep things simple and load from memory.
 static const GLchar* vertexShader =
@@ -550,11 +745,13 @@ int main(int argc, char* argv[]) {
       return 102;
     }
 
-    // Construct a graphics library and tell RenderManager we
-    // want to share an OpenGL context.
+    // Construct a graphics library which will be used both to create our
+    // window and to create the RenderManager context window.
+    auto toolkit = new SDLToolkitImpl();
+
     osvr::renderkit::GraphicsLibrary myLibrary;
     myLibrary.OpenGL = new osvr::renderkit::GraphicsLibraryOpenGL;
-    myLibrary.OpenGL->shareOpenGLContext = true;
+    myLibrary.OpenGL->toolkit = toolkit->getToolkit();
 
     // Open OpenGL and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,
