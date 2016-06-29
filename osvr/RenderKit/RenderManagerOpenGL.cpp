@@ -1071,9 +1071,11 @@ namespace renderkit {
         const GLfloat border[] = { 0, 0, 0, 0 };
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#ifndef RM_USE_OPENGLES20
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+#endif
 
         // NOTE: No need to clear the buffer in color or depth; we're
         // always overwriting the whole thing.  We do need to store the
