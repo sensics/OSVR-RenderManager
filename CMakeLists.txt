@@ -202,21 +202,33 @@ if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
 endif()
 
+set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/osvrRenderManager")
+
+
 ###
 # Helper for dependencies
 ###
 include(CopyImportedTarget)
-## Copy and install shared libraries from imported targets as required
-set(OSVR_RENDERMANAGER_REQUIRED_LIBRARIES)
+## Copy and install shared libraries from imported targets as required.
+## Also generate a list of imported targets for clients of RM to make use of.
+get_filename_component(OSVRRM_REQUIRED_LIBRARIES_DIR "${OSVRRM_SHARED_LIBRARY_DIR}" ABSOLUTE BASE_DIR "${CMAKE_INSTALL_PREFIX}")
+set(OSVRRM_REQUIRED_LIBRARIES_DEBUG)
+set(OSVRRM_REQUIRED_LIBRARIES_RELEASE)
+set(OSVRRM_REQUIRED_LIBRARIES_RELWITHDEBINFO)
+set(OSVRRM_REQUIRED_LIBRARIES_MINSIZEREL)
 function(osvrrm_copy_deps)
 	copy_imported_targets(osvrRenderManager ${ARGN})
 	foreach(_dep ${ARGN})
-		get_target_property(_lib_location ${_dep} LOCATION)
-		get_filename_component(_lib_filename "${_lib_location}" NAME)
-		list(APPEND OSVR_RENDERMANAGER_REQUIRED_LIBRARIES "${_lib_filename}")
+		foreach(_config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+			get_target_property(_lib_location ${_dep} LOCATION_${_config})
+			get_filename_component(_lib_filename "${_lib_location}" NAME)
+			set(_lib_filename "${OSVRRM_REQUIRED_LIBRARIES_DIR}/${_lib_filename}")
+			list(APPEND OSVRRM_REQUIRED_LIBRARIES_${_config} "${_lib_filename}")
+			set(OSVRRM_REQUIRED_LIBRARIES_${_config} "${OSVRRM_REQUIRED_LIBRARIES_${_config}}" PARENT_SCOPE)
+			message("Adding ${_lib_filename} to OSVRRM_REQUIRED_LIBRARIES_${_config}.")
+		endforeach()
 		install_imported_target(${_dep} DESTINATION ${OSVRRM_SHARED_LIBRARY_DIR} COMPONENT Runtime)
 	endforeach()
-	set(OSVR_RENDERMANAGER_REQUIRED_LIBRARIES "${OSVR_RENDERMANAGER_REQUIRED_LIBRARIES}" PARENT_SCOPE)
 endfunction()
 
 ###
@@ -347,18 +359,13 @@ add_subdirectory(examples)
 
 install(TARGETS
 	osvrRenderManager
-	EXPORT ${PROJECT_NAME}
+	${OSVR_RENDERMANAGER_EXPORTED_TARGETS}
+	EXPORT osvrRenderManagerTargets
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	PUBLIC_HEADER DESTINATION include/osvr/RenderKit
-)
-
-install(EXPORT
-	${PROJECT_NAME}
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-	FILE ${PROJECT_NAME}Config.cmake
 )
 
 if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
@@ -379,7 +386,13 @@ if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	add_executable(DirectModeDebugging "${NVIDIA_SRC_DIR}/DirectModeDebugging.cpp" ${NVAPI_EXTRA_HEADERS})
 	target_link_libraries(DirectModeDebugging PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
 
-	install(TARGETS EnableOSVRDirectMode DisableOSVRDirectMode DirectModeDebugging RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(TARGETS
+		EnableOSVRDirectMode
+		DisableOSVRDirectMode
+		DirectModeDebugging
+		EXPORT osvrRenderManagerTargets
+		RUNTIME
+		DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
@@ -394,7 +407,12 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	add_executable(DisableOSVRDirectModeAMD "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
 	target_link_libraries(DisableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
 
-	install(TARGETS EnableOSVRDirectModeAMD DisableOSVRDirectModeAMD RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(TARGETS
+		EnableOSVRDirectModeAMD
+		DisableOSVRDirectModeAMD
+		EXPORT osvrRenderManagerTargets
+		RUNTIME
+		DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
 ###
@@ -402,7 +420,6 @@ endif()
 ###
 include(CMakePackageConfigHelpers)
 include(GenerateCompatibilityVersionFile)
-set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/osvrRenderManager")
 
 generate_compatibility_version_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigVersion.cmake"
@@ -416,7 +433,17 @@ generate_compatibility_version_file(
 	COMPATIBILITY AnyNewerVersion
 	CXX_ABI)
 
-get_filename_component(OSVR_RENDERMANAGER_REQUIRED_LIBRARIES_DIR "${OSVRRM_SHARED_LIBRARY_DIR}" ABSOLUTE BASE_DIR "${CMAKE_INSTALL_PREFIX}")
+# Export the targets we want in the build tree.
+export(TARGETS
+	osvrRenderManager
+	${OSVR_RENDERMANAGER_EXPORTED_TARGETS}
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerTargets.cmake"
+    NAMESPACE osvrRenderManager::
+)
+
+# Register the current build dir as a package search location
+export(PACKAGE osvrRenderManager)
+
 configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
@@ -431,24 +458,26 @@ if(WIN32)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetMSVCVersion.cmake" "${CMAKE_CURRENT_BINARY_DIR}/GetMSVCVersion.cmake" COPYONLY)
 endif()
 
+install(EXPORT osvrRenderManagerTargets
+    FILE osvrRenderManagerTargets.cmake
+    NAMESPACE osvrRenderManager::
+    DESTINATION ${CONFIG_INSTALL_DIR}
+    COMPONENT Devel)
+
 install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigVersion.cmake"
 	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/osvrRenderManagerConfigInstalledBoost.cmake"
-	DESTINATION
-	${CONFIG_INSTALL_DIR}
-	COMPONENT
-	Devel)
+	DESTINATION ${CONFIG_INSTALL_DIR}
+	COMPONENT Devel)
 
 if(WIN32)
 	# Windows-only helpers for CMake
 	install(FILES
 		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetMSVCVersion.cmake"
 		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeBoostHelper.cmake"
-		DESTINATION
-		${CONFIG_INSTALL_DIR}
-		COMPONENT
-		Devel)
+		DESTINATION ${CONFIG_INSTALL_DIR}
+		COMPONENT Devel)
 endif()
 
 # Tests
