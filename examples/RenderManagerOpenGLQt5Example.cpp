@@ -159,7 +159,8 @@ class Qt5ToolkitImpl {
         // frameless, then the second window's title and region show up but
         // the glwidget is apparently never exposed.
         if (glwidgets.size()) {
-          gl = new QGLWidget(glwidgets.at(0)->context(), nullptr, glwidgets.at(0));
+          gl = new QGLWidget(nullptr, nullptr, glwidgets.at(0));
+          gl->context()->create(glwidgets.at(0)->context());
         }
         else {
           gl = new QGLWidget();
@@ -412,6 +413,7 @@ int main(int argc, char* argv[]) {
     }
 
     RenderManagerOpenGLQt5Example example;
+
     if (!example.initializeOpenGLFunctions()) {
         std::cerr << "Could not open initialize OpenGL functions" << std::endl;
         return 3;

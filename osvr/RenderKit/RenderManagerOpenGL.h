@@ -153,7 +153,8 @@ namespace renderkit {
         GLuint
             m_modelViewUniformId; //< Pointer to modelView matrix, vertex shader
         GLuint m_textureUniformId; //< Pointer to texture matrix, vertex shader
-        GLuint m_frameBuffer;      //< Groups a color buffer and a depth buffer
+
+        std::vector<GLuint> m_frameBuffers;      //< Groups a color buffer and a depth buffer (per display)
 
         std::vector<RenderBuffer>
             m_colorBuffers; //< Color buffers to hand to render callbacks
@@ -168,6 +169,11 @@ namespace renderkit {
         };
 
         struct DistortionMeshBuffer {
+
+            // Needed for making the proper context current in the destructor.
+            RenderManagerOpenGL* renderManager;
+            size_t display;
+
             GLuint VAO;
             GLuint vertexBuffer;
             GLuint indexBuffer;
