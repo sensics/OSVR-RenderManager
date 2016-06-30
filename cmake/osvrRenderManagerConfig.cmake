@@ -10,7 +10,6 @@ include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerTargets.cmake")
 
 # Fix up imported targets to add deps: these files will only exist in install trees.
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigInstalledBoost.cmake" OPTIONAL)
-include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigInstalledOpenCV.cmake" OPTIONAL)
 
 # A list of filenames of required libraries for running with osvrRenderManager DLL
 set(OSVRRM_REQUIRED_LIBRARIES_DEBUG "@OSVRRM_REQUIRED_LIBRARIES_DEBUG@")
@@ -44,4 +43,3 @@ endfunction()
 
 # Hook for a super-build to optionally inject configuration after target import.
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigSuperBuildSuffix.cmake" OPTIONAL)
-
