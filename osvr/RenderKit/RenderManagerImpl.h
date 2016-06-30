@@ -131,7 +131,7 @@ OSVR_ReturnCode osvrRenderManagerGetRenderInfoImpl(
     ConvertRenderParams(renderParams, _renderParams);
     auto rm = reinterpret_cast<osvr::renderkit::RenderManager*>(renderManager);
     auto ri = rm->GetRenderInfo(_renderParams);
-    if (renderInfoIndex > ri.size()) {
+    if (renderInfoIndex >= ri.size()) {
         std::cerr << "[OSVR] renderInfoIndex is out of range" << std::endl;
         return OSVR_RETURN_FAILURE;
     }
