@@ -212,6 +212,12 @@ include(CopyImportedTarget)
 ## Copy and install shared libraries from imported targets as required.
 ## Also generate a list of imported targets for clients of RM to make use of.
 get_filename_component(OSVRRM_REQUIRED_LIBRARIES_DIR "${OSVRRM_SHARED_LIBRARY_DIR}" ABSOLUTE BASE_DIR "${CMAKE_INSTALL_PREFIX}")
+message("Absolute path to installed libraries: ${OSVRRM_REQUIRED_LIBRARIES_DIR}")
+get_filename_component(OSVRRM_CONFIG_INSTALL_DIR "${CONFIG_INSTALL_DIR}" ABSOLUTE BASE_DIR "${CMAKE_INSTALL_PREFIX}")
+message("Absolute path to CMake config: ${OSVRRM_CONFIG_INSTALL_DIR}")
+file(RELATIVE_PATH OSVRRM_REQUIRED_LIBRARIES_DIR "${OSVRRM_CONFIG_INSTALL_DIR}" "${OSVRRM_REQUIRED_LIBRARIES_DIR}/.")
+message("Relative path to installed libraries: ${OSVRRM_REQUIRED_LIBRARIES_DIR}")
+
 set(OSVRRM_REQUIRED_LIBRARIES_DEBUG)
 set(OSVRRM_REQUIRED_LIBRARIES_RELEASE)
 set(OSVRRM_REQUIRED_LIBRARIES_RELWITHDEBINFO)
