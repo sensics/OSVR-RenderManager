@@ -125,8 +125,8 @@ osvrCreateRenderManagerImpl(OSVR_ClientContext clientContext,
 
 template <class OSVR_RenderInfoType>
 OSVR_ReturnCode osvrRenderManagerGetRenderInfoImpl(
-    OSVR_RenderManager renderManager, OSVR_RenderInfoCount renderInfoIndex,
-    OSVR_RenderParams renderParams, OSVR_RenderInfoType* renderInfoOut) {
+      OSVR_RenderManager renderManager, OSVR_RenderInfoCount renderInfoIndex,
+      OSVR_RenderParams renderParams, OSVR_RenderInfoType* renderInfoOut) {
     osvr::renderkit::RenderManager::RenderParams _renderParams;
     ConvertRenderParams(renderParams, _renderParams);
     auto rm = reinterpret_cast<osvr::renderkit::RenderManager*>(renderManager);
