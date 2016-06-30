@@ -29,7 +29,10 @@
 #include <osvr/RenderKit/RenderManagerC.h>
 
 // Library/third-party includes
-//#include <GL/GL.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
+#include <GL/GL.h>
 
 // Standard includes
 // - none
@@ -77,9 +80,8 @@ typedef struct OSVR_GraphicsLibraryOpenGL {
 } OSVR_GraphicsLibraryOpenGL;
 
 typedef struct OSVR_RenderBufferOpenGL {
-    // GLuint colorBufferName;
-    // GLuint depthStencilBufferName;
-    int unused;  // C does not allow empty structures
+     GLuint colorBufferName;
+     GLuint depthStencilBufferName;
 } OSVR_RenderBufferOpenGL;
 
 typedef struct OSVR_RenderInfoOpenGL {

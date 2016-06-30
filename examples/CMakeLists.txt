@@ -199,6 +199,12 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
 
 	#-----------------------------------------------------------------------------
 	# OpenGL Example program that uses the Get()/Present() interface, not Render().
+	add_executable(RenderManagerOpenGLCAPIExample RenderManagerOpenGLCAPIExample.cpp)
+	target_link_libraries(RenderManagerOpenGLCAPIExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
+    target_compile_features(RenderManagerOpenGLCAPIExample PRIVATE cxx_range_for)
+
+	#-----------------------------------------------------------------------------
+	# OpenGL Example program that uses the Get()/Present() interface, not Render().
 	add_executable(RenderManagerOpenGLPresentSideBySideExample RenderManagerOpenGLPresentSideBySideExample.cpp)
 	target_link_libraries(RenderManagerOpenGLPresentSideBySideExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
     target_compile_features(RenderManagerOpenGLPresentSideBySideExample PRIVATE cxx_range_for)

@@ -61,22 +61,20 @@ ConvertGraphicsLibrary(const osvr::renderkit::GraphicsLibrary& graphicsLibrary,
 inline void
 ConvertRenderBuffer(const OSVR_RenderBufferOpenGL& renderBuffer,
                     osvr::renderkit::RenderBuffer& renderBufferOut) {
-    // @todo support OpenGL here.
-    // renderBufferOut.OpenGL = new osvr::renderkit::RenderBufferOpenGL();
-    // renderBufferOut.OpenGL->colorBufferName = renderBuffer.colorBufferName;
-    // renderBufferOut.OpenGL->depthStencilBufferName =
-    // renderBuffer.depthStencilBufferName;
+     renderBufferOut.OpenGL = new osvr::renderkit::RenderBufferOpenGL();
+     renderBufferOut.OpenGL->colorBufferName = renderBuffer.colorBufferName;
+     renderBufferOut.OpenGL->depthStencilBufferName =
+     renderBuffer.depthStencilBufferName;
 }
 
 inline void
 ConvertRenderBuffer(const osvr::renderkit::RenderBuffer& renderBuffer,
                     OSVR_RenderBufferOpenGL& renderBufferOut) {
-    // @todo support OpenGL here
     if (renderBuffer.OpenGL) {
-        // renderBufferOut.colorBufferName =
-        // renderBuffer.OpenGL->colorBufferName;
-        // renderBufferOut.depthStencilBufferName =
-        // renderBuffer.OpenGL->depthStencilBufferName;
+         renderBufferOut.colorBufferName =
+         renderBuffer.OpenGL->colorBufferName;
+         renderBufferOut.depthStencilBufferName =
+         renderBuffer.OpenGL->depthStencilBufferName;
     }
 }
 
@@ -134,7 +132,7 @@ OSVR_ReturnCode osvrRenderManagerRegisterRenderBufferOpenGL(
                                                      renderBuffer);
 }
 
-OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromCollectionOpenGL(
     OSVR_RenderInfoCollection renderInfoCollection,
     OSVR_RenderInfoCount index,
     OSVR_RenderInfoOpenGL* renderInfoOut) {
