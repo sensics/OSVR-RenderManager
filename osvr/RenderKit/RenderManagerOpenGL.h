@@ -169,6 +169,7 @@ namespace renderkit {
         };
 
         struct DistortionMeshBuffer {
+
             // Needed for making the proper context current in the destructor.
             RenderManagerOpenGL* renderManager;
             size_t display;
