@@ -181,7 +181,7 @@ namespace renderkit {
             "RenderManagerD3D11OpenGL::RenderEyeInitialize beginning");
 
         // Attach the Direct3D buffers to our framebuffer object
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers[GetDisplayUsedByEye(eye)]);
         checkForGLError(
             "RenderManagerD3D11OpenGL::RenderEyeInitialize BindFrameBuffer");
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,

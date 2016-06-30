@@ -357,9 +357,19 @@ namespace renderkit {
 
     RenderManagerOpenGL::~RenderManagerOpenGL() {
         if (m_displayOpen) {
+            for (size_t i = 0; i < m_frameBuffers.size(); i++) {
+                if (!m_toolkit.makeCurrent ||
+                    !m_toolkit.makeCurrent(m_toolkit.data, i)) {
+                    // If makeCurrent() fails give up on destroying OpenGL objects
+                    delete m_buffers.OpenGL;
+                    delete m_library.OpenGL;
+                    return;
+                }
+                glDeleteFramebuffers(1, &m_frameBuffers[i]);
+            }
+
             deleteProgram();
 
-            glDeleteFramebuffers(1, &m_frameBuffer);
             size_t numEyes = GetNumEyes();
             // @todo Handle the case of multiple displays per eye
             for (size_t i = 0; i < m_colorBuffers.size(); i++) {
@@ -397,9 +407,16 @@ namespace renderkit {
         // or more textures, and 0 or 1 depth buffer.
         // It gets bound to the appropriate buffer for each eye
         // during rendering.
-        m_frameBuffer = 0;
-        glGenFramebuffers(1, &m_frameBuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+        for (size_t i = 0; i < GetNumDisplays(); i++) {
+            if (!m_toolkit.makeCurrent ||
+                !m_toolkit.makeCurrent(m_toolkit.data, i)) {
+                return false;
+            }
+            GLuint frameBuffer = 0;
+            glGenFramebuffers(1, &frameBuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+            m_frameBuffers.push_back(frameBuffer);
+        }
 
         //======================================================
         // Create the render textures (and Z buffer textures) we're going
@@ -408,6 +425,10 @@ namespace renderkit {
         // each of these before calling the render callbacks.
         size_t numEyes = GetNumEyes();
         for (size_t i = 0; i < numEyes; i++) {
+            if (!m_toolkit.makeCurrent ||
+                !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
+                return false;
+            }
 
             // The color buffer for this eye
             GLuint colorBufferName = 0;
@@ -663,7 +684,7 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(GetDisplayUsedByEye(eye)));
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
             return false;
@@ -735,6 +756,8 @@ namespace renderkit {
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer(
         DistortionMeshBuffer && rhs) {
+        renderManager = std::move(rhs.renderManager);
+        display = std::move(rhs.display);
         VAO = std::move(rhs.VAO);
         vertexBuffer = std::move(rhs.vertexBuffer);
         indexBuffer = std::move(rhs.indexBuffer);
@@ -751,6 +774,8 @@ namespace renderkit {
         DistortionMeshBuffer && rhs) {
         if (&rhs != this) {
             Clear();
+            renderManager = std::move(rhs.renderManager);
+            display = std::move(rhs.display);
             VAO = std::move(rhs.VAO);
             vertexBuffer = std::move(rhs.vertexBuffer);
             indexBuffer = std::move(rhs.indexBuffer);
@@ -761,6 +786,12 @@ namespace renderkit {
     }
 
     void RenderManagerOpenGL::DistortionMeshBuffer::Clear() {
+        if (!renderManager ||
+            !renderManager->m_toolkit.makeCurrent ||
+            !renderManager->m_toolkit.makeCurrent(renderManager->m_toolkit.data, display)) {
+            // If makeCurrent() fails give up on destroying OpenGL objects
+            return;
+        }
         if (VAO) {
             glDeleteVertexArrays(1, &VAO);
             VAO = 0;
@@ -802,8 +833,14 @@ namespace renderkit {
 
         m_distortionMeshBuffer.resize(numEyes);
         for (size_t eye = 0; eye < numEyes; eye++) {
+            if (!m_toolkit.makeCurrent ||
+                !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(eye))) {
+                return false;
+            }
 
             auto & meshBuffer = m_distortionMeshBuffer[eye];
+            meshBuffer.renderManager = this;
+            meshBuffer.display = GetDisplayUsedByEye(eye);
 
             // Compute the distortion mesh
             DistortionMesh mesh = ComputeDistortionMesh(eye, type, distort[eye], m_params.m_renderOverfillFactor);
