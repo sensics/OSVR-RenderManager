@@ -18,27 +18,22 @@ set(OSVRRM_REQUIRED_LIBRARIES_RELWITHDEBINFO "@OSVRRM_REQUIRED_LIBRARIES_RELWITH
 set(OSVRRM_REQUIRED_LIBRARIES_MINSIZEREL "@OSVRRM_REQUIRED_LIBRARIES_MINSIZEREL@")
 
 # Helper function to copy required libraries to an install directory
+set(OSVRRM_CONFIG_DIR "${CMAKE_CURRENT_LIST_DIR}")
 function(osvrrm_install_dependencies _destination)
-	install(FILES
-		${OSVRRM_REQUIRED_LIBRARIES_DEBUG}
-		CONFIGURATIONS Debug
-		DESTINATION ${_destination}
-		COMPONENT Runtime)
-	install(FILES
-		${OSVRRM_REQUIRED_LIBRARIES_RELEASE}
-		CONFIGURATIONS Release
-		DESTINATION ${_destination}
-		COMPONENT Runtime)
-	install(FILES
-		${OSVRRM_REQUIRED_LIBRARIES_RELWITHDEBINFO}
-		CONFIGURATIONS RelWithDebInfo
-		DESTINATION ${_destination}
-		COMPONENT Runtime)
-	install(FILES
-		${OSVRRM_REQUIRED_LIBRARIES_MINSIZEREL}
-		CONFIGURATIONS MinSizeRel
-		DESTINATION ${_destination}
-		COMPONENT Runtime)
+	foreach(_config Debug Release RelWithDebInfo MinSizeRel)
+		string(TOUPPER "${_config}" _CONFIG)
+		# Canonicalize paths relative to the directory containing this .cmake file
+		set(_files)
+		foreach(_file IN LISTS OSVRRM_REQUIRED_LIBRARIES_${_CONFIG})
+			get_filename_component(_file "${_file}" ABSOLUTE BASE_DIR "${OSVRRM_CONFIG_DIR}")
+			list(APPEND _files "${_file}")
+		endforeach()
+		install(FILES
+			${_files}
+			CONFIGURATIONS ${_config}
+			DESTINATION ${_destination}
+			COMPONENT Runtime)
+	endforeach()
 endfunction()
 
 # Hook for a super-build to optionally inject configuration after target import.
