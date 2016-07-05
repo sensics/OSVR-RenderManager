@@ -313,7 +313,7 @@ endif()
 if (ANDROID)
 	target_include_directories(osvrRenderManager PRIVATE ${OPENGLES2_INCLUDE_DIR})
 	target_link_libraries(osvrRenderManager PRIVATE ${OPENGLES2_LIBRARIES})
-	target_link_libraries(osvrRenderManager PRIVATE android)
+	target_link_libraries(osvrRenderManager PRIVATE GLESv1_CM log android)
 endif()
 
 if (GLEW_FOUND)
@@ -346,7 +346,6 @@ target_link_libraries(osvrRenderManagerCpp INTERFACE osvrRenderManager osvr::osv
 # Alias targets, so the examples can be used as-is.
 add_library(osvrRM::osvrRenderManager ALIAS osvrRenderManager)
 add_library(osvrRM::osvrRenderManagerCpp ALIAS osvrRenderManagerCpp)
-
 
 if(WIN32)
 	# Install d3dcompiler_47
