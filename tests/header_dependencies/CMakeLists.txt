@@ -11,6 +11,7 @@ set(IGNORED_HEADERS
         RenderKit/RenderManagerD3D11ATW.h
         RenderKit/RenderManagerD3DOpenGL.h
         RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.h
+        RenderKit/NDA/OSVR-RenderManager-NVIDIA/Util.h
         RenderKit/NDA/OSVR-RenderManager-NVIDIA/CheckSuccess.h
         RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVAPIWrappers.h
         RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVIDIADriverVersion.h
