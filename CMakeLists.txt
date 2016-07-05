@@ -28,17 +28,19 @@ find_package(osvr REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
-# Check for the submodules
-set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
+# Check for the NDA submodules
 set(HAVE_NVIDIA_NDA_SUBMODULE FALSE)
-if(EXISTS "${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp")
-	set(HAVE_NVIDIA_NDA_SUBMODULE TRUE)
-endif()
-
-set(AMD_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
 set(HAVE_AMD_NDA_SUBMODULE FALSE)
-if(EXISTS "${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp")
-	set(HAVE_AMD_NDA_SUBMODULE TRUE)
+if(WIN32)
+  set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
+  if(EXISTS "${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp")
+  	set(HAVE_NVIDIA_NDA_SUBMODULE TRUE)
+  endif()
+
+  set(AMD_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
+  if(EXISTS "${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp")
+	  set(HAVE_AMD_NDA_SUBMODULE TRUE)
+  endif()
 endif()
 
 # Add one of these libraries for each vendor that we've got a driver
