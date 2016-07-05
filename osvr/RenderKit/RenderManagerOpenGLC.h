@@ -32,7 +32,8 @@
 #include <osvr/Util/PlatformConfig.h>
 #if defined(OSVR_WINDOWS)
 #include <windows.h>
-#elif defined(OSVR_MACOSX)
+#endif
+#if defined(OSVR_MACOSX)
 #include <OpenGL/gl.h>
 #else
 #include <GL/GL.h>
