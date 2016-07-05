@@ -267,6 +267,11 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
+        // Determine the appropriate size for the frame buffer to be used for
+        // this eye.
+        int width = static_cast<int>(renderInfo.viewport.width);
+        int height = static_cast<int>(renderInfo.viewport.height);
+
         // The color buffer for this eye.  We need to put this into
         // a generic structure for the Present function, but we only need
         // to fill in the OpenGL portion.
@@ -278,37 +283,24 @@ int main(int argc, char* argv[]) {
         //  Note that this texture format must be RGBA and unsigned byte,
         // so that we can present it to Direct3D for DirectMode
         GLuint colorBufferName = 0;
-        glGenRenderbuffers(1, &colorBufferName);
+        if (OSVR_RETURN_SUCCESS
+            != osvrRenderManagerCreateColorBufferOpenGL(width, height, &colorBufferName)) {
+            std::cerr << "Could not create color buffer." << std::endl;
+            return -5;
+        }
 
         OSVR_RenderBufferOpenGL rb;
         rb.colorBufferName = colorBufferName;
         colorBuffers.push_back(rb);
 
-        // "Bind" the newly created texture : all future texture
-        // functions will modify this texture glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorBufferName);
-
-        // Determine the appropriate size for the frame buffer to be used for
-        // this eye.
-        int width = static_cast<int>(renderInfo.viewport.width);
-        int height = static_cast<int>(renderInfo.viewport.height);
-
-        // Give an empty image to OpenGL ( the last "0" means "empty" )
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-            GL_UNSIGNED_BYTE, 0);
-
-        // Bilinear filtering
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
         // The depth buffer
         GLuint depthrenderbuffer;
-        glGenRenderbuffers(1, &depthrenderbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width,
-            height);
+        if (OSVR_RETURN_SUCCESS
+            != osvrRenderManagerCreateDepthBufferOpenGL(width, height, &depthrenderbuffer)) {
+            std::cerr << "Could not create depth buffer." << std::endl;
+            return -5;
+        }
+        rb.depthStencilBufferName = depthrenderbuffer;
         depthBuffers.push_back(depthrenderbuffer);
 
         if (OSVR_RETURN_SUCCESS != osvrRenderManagerRegisterRenderBufferOpenGL(
