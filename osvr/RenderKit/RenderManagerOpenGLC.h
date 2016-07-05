@@ -29,10 +29,14 @@
 #include <osvr/RenderKit/RenderManagerC.h>
 
 // Library/third-party includes
-#ifdef _WIN32
+#include <osvr/Util/PlatformConfig.h>
+#if defined(OSVR_WINDOWS)
 #include <windows.h>
-#endif
+#elif defined(OSVR_MACOSX)
+#include <OpenGL/gl.h>
+#else
 #include <GL/GL.h>
+#endif
 
 // Standard includes
 // - none
