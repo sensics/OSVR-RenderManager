@@ -27,14 +27,13 @@ Sensics, Inc.
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManager.h"
-#include <RenderManagerBackends.h>
-#include "RenderManagerOpenGLC.h"
+#include <osvr/Util/PlatformConfig.h>
 
-#ifdef _WIN32
+#if defined(OSVR_WINDOWS)
 #include <windows.h>
 #endif
 
-#ifdef RM_USE_OPENGLES20
+#ifdef OSVR_ANDROID
   // @todo This presumes we're compiling on Android.
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
@@ -70,6 +69,7 @@ Sensics, Inc.
   #endif
 #endif
 
+#include "RenderManagerOpenGLC.h"
 #include <stdlib.h>
 
 #include <vector>
