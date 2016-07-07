@@ -2143,9 +2143,8 @@ namespace renderkit {
 #endif
         } else if (p.m_renderLibrary == "OpenGL") {
             if (p.m_directMode) {
-// DirectMode is currently only implemented under Direct3D11,
-// so we wrap this with an OpenGL renderer.
-#if defined(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL) && !defined(RM_USE_OPENGLES20)
+                // DirectMode is currently only implemented under Direct3D11,
+                // so we wrap this with an OpenGL renderer.
                 // Set the parameters on the harnessed renderer to not apply the
                 // rendering fixes that we're applying.  Also set its render
                 // library
@@ -2214,13 +2213,6 @@ namespace renderkit {
 
                 ret.reset(
                   new RenderManagerD3D11OpenGL(contextParameter, p, std::move(host)));
-#else
-                std::cerr
-                    << "createRenderManager: D3D11OpenGL render library not "
-                       "compiled in"
-                    << std::endl;
-                return nullptr;
-#endif
             } else {
 #ifdef RM_USE_OPENGL
                 ret.reset(new RenderManagerOpenGL(contextParameter, p));
