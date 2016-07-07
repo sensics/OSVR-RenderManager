@@ -28,6 +28,7 @@ Russ Taylor <russ@sensics.com>
 #include "DistortionCorrectTextureCoordinate.h"
 #include "DistortionParameters.h"
 #include "UnstructuredMeshInterpolator.h"
+#include "osvr_display_configuration.h"
 
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
@@ -290,8 +291,8 @@ namespace renderkit {
             headSpaceName = p.m_roomFromHeadName;
         }
 
-        m_displayWidth = m_params.m_displayConfiguration.getDisplayWidth();
-        m_displayHeight = m_params.m_displayConfiguration.getDisplayHeight();
+        m_displayWidth = m_params.m_displayConfiguration->getDisplayWidth();
+        m_displayHeight = m_params.m_displayConfiguration->getDisplayHeight();
 
         if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
                                    &m_roomFromHeadInterface) ==
@@ -843,7 +844,7 @@ namespace renderkit {
                 // center
                 // of projection is.
                 float rotate_pixels_degrees = 0;
-                if (m_params.m_displayConfiguration.getEyes()[eye]
+                if (m_params.m_displayConfiguration->getEyes()[eye]
                         .m_rotate180 != 0) {
                     rotate_pixels_degrees = 180;
                 }
@@ -1045,22 +1046,22 @@ namespace renderkit {
     }
 
     size_t RenderManager::GetNumEyes() {
-        return m_params.m_displayConfiguration.getEyes().size();
+        return m_params.m_displayConfiguration->getEyes().size();
     }
 
     size_t RenderManager::GetNumDisplays() {
-        switch (m_params.m_displayConfiguration.getEyes().size()) {
+        switch (m_params.m_displayConfiguration->getEyes().size()) {
         case 1:
             return 1;
         case 2:
-            if (m_params.m_displayConfiguration.getDisplayMode() ==
+            if (m_params.m_displayConfiguration->getDisplayMode() ==
                 OSVRDisplayConfiguration::DisplayMode::FULL_SCREEN) {
                 return 2;
             }
             return 1;
         default:
             std::cerr << "RenderManager::GetNumDisplays(): Unrecognized value: "
-                      << m_params.m_displayConfiguration.getEyes().size()
+                      << m_params.m_displayConfiguration->getEyes().size()
                       << std::endl;
         }
         return 1;
@@ -1105,11 +1106,11 @@ namespace renderkit {
         // bottom).
         double right =
             tan(osvr::util::getRadians(
-                    m_params.m_displayConfiguration.getHorizontalFOV()) /
+                    m_params.m_displayConfiguration->getHorizontalFOV()) /
                 2.0);
         double left = -right;
         double top = tan(osvr::util::getRadians(
-                             m_params.m_displayConfiguration.getVerticalFOV()) /
+                             m_params.m_displayConfiguration->getVerticalFOV()) /
                          2.0);
         double bottom = -top;
 
@@ -1129,9 +1130,9 @@ namespace renderkit {
         double width = right - left;
         double height = top - bottom;
         double xCOP =
-            m_params.m_displayConfiguration.getEyes()[whichEye].m_CenterProjX;
+            m_params.m_displayConfiguration->getEyes()[whichEye].m_CenterProjX;
         double yCOP =
-            m_params.m_displayConfiguration.getEyes()[whichEye].m_CenterProjY;
+            m_params.m_displayConfiguration->getEyes()[whichEye].m_CenterProjY;
         double xOffset = (0.5 - xCOP) * width;
         double yOffset = (0.5 - yCOP) * height;
         left += xOffset;
@@ -1142,7 +1143,7 @@ namespace renderkit {
         // Incorporate pitch_tilt (degrees, positive is downwards)
         // We assume that this results in a shearing of the image that leaves
         // the plane of the screen the same.
-        auto pitchTilt = m_params.m_displayConfiguration.getPitchTilt();
+        auto pitchTilt = m_params.m_displayConfiguration->getPitchTilt();
         if (pitchTilt != 0 * util::radians) {
             /// @todo
         }
@@ -1203,7 +1204,7 @@ namespace renderkit {
         // Set up the viewport based on the display resolution and the
         // display configuration.
         double xFactor = 1, yFactor = 1;
-        switch (m_params.m_displayConfiguration.getDisplayMode()) {
+        switch (m_params.m_displayConfiguration->getDisplayMode()) {
         case OSVRDisplayConfiguration::DisplayMode::FULL_SCREEN:
             // Already set.
             break;
@@ -1216,7 +1217,7 @@ namespace renderkit {
         default:
             std::cerr << "RenderManager::ConstructViewportForRender: "
                          "Unrecognized Display Mode"
-                      << m_params.m_displayConfiguration.getDisplayMode()
+                      << m_params.m_displayConfiguration->getDisplayMode()
                       << std::endl;
             return false;
         }
@@ -1255,7 +1256,7 @@ namespace renderkit {
 
         // Set up the viewport based on the display resolution and the
         // display configuration.
-        switch (m_params.m_displayConfiguration.getDisplayMode()) {
+        switch (m_params.m_displayConfiguration->getDisplayMode()) {
         case OSVRDisplayConfiguration::DisplayMode::FULL_SCREEN:
             viewport.lower = viewport.left = 0;
             viewport.width = m_displayWidth;
@@ -1282,7 +1283,7 @@ namespace renderkit {
         default:
             std::cerr << "RenderManager::ConstructViewportForPresent: "
                          "Unrecognized Display Mode"
-                      << m_params.m_displayConfiguration.getDisplayMode()
+                      << m_params.m_displayConfiguration->getDisplayMode()
                       << std::endl;
             return false;
         }
@@ -1436,10 +1437,10 @@ namespace renderkit {
         makeIdentity(q_rotatedEyeFromEye);
         double rotateEyesApart = 0;
         double overlapFrac =
-            m_params.m_displayConfiguration.getOverlapPercent();
+            m_params.m_displayConfiguration->getOverlapPercent();
         if (overlapFrac < 1.) {
             const auto hfov =
-                m_params.m_displayConfiguration.getHorizontalFOV();
+                m_params.m_displayConfiguration->getHorizontalFOV();
             const auto angularOverlap = hfov * overlapFrac;
             rotateEyesApart = util::getDegrees((hfov - angularOverlap) / 2.);
         }
@@ -2063,8 +2064,7 @@ namespace renderkit {
         try {
             std::string jsonString =
               osvrRenderManagerGetString(contextParameter, "/display");
-            OSVRDisplayConfiguration displayConfig(jsonString);
-            p.m_displayConfiguration = displayConfig;
+            p.m_displayConfiguration.reset(new OSVRDisplayConfiguration(jsonString));
         } catch (std::exception& /*e*/) {
             std::cerr << "createRenderManager: Could not parse /display string "
                          "from server."
@@ -2075,23 +2075,23 @@ namespace renderkit {
         // Determine the appropriate display VendorIds based on the name of the
         // display device.  Don't push any back if we don't recognize the vendor
         // name.
-        if (p.m_displayConfiguration.getVendor() == "Oculus") {
+        if (p.m_displayConfiguration->getVendor() == "Oculus") {
             p.addCandidatePNPID("OVR"); // 0xD23E
-        } else if (p.m_displayConfiguration.getVendor() == "OSVR" ||
-                   p.m_displayConfiguration.getVendor() == "Sensics") {
+        } else if (p.m_displayConfiguration->getVendor() == "OSVR" ||
+                   p.m_displayConfiguration->getVendor() == "Sensics") {
             // There are two possible vendor IDs for OSVR.  We push them both
             // here.
             p.addCandidatePNPID("SVR"); // 0xD24E
             p.addCandidatePNPID("SEN"); // 0xAE4C
-        } else if (p.m_displayConfiguration.getVendor() == "Dell") {
+        } else if (p.m_displayConfiguration->getVendor() == "Dell") {
             p.addCandidatePNPID("DEL"); // 0xAC10 - for testing
-        } else if (p.m_displayConfiguration.getVendor() == "VVR") {
+        } else if (p.m_displayConfiguration->getVendor() == "VVR") {
             p.addCandidatePNPID("VVR"); // 0xD25A
-        } else if (p.m_displayConfiguration.getVendor() == "Vuzix") {
+        } else if (p.m_displayConfiguration->getVendor() == "Vuzix") {
             p.addCandidatePNPID("IWR"); // 0xF226
-        } else if (p.m_displayConfiguration.getVendor() == "HTC") {
+        } else if (p.m_displayConfiguration->getVendor() == "HTC") {
           p.addCandidatePNPID("HVR"); // 0xD222
-        } else if (p.m_displayConfiguration.getVendor() == "VRGate") {
+        } else if (p.m_displayConfiguration->getVendor() == "VRGate") {
           p.addCandidatePNPID("VRG"); // 0x475A
           p.addCandidatePNPID("TSB"); // 0x6252
         }
@@ -2100,8 +2100,8 @@ namespace renderkit {
         // Construct the distortion parameters based on the local display
         // class.
         // @todo Remove once we get a general polynomial from Core.
-        for (size_t i = 0; i < p.m_displayConfiguration.getEyes().size(); i++) {
-          DistortionParameters distortion(p.m_displayConfiguration, i);
+        for (size_t i = 0; i < p.m_displayConfiguration->getEyes().size(); i++) {
+          DistortionParameters distortion(*p.m_displayConfiguration, i);
           distortion.m_desiredTriangles = 200 * 64;
           p.m_distortionParameters.push_back(distortion);
         }

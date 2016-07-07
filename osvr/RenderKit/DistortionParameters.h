@@ -29,7 +29,9 @@
 // Internal Includes
 #include "MonoPointMeshTypes.h"
 #include "RGBPointMeshTypes.h"
-#include "osvr_display_configuration.h"
+
+// Required for DLL linkage on Windows
+#include <osvr/RenderKit/Export.h>
 
 // Library/third-party includes
 // - none
@@ -37,6 +39,10 @@
 // Standard includes
 #include <vector>
 #include <cstddef>      // for size_t
+
+// Forward declaration so that we can avoid including this header in
+// files that the client has to include.
+class OSVRDisplayConfiguration;
 
 namespace osvr {
 namespace renderkit {
@@ -125,59 +131,10 @@ namespace renderkit {
         } Type;
 
         OSVR_RENDERMANAGER_EXPORT DistortionParameters(
-              OSVRDisplayConfiguration& osvrParams,
-              size_t eye) : DistortionParameters() {
-          if (osvrParams.getDistortionType() ==
-            OSVRDisplayConfiguration::RGB_SYMMETRIC_POLYNOMIALS) {
-            m_type = rgb_symmetric_polynomials;
-            std::vector<float> Ds;
-            Ds.push_back(
-              osvrParams.getDistortionDistanceScaleX());
-            Ds.push_back(
-              osvrParams.getDistortionDistanceScaleY());
-            m_distortionD = Ds;
-            m_distortionPolynomialRed =
-              osvrParams.getDistortionPolynomalRed();
-            m_distortionPolynomialGreen =
-              osvrParams.getDistortionPolynomalGreen();
-            m_distortionPolynomialBlue =
-              osvrParams.getDistortionPolynomalBlue();
-            std::vector<float> COP = {
-              static_cast<float>(
-              osvrParams.getEyes()[eye].m_CenterProjX),
-              static_cast<float>(
-              osvrParams.getEyes()[eye].m_CenterProjY) };
-            m_distortionCOP = COP;
-          }
-          else if (osvrParams.getDistortionType() ==
-            OSVRDisplayConfiguration::MONO_POINT_SAMPLES) {
-            m_type = mono_point_samples;
-            m_monoPointSamples =
-              osvrParams.getDistortionMonoPointMeshes();
-          }
-          else if (osvrParams.getDistortionType() ==
-            OSVRDisplayConfiguration::RGB_POINT_SAMPLES) {
-            m_type = rgb_point_samples;
-            m_rgbPointSamples =
-              osvrParams.getDistortionRGBPointMeshes();
-          }
-          else {
-            std::cerr << "DistortionParameters::DistortionParameters(): "
-              "Unrecognized distortion correction type ("
-              << osvrParams.getDistortionTypeString()
-              << "), ignoring" << std::endl;
-          }
-        }
+          OSVRDisplayConfiguration& osvrParams,
+          size_t eye);
 
-        OSVR_RENDERMANAGER_EXPORT DistortionParameters() {
-            m_type = rgb_symmetric_polynomials;
-            m_distortionCOP = {0.5f /* X */, 0.5f /* Y */};
-            m_distortionD = {1 /* DX */, 1 /* DY */};
-            m_distortionPolynomialRed = {0, 1};
-            m_distortionPolynomialGreen = {0, 1};
-            m_distortionPolynomialBlue = {0, 1};
-            m_desiredTriangles = 2;
-        };
+        OSVR_RENDERMANAGER_EXPORT DistortionParameters();
 
         /** \name Parameters valid for all mesh types */
         //@{
