@@ -253,6 +253,7 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/RenderManagerC.h
 	osvr/RenderKit/RenderManagerD3D11C.h
 	osvr/RenderKit/RenderManagerOpenGLC.h
+	osvr/RenderKit/RenderManagerOpenGLVersion.h
 	osvr/RenderKit/GraphicsLibraryD3D11.h
 	osvr/RenderKit/GraphicsLibraryOpenGL.h
 	osvr/RenderKit/MonoPointMeshTypes.h
