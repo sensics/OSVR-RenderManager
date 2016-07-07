@@ -45,6 +45,10 @@ Russ Taylor <russ@sensics.com>
 #include <mutex>
 #include <array>
 
+// Forward declaration so that we can avoid including this header in
+// files that the client has to include.
+class OSVRDisplayConfiguration;
+
 namespace osvr {
 namespace renderkit {
 
@@ -627,7 +631,7 @@ namespace renderkit {
             std::vector<float> m_eyeDelaysMS;
             bool m_clientPredictionLocalTimeOverride;  //< Override tracker timestamp?
 
-            OSVRDisplayConfiguration
+            std::shared_ptr<OSVRDisplayConfiguration>
                 m_displayConfiguration; //< Display configuration
 
             std::string m_roomFromHeadName; //< Transform to use for head space

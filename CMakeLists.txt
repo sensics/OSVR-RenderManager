@@ -78,6 +78,7 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/RenderManagerC.cpp
 	osvr/RenderKit/RenderKitGraphicsTransforms.cpp
 	osvr/RenderKit/osvr_display_configuration.cpp
+	osvr/RenderKit/DistortionParameters.cpp
 	osvr/RenderKit/VendorIdTools.h
 	osvr/RenderKit/osvr_display_config_built_in_osvr_hdks.h
 	osvr/RenderKit/DistortionCorrectTextureCoordinate.h

@@ -33,6 +33,7 @@
 #include <map>
 #include <cmath>
 #include <array>
+#include <iostream>
 
 namespace osvr {
 namespace renderkit {

@@ -984,7 +984,7 @@ namespace renderkit {
         OSVR_ViewportDescription viewportDesc;
         if (!ConstructViewportForPresent(
                 params.m_index, viewportDesc,
-                m_params.m_displayConfiguration.getSwapEyes())) {
+                m_params.m_displayConfiguration->getSwapEyes())) {
             std::cerr << "RenderManagerOpenGL::PresentEye(): Could not "
                          "construct viewport"
                       << std::endl;
@@ -1181,7 +1181,7 @@ namespace renderkit {
       OSVR_ViewportDescription viewportDesc;
       if (!ConstructViewportForPresent(
         eye, viewportDesc,
-        m_params.m_displayConfiguration.getSwapEyes())) {
+        m_params.m_displayConfiguration->getSwapEyes())) {
         std::cerr << "RenderManagerOpenGL::SolidColorEye(): Could not "
           "construct viewport"
           << std::endl;

@@ -1212,7 +1212,7 @@ namespace renderkit {
         // Get the viewport.  This returns a viewport for OpenGL.  To get one
         // for D3D in the case that we have a display that is rotated by 90 or
         // 270, we need to swap the eyes compared to what we've been asked for.
-        bool swapEyes = m_params.m_displayConfiguration.getSwapEyes();
+        bool swapEyes = m_params.m_displayConfiguration->getSwapEyes();
         if (static_cast<int>(params.m_rotateDegrees) % 180 != 0) {
             if (GetNumEyes() % 2 == 0) {
                 swapEyes = !swapEyes;
