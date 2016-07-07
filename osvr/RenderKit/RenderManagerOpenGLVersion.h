@@ -1,14 +1,14 @@
 /** @file
     @brief Header
 
-    @date 2015
+    @date 2016
 
     @author
     Sensics, Inc.
     <http://sensics.com/osvr>
 */
 
-// Copyright 2015 Sensics, Inc.
+// Copyright 2016 Sensics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,13 +22,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef INCLUDED_RenderManagerCapabilities_h_GUID_A214911C_4127_41B2_9B93_3849E94FA364
-#define INCLUDED_RenderManagerCapabilities_h_GUID_A214911C_4127_41B2_9B93_3849E94FA364
+#ifndef INCLUDED_RenderManagerOpenGLVersion_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6
+#define INCLUDED_RenderManagerOpenGLVersion_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6
 
-#cmakedefine RM_USE_D3D11 1
-#cmakedefine RM_USE_NVIDIA_DIRECT_D3D11 1
-#cmakedefine RM_USE_AMD_DIRECT_D3D11 1
-#cmakedefine RM_USE_NVIDIA_DIRECT_D3D11_OPENGL 1
-#cmakedefine RM_USE_OPENGL 1
+#include <osvr/Util/PlatformConfig.h>
+#if defined(OSVR_ANDROID)
+#define OSVR_RM_USE_OPENGLES20
+#endif
 
-#endif // INCLUDED_RenderManagerCapabilities_h_GUID_A214911C_4127_41B2_9B93_3849E94FA364
+#endif // INCLUDED_RenderManagerOpenGLVersion_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6

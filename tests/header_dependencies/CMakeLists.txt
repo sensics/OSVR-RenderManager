@@ -4,7 +4,6 @@
 
 set(IGNORED_HEADERS
         RenderKit/DistortionCorrectTextureCoordinate.h
-        RenderKit/GraphicsLibraryOpenGL.h
         RenderKit/GraphicsLibraryD3D11.h
         RenderKit/RenderManagerOpenGL.h
         RenderKit/RenderManagerD3D.h

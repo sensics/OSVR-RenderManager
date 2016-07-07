@@ -22,10 +22,10 @@ Sensics, Inc.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <RenderManagerBackends.h>
+#include "RenderManagerOpenGLVersion.h"
 #include <SDL.h>
 #include "RenderManagerSDLInitQuit.h"
-#ifdef RM_USE_OPENGLES20
+#ifdef OSVR_RM_USE_OPENGLES20
   #define glDeleteVertexArrays glDeleteVertexArraysOES
   #define glGenVertexArrays glGenVertexArraysOES
   #define glBindVertexArray glBindVertexArrayOES
@@ -540,7 +540,7 @@ namespace renderkit {
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay after context creation");
 
-#ifndef RM_USE_OPENGLES20
+#ifndef OSVR_RM_USE_OPENGLES20
         //======================================================
         // We need to call glewInit() so that we have access to
         // the extensions needed below.
@@ -1108,7 +1108,7 @@ namespace renderkit {
         const GLfloat border[] = { 0, 0, 0, 0 };
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-#ifndef RM_USE_OPENGLES20
+#ifndef OSVR_RM_USE_OPENGLES20
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);

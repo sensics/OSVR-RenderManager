@@ -26,7 +26,7 @@
 #define INCLUDED_RenderManagerOpenGLC_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6
 
 // Internal Includes
-#include <RenderManagerBackends.h>
+#include "RenderManagerOpenGLVersion.h"
 #include <osvr/RenderKit/RenderManagerC.h>
 
 // Library/third-party includes
@@ -35,16 +35,29 @@
 #include <windows.h>
 #endif
 
-#ifdef RM_USE_OPENGLES20
-// @todo This presumes we're compiling on Android.
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+// This section will include the OpenGL libraries needed on various
+// architectures.  In the case that the application wants to use a
+// different variant of OpenGL include (for example, Unreal wants to
+// use glcorearb.h instead, which is incompatible with gl.h), it can
+// #define OSVR_RM_SKIP_GL_INCLUDE before including this file.  It
+// can also #define OSVR_RM_SKIP_GLEXT_INCLUDE to keep from including
+// the extension library on GLES 2.0.
+#ifdef OSVR_RM_USE_OPENGLES20
+  // @todo This presumes we're compiling on Android.
+  #if !defined(OSVR_RM_SKIP_GL_INCLUDE)
+    #include <GLES2/gl2.h>
+  #endif
+  #if !defined(OSVR_RM_SKIP_GLEXT_INCLUDE)
+    #include <GLES2/gl2ext.h>
+  #endif
 #else
-#if defined(OSVR_MACOSX)
-#include <OpenGL/gl3.h>
-#else
-#include <GL/gl.h>
-#endif
+  #if !defined(OSVR_RM_SKIP_GL_INCLUDE)
+    #if defined(OSVR_MACOSX)
+      #include <OpenGL/gl3.h>
+    #else
+      #include <GL/gl.h>
+    #endif
+  #endif
 #endif
 
 // Standard includes
