@@ -35,7 +35,7 @@
 #include <windows.h>
 #endif
 
-#ifdef RM_USE_OPENGLES20
+#ifdef OSVR_RM_USE_OPENGLES20
 // @todo This presumes we're compiling on Android.
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>

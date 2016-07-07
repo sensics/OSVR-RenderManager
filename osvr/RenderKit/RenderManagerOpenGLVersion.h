@@ -27,7 +27,7 @@
 
 #include <osvr/Util/PlatformConfig.h>
 #if defined(OSVR_ANDROID)
-#define RM_USE_OPENGLES20
+#define OSVR_RM_USE_OPENGLES20
 #endif
 
 #endif // INCLUDED_RenderManagerOpenGLVersion_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6
