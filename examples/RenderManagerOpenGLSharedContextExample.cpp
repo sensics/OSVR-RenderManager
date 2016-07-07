@@ -51,6 +51,7 @@
 // This must come after we include <GL/gl.h> so its pointer types are defined.
 #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
 #include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
 
 //==========================================================================
 // Toolkit object to handle our window creation needs.  We pass it down to
