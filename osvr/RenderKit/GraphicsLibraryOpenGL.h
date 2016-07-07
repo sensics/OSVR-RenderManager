@@ -24,8 +24,7 @@ Russ Taylor <russ@sensics.com>
 
 #pragma once
 
-// Forward declaration to avoid having to #include another file.
-struct OSVR_OpenGLToolkitFunctions;
+#include "RenderManagerOpenGLC.h"
 
 namespace osvr {
 namespace renderkit {
@@ -37,9 +36,7 @@ namespace renderkit {
     /// for a render callback handler in an application using OpenGL
     /// as its renderer.  It is in a separate include file so
     /// that only code that actually uses this needs to
-    /// include it.  NOTE: You must #include <GL/gl.h> or
-    /// another version of a GL or GLES include file before
-    /// including this file.
+    /// include it.
 
     class GraphicsLibraryOpenGL {
       public:
@@ -55,9 +52,6 @@ namespace renderkit {
     /// This is one of the members of the RenderBuffer union
     /// from RenderManager.h.  It stores the information needed
     /// for an OpenGL texture.
-    /// NOTE: You must #include <GL/gl.h> or
-    /// another version of a GL or GLES include file before
-    /// including this file.
 
     class RenderBufferOpenGL {
       public:
