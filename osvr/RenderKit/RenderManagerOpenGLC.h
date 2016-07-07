@@ -26,7 +26,7 @@
 #define INCLUDED_RenderManagerOpenGLC_h_GUID_362705F9_1D6B_468E_3532_B813F7AB50C6
 
 // Internal Includes
-#include <RenderManagerBackends.h>
+#include "RenderManagerOpenGLVersion.h"
 #include <osvr/RenderKit/RenderManagerC.h>
 
 // Library/third-party includes

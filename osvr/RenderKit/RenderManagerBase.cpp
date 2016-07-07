@@ -24,7 +24,8 @@ Russ Taylor <russ@sensics.com>
 
 // Internal Includes
 #include "RenderManager.h"
-#include <RenderManagerBackends.h>
+#include "RenderManagerBackends.h"
+#include "RenderManagerOpenGLVersion.h"
 #include "DistortionCorrectTextureCoordinate.h"
 #include "DistortionParameters.h"
 #include "UnstructuredMeshInterpolator.h"

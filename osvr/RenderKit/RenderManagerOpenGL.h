@@ -27,7 +27,7 @@ Sensics, Inc.
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
 #include "RenderManager.h"
-#include <RenderManagerBackends.h>
+#include "RenderManagerOpenGLVersion.h"
 #include "RenderManagerOpenGLC.h"
 
 #ifdef _WIN32

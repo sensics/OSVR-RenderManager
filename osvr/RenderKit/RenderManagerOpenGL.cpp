@@ -22,7 +22,7 @@ Sensics, Inc.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <RenderManagerBackends.h>
+#include "RenderManagerOpenGLVersion.h"
 #include <SDL.h>
 #include "RenderManagerSDLInitQuit.h"
 #ifdef RM_USE_OPENGLES20
