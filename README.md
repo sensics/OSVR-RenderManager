@@ -9,8 +9,8 @@ vendor-specific extensions to support direct rendering.  These were developed
 under non-disclosure agreements with the vendors.
 
 Most Windows users will want to install the precompiled binaries (which include
-the DirectMode interfaces for nVidia and AMD) using the installers provided at
-the [developer downloads site](http://osvr.github.io/using/).
+the DirectMode interfaces for nVidia, AMD, and Intel graphics cards) using the
+installers provided at the [developer downloads site](http://osvr.github.io/using/).
 
 Those who don't have access to the NDA repositories get using:
 
@@ -42,10 +42,12 @@ implements many VR-specific needs.
 **DirectMode:** On platforms that support it, RenderManager implements direct
 rendering to the display, bypassing operating-system delays and enabling front-
 buffer rendering.  On Windows, this is implemented using nVidia's *VR Direct
-Mode* rendering and AMD's *Direct-to-Display* rendering.  These share a common
+Mode* rendering, AMD's *Direct-to-Display* rendering, and on Intel cards via
+a new Windows rendering interface that supports DirectMode.  These share a common
 interface in RenderManager and plans are underway to extend these to new operating
 systems as they become available.  DirectMode supports both D3D11 and OpenGL (core
-and legacy) on Windows.
+and legacy) on Windows except that OpenGL is not yet supported on Intel cards
+because they do not yet support the OpenGL/D3D interop calls.
 
 The following capabilities are provided on all supported platforms:
 
