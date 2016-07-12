@@ -1,10 +1,10 @@
 IMPORTANT: This installer only includes sample applications and the libraries and source code needed to compile applications.  If you are running a pre-compiled Unity, Unreal, or other demo this will not update the version of RenderManager it is linked against; you must either obtain an updated demo or (if you're lucky) copy the RenderManager.dll file from this installer into appropriate location inside the game folder.
 
 IMPORTANT: Using DirectMode requires
-	nVidia driver version 364.64 or higher (364.47 and 364.51 have a bug preventing it from working).
+	nVidia driver version 364.64 or higher, but use one lower than 368.22 (which disables support for non-HDCP displays in many configurations) if your display is not HDCP compliant.
 	or AMD Crimson drivers (tested with version 16.1).
 	or Intel drivers (tested with version 20.19.15.4409, but OpenGL Interop
-	  requires a version after 6/6/2016).
+	  is not yet released as of 6/6/2016).
 
 FAQ: If you have multiple GPUs not in SLI mode, you need to select "Activate all displays" instead of "SLI Disabled" in the nVidia Control Panel under "Configure SLI, Surround, PhysX" to make DirectMode work.
 
@@ -16,7 +16,7 @@ Step 1: Run an OSVR server (obtained from an OSVR Core install) with a compatibl
   To use an Oculus DK2 with the raw VRPN drivers, uninstall the SDK, then run
     1) Either of the DK2/1 VRPN server shorcuts (sleep or no sleep)
     2) Any of the DK2/OSVR server shorcuts (standard, ATW, ATW sleep)
-  NOTE: As of version 6.48, AMD DirectMode will only work in Landscape mode.
+  NOTE: As of version 6.50, AMD DirectMode will only work in Landscape mode.
         The only current configuration file that works with AMD is OSVR HDK 1.2 landscape directmode.
         You can also edit the other configuration files to make the rotation 0 rather than 90.
 
@@ -24,13 +24,15 @@ Step 2: Run one of the example programs
   RenderManager*: Various graphics libraries and modes of operation.
   AdjustableRenderingDelayD3D: Shows the impact of timewarp with 500ms rendering delay.
   RenderManagerOpenGLHeadSpaceExample: Displays a small cube in head space to debug backwards eyes.
+  SolidColor provides a slowly-varying solid color and works with all graphics APIs.
   SpinCubeD3D provides a smoothly-rotating cube to test update consistency.
   SpinCubeOpenGL provides a smoothly-rotating cube with frame ID displayed to test update consistency.  Timing info expects 60Hz DirectMode display device that blocks the app for vsync.
 
 If DirectMode fails, you can run the DirectModeDebugging program to list available displays on nVidia.
 You can also run EnableOSVRDirectModeNVidia or EnableOSVRDirectModeAMD, depending on which type of graphics card you are using.
+On Intel cards, the manufacturer needs to ensure that the registry is properly updated to show the HMD as a DirectMode display.
 
-NOTE: As of version 0.6.42, nVidia DirectMode only works with a driver that has been modified to white-list the display that you are using.  This should be already in the driver versions above 361.43 for OSVR and Vuzix displays.
+NOTE: As of version 0.6.50, nVidia DirectMode only works with a driver that has been modified to white-list the display that you are using.  This should be already in the driver versions above 361.43 for OSVR and Vuzix displays.
 
 An osvr_server.exe must be running to open a display (this is where it gets information about the distortion correction and other system parameters).  The osvr_server.exe must use a configuration that defines /me/head (implicitly or explicitly) for head tracking to work.  There are shortcuts to run the server with various configuration files.  You can leave the server running and run multiple different clients one after the other.  All clients should work with all servers.
 
@@ -44,6 +46,17 @@ Source code for RenderManager, including example programs, is available at:
   https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.50:
+ *ftr Now builds as part of the OSVR-Android-Build project
+ *ftr Completed implementation of OpenGL C API, along with example
+ *ftr Completed implementation of D3D11 C API, along with example
+  bug Reworked OpenGL header file structure to work on all architectures
+  ftr Stephen Keiss Qt-based rendering (rather than SDL) added.
+  ftr Shared OpenGL context between client code and RenderManager
+  ftr Rendering-system-independent call to blank screen
+  bug Fixed crash when making a new RenderManager after destroying one
+  ftr Matthew Dutton's fix to increase loading speed for distortion mesh
+  ftr Performance optimizations
 0.6.49:
   bug Fixed crash on exit bug when using Intel DirectMode driver
 0.6.48:
@@ -56,6 +69,8 @@ Version notes:
   bug Removed non-Core calls from OpenGL code, enabling use on MesaGL
 0.6.43:
  *ftr Asynchronous time warp is working on all DirectRender configurations
+      (note that this only uses pre-emptive rendering on cards and drivers
+      that support it).
  *ftr Client-side per-eye prediction added to reduce judder and latency
  *bug Multi-GPU support fixed (Intel + nVidia, with HDMI on nVidia)
   ftr Smaller GPU memory use when not using Render() path, and OpenGL/D3D
