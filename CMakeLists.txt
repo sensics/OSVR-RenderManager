@@ -43,7 +43,7 @@ if(WIN32)
   endif()
 
   set(INTEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Intel")
-  if(EXISTS "${AMD_SRC_DIR}/RenderManagerIntel3D.cpp")
+  if(EXISTS "${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp")
 	  set(HAVE_INTEL_NDA_SUBMODULE TRUE)
   endif()
 endif()
@@ -154,8 +154,8 @@ if (HAVE_INTEL_NDA_SUBMODULE)
 	target_include_directories(osvrRM-intel-requirements INTERFACE "${INTEL_SRC_DIR}")
 	# Intel NDA files.
 	list(APPEND RenderManager_SOURCES
-		"${AMD_SRC_DIR}/RenderManagerIntelD3D.cpp"
-		"${AMD_SRC_DIR}/RenderManagerIntelD3D.h")
+		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp"
+		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.h")
 	set(RM_USE_INTEL_DIRECT_D3D11 TRUE)
 	message(STATUS " - Intel direct D3D11 support: enabled (found Intel NDA submodule)")
 else()
@@ -302,6 +302,11 @@ if (RM_USE_AMD_DIRECT_D3D11)
 	target_link_libraries(osvrRenderManager
 		PRIVATE
 		osvrRM-amd-requirements)
+endif()
+if (RM_USE_INTEL_DIRECT_D3D11)
+	target_link_libraries(osvrRenderManager
+		PRIVATE
+		osvrRM-intel-requirements)
 endif()
 if (WIN32)
 	target_link_libraries(osvrRenderManager PRIVATE D3D11)
