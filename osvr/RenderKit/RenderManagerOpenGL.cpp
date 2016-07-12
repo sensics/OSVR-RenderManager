@@ -143,7 +143,11 @@ public:
       SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
-    // If we have multiple displays, re-use the same context.
+    // If we have multiple displays, we need to re-use the
+    // same context between them.  In fact, we always want
+    // to re-use the context if the application has one open
+    // when it asks us to create its windows.
+#if 0
     if (m_displays.size() > 0) {
       // Share the current context
       SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
@@ -151,6 +155,9 @@ public:
       // Replace the current context
       SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 0);
     }
+#else
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+#endif
 
     // Push back a new window and context.
     m_displays.push_back(DisplayInfo());
