@@ -1901,7 +1901,7 @@ namespace renderkit {
       )
     {
       RenderManagerD3D11Base *ret = nullptr;
-#if defined(RM_USE_NVIDIA_DIRECT_D3D11) || defined(RM_USE_AMD_DIRECT_D3D11) || defined(RM_USE_INTEL_DIRECT_D3D11
+#if defined(RM_USE_NVIDIA_DIRECT_D3D11) || defined(RM_USE_AMD_DIRECT_D3D11) || defined(RM_USE_INTEL_DIRECT_D3D11)
   #if defined(RM_USE_AMD_DIRECT_D3D11)
       if ((ret == nullptr) && RenderManagerAMDD3D11::DirectModeAvailable() ) {
         // See if we have an AMD card.  This is done by
