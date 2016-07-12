@@ -7,3 +7,6 @@
 [submodule "vendor/vrpn"]
 	path = vendor/vrpn
 	url = https://github.com/vrpn/vrpn.git
+[submodule "osvr/RenderKit/NDA/OSVR-RenderManager-Intel"]
+	path = osvr/RenderKit/NDA/OSVR-RenderManager-Intel
+	url = git@github.com:sensics/OSVR-RenderManager-Intel.git
