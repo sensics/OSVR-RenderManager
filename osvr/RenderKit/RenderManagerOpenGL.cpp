@@ -1104,7 +1104,11 @@ namespace renderkit {
         // Render the geometry to fill the viewport, with the texture
         // mapped onto it.
 
-        // Render to the 0th frame buffer, which is the screen.
+        // Render to the 0th frame buffer, which is the screen.  Keep track
+        // of which framebuffer was bound before so we can put it back and
+        // avoid messing with user code.
+        GLint prevFrameBuffer;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Bind the texture that we're going to use to render into the
@@ -1172,12 +1176,14 @@ namespace renderkit {
           glDisable(GL_CULL_FACE);
         }
 
-        if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
-            return false;
-        }
+        glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
 
         // Put back the user's vertex/shader program.
         glUseProgram(userProgram);
+
+        if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
+            return false;
+        }
 
         return true;
     }
