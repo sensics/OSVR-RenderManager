@@ -942,7 +942,8 @@ namespace renderkit {
             return false;
         }
         checkForGLError(
-          "RenderManagerOpenGL::PresentDisplayInitialize: start");
+          "RenderManagerOpenGL::PresentDisplayInitialize: start, display " +
+          std::to_string(display) );
 
         // Make our OpenGL context current
         if (!m_toolkit.makeCurrent ||
