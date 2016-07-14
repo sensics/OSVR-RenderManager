@@ -2097,6 +2097,7 @@ namespace renderkit {
             // here.
             p.addCandidatePNPID("SVR"); // 0xD24E
             p.addCandidatePNPID("SEN"); // 0xAE4C
+            p.addCandidatePNPID("AUO"); // 0xAF06 ?
         } else if (p.m_displayConfiguration->getVendor() == "Dell") {
             p.addCandidatePNPID("DEL"); // 0xAC10 - for testing
         } else if (p.m_displayConfiguration->getVendor() == "VVR") {
