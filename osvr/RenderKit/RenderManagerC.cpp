@@ -86,9 +86,11 @@ OSVR_ReturnCode osvrRenderManagerFinishPresentRenderBuffers(
     osvr::renderkit::RenderManager::RenderParams _renderParams;
     ConvertRenderParams(renderParams, _renderParams);
 
-    rm->PresentRenderBuffers(state->renderBuffers, state->renderInfoUsed,
-                             _renderParams, state->normalizedCroppingViewports,
-                             shouldFlipY == OSVR_TRUE);
+    if (!rm->PresentRenderBuffers(state->renderBuffers, state->renderInfoUsed,
+        _renderParams, state->normalizedCroppingViewports,
+        shouldFlipY == OSVR_TRUE)) {
+      return OSVR_RETURN_FAILURE;
+    }
 
     return OSVR_RETURN_SUCCESS;
 }
