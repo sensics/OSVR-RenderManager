@@ -129,6 +129,12 @@ if (SDL2_FOUND)
               RenderManagerOpenGLSharedContextExample
               RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
+
+	#-----------------------------------------------------------------------------
+	# OpenGL Example program that uses the C API and a shared context.
+	add_executable(RenderManagerOpenGLCAPISharedContextExample RenderManagerOpenGLCAPISharedContextExample.cpp)
+	target_link_libraries(RenderManagerOpenGLCAPISharedContextExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
+  target_compile_features(RenderManagerOpenGLCAPISharedContextExample PRIVATE cxx_range_for)
 endif()
 
 
