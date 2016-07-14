@@ -658,7 +658,7 @@ int main(int argc, char* argv[]) {
             if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferOpenGL(
                 presentState, colorBuffers[i], renderInfo, fullView))) {
                 std::cerr << "Could not present render buffer " << i << std::endl;
-                return 202;
+                quit = true;
             }
         }
 
@@ -683,10 +683,6 @@ int main(int argc, char* argv[]) {
         SDL_GL_SwapWindow(myWindow);
         bg += 0.003f;
         if (bg > 1) { bg = 0; }
-        err = glGetError();
-        if (err != GL_NO_ERROR) {
-          std::cout << "After local rendering: OpenGL error " << err << std::endl;
-        }
     }
 
     // Clean up after ourselves.
