@@ -527,13 +527,12 @@ int main(int argc, char* argv[]) {
     std::vector<GLuint> depthBuffers; //< Depth/stencil buffers to render into
 
     // Initialize the sample shader with our window's context open,
-    // so that its shaders will be associated with it.
+    // so that our shaders will be associated with it.
     // NOTE: When the RenderManager internals are changed so that it
     // does not share an OpenGL context with the application, this
     // causes the display to be rendered black.  Because it now defaults
     // to doing this, we see the display in the window.
     SDL_GL_MakeCurrent(myWindow, myGLContext);
-    // @todo Switch to Core rendering mode, which will init the shader here
 
     // Construct the buffers we're going to need for our render-to-texture
     // code.
