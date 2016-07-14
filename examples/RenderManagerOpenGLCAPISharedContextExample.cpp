@@ -27,6 +27,14 @@ Russ Taylor <russ@sensics.com>
 // when we open the display.
 #include <GL/glew.h>
 
+// We are going to use SDL to get our OpenGL context for us.
+// Unfortunately, SDL.h has #define main    SDL_main in it, so
+// we need to undefine main again so we can make our own below.
+#include <osvr/RenderKit/RenderManagerSDLInitQuit.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
+#undef main
+
 // Internal Includes
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
@@ -63,8 +71,269 @@ inline osvr::renderkit::OSVR_ProjectionMatrix ConvertProjectionMatrix(::OSVR_Pro
     return ret;
 }
 
-// Forward declarations of rendering functions defined below.
-void draw_cube(double radius);
+// normally you'd load the shaders from a file, but in this case, let's
+// just keep things simple and load from memory.
+static const GLchar* vertexShader =
+"#version 330 core\n"
+"layout(location = 0) in vec3 position;\n"
+"layout(location = 1) in vec3 vertexColor;\n"
+"out vec3 fragmentColor;\n"
+"uniform mat4 modelView;\n"
+"uniform mat4 projection;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = projection * modelView * vec4(position,1);\n"
+"   fragmentColor = vertexColor;\n"
+"}\n";
+
+static const GLchar* fragmentShader = "#version 330 core\n"
+"in vec3 fragmentColor;\n"
+"out vec3 color;\n"
+"void main()\n"
+"{\n"
+"    color = fragmentColor;\n"
+"}\n";
+
+class SampleShader {
+public:
+  SampleShader() {}
+
+  ~SampleShader() {
+    if (initialized) {
+      glDeleteProgram(programId);
+    }
+  }
+
+  void init() {
+    if (!initialized) {
+      GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+      GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+
+      // vertex shader
+      glShaderSource(vertexShaderId, 1, &vertexShader, NULL);
+      glCompileShader(vertexShaderId);
+      checkShaderError(vertexShaderId,
+        "Vertex shader compilation failed.");
+
+      // fragment shader
+      glShaderSource(fragmentShaderId, 1, &fragmentShader, NULL);
+      glCompileShader(fragmentShaderId);
+      checkShaderError(fragmentShaderId,
+        "Fragment shader compilation failed.");
+
+      // linking program
+      programId = glCreateProgram();
+      glAttachShader(programId, vertexShaderId);
+      glAttachShader(programId, fragmentShaderId);
+      glLinkProgram(programId);
+      checkProgramError(programId, "Shader program link failed.");
+
+      // once linked into a program, we no longer need the shaders.
+      glDeleteShader(vertexShaderId);
+      glDeleteShader(fragmentShaderId);
+
+      projectionUniformId = glGetUniformLocation(programId, "projection");
+      modelViewUniformId = glGetUniformLocation(programId, "modelView");
+      initialized = true;
+    }
+  }
+
+  void useProgram(const GLdouble projection[], const GLdouble modelView[]) {
+    init();
+    glUseProgram(programId);
+    GLfloat projectionf[16];
+    GLfloat modelViewf[16];
+    convertMatrix(projection, projectionf);
+    convertMatrix(modelView, modelViewf);
+    glUniformMatrix4fv(projectionUniformId, 1, GL_FALSE, projectionf);
+    glUniformMatrix4fv(modelViewUniformId, 1, GL_FALSE, modelViewf);
+  }
+
+private:
+  SampleShader(const SampleShader&) = delete;
+  SampleShader& operator=(const SampleShader&) = delete;
+  bool initialized = false;
+  GLuint programId = 0;
+  GLuint projectionUniformId = 0;
+  GLuint modelViewUniformId = 0;
+
+  void checkShaderError(GLuint shaderId, const std::string& exceptionMsg) {
+    GLint result = GL_FALSE;
+    int infoLength = 0;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &result);
+    glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLength);
+    if (result == GL_FALSE) {
+      std::vector<GLchar> errorMessage(infoLength + 1);
+      glGetProgramInfoLog(programId, infoLength, NULL, &errorMessage[0]);
+      std::cerr << &errorMessage[0] << std::endl;
+      throw std::runtime_error(exceptionMsg);
+    }
+  }
+
+  void checkProgramError(GLuint programId, const std::string& exceptionMsg) {
+    GLint result = GL_FALSE;
+    int infoLength = 0;
+    glGetProgramiv(programId, GL_LINK_STATUS, &result);
+    glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLength);
+    if (result == GL_FALSE) {
+      std::vector<GLchar> errorMessage(infoLength + 1);
+      glGetProgramInfoLog(programId, infoLength, NULL, &errorMessage[0]);
+      std::cerr << &errorMessage[0] << std::endl;
+      throw std::runtime_error(exceptionMsg);
+    }
+  }
+
+  void convertMatrix(const GLdouble source[], GLfloat dest_out[]) {
+    if (nullptr == source || nullptr == dest_out) {
+      throw new std::logic_error("source and dest_out must be non-null.");
+    }
+    for (int i = 0; i < 16; i++) {
+      dest_out[i] = (GLfloat)source[i];
+    }
+  }
+};
+static SampleShader sampleShader;
+
+class Cube {
+public:
+  Cube(GLfloat scale) {
+    colorBufferData = { 1.0, 0.0, 0.0, // +X
+      1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+
+      1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+
+      1.0, 0.0, 1.0, // -X
+      1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+
+      1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+
+      0.0, 1.0, 0.0, // +Y
+      0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+
+      0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+
+      1.0, 1.0, 0.0, // -Y
+      1.0, 1.0, 0.0, 1.0, 1.0, 0.0,
+
+      1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0,
+
+      0.0, 0.0, 1.0, // +Z
+      0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+
+      0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+
+      0.0, 1.0, 1.0, // -Z
+      0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
+
+      0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0 };
+
+    vertexBufferData = { scale, scale, scale, // +X
+      scale, -scale, -scale, scale, scale, -scale,
+
+      scale, -scale, -scale, scale, scale, scale,
+      scale, -scale, scale,
+
+      -scale, -scale, -scale, // -X
+      -scale, -scale, scale, -scale, scale, scale,
+
+      -scale, -scale, -scale, -scale, scale, scale,
+      -scale, scale, -scale,
+
+      scale, scale, scale, // +Y
+      scale, scale, -scale, -scale, scale, -scale,
+
+      scale, scale, scale, -scale, scale, -scale,
+      -scale, scale, scale,
+
+      scale, -scale, scale, // -Y
+      -scale, -scale, -scale, scale, -scale, -scale,
+
+      scale, -scale, scale, -scale, -scale, scale,
+      -scale, -scale, -scale,
+
+      -scale, scale, scale, // +Z
+      -scale, -scale, scale, scale, -scale, scale,
+
+      scale, scale, scale, -scale, scale, scale,
+      scale, -scale, scale,
+
+      scale, scale, -scale, // -Z
+      -scale, -scale, -scale, -scale, scale, -scale,
+
+      scale, scale, -scale, scale, -scale, -scale,
+      -scale, -scale, -scale };
+  }
+
+  ~Cube() {
+    if (initialized) {
+      glDeleteBuffers(1, &vertexBuffer);
+      glDeleteVertexArrays(1, &vertexArrayId);
+    }
+  }
+
+  void init() {
+    if (!initialized) {
+      // Vertex buffer
+      glGenBuffers(1, &vertexBuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+      glBufferData(GL_ARRAY_BUFFER,
+        sizeof(vertexBufferData[0]) * vertexBufferData.size(),
+        &vertexBufferData[0], GL_STATIC_DRAW);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      // Color buffer
+      glGenBuffers(1, &colorBuffer);
+      glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+      glBufferData(GL_ARRAY_BUFFER,
+        sizeof(colorBufferData[0]) * colorBufferData.size(),
+        &colorBufferData[0], GL_STATIC_DRAW);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      // Vertex array object
+      glGenVertexArrays(1, &vertexArrayId);
+      glBindVertexArray(vertexArrayId);
+      {
+        // color
+        glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+
+        // VBO
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
+
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+      }
+      glBindVertexArray(0);
+      initialized = true;
+    }
+  }
+
+  void draw(const GLdouble projection[], const GLdouble modelView[]) {
+    init();
+
+    sampleShader.useProgram(projection, modelView);
+
+    glBindVertexArray(vertexArrayId);
+    {
+      glDrawArrays(GL_TRIANGLES, 0,
+        static_cast<GLsizei>(vertexBufferData.size()));
+    }
+    glBindVertexArray(0);
+  }
+
+private:
+  Cube(const Cube&) = delete;
+  Cube& operator=(const Cube&) = delete;
+  bool initialized = false;
+  GLuint colorBuffer = 0;
+  GLuint vertexBuffer = 0;
+  GLuint vertexArrayId = 0;
+  std::vector<GLfloat> colorBufferData;
+  std::vector<GLfloat> vertexBufferData;
+};
+
+static Cube roomCube(5.0f);
 
 // Set to true when it is time for the application to quit.
 // Handlers below that set it to true when the user causes
@@ -105,6 +374,7 @@ bool SetupRendering() {
 
     // Turn on depth testing, so we get correct ordering.
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     return true;
 }
@@ -119,6 +389,7 @@ void RenderView(
 
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    GLenum err = glGetError();
 
     // Set color and depth buffers for the frame buffer
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorBuffer, 0);
@@ -135,40 +406,26 @@ void RenderView(
         return;
     }
 
-    // Set the viewport to cover our entire render texture.
-    glViewport(0, 0, static_cast<GLsizei>(renderInfo.viewport.width),
-        static_cast<GLsizei>(renderInfo.viewport.height));
-
-    // Set the OpenGL projection matrix
-    GLdouble projection[16];
-    osvr::renderkit::OSVR_ProjectionMatrix temp;
-    temp.bottom = renderInfo.projection.bottom;
-    osvr::renderkit::OSVR_Projection_to_OpenGL(projection,
-        ConvertProjectionMatrix(renderInfo.projection));
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMultMatrixd(projection);
-
-    /// Put the transform into the OpenGL ModelView matrix
-    GLdouble modelView[16];
-    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, renderInfo.pose);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glMultMatrixd(modelView);
+    // Set the viewport
+    glViewport(static_cast<GLint>(renderInfo.viewport.left),
+      static_cast<GLint>(renderInfo.viewport.lower),
+      static_cast<GLint>(renderInfo.viewport.width),
+      static_cast<GLint>(renderInfo.viewport.height));
 
     // Clear the screen to black and clear depth
     glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // =================================================================
-    // This is where we draw our world and hands and any other objects.
-    // We're in World Space.  To find out about where to render objects
-    // in OSVR spaces (like left/right hand space) we need to query the
-    // interface and handle the coordinate tranforms ourselves.
+    osvr::renderkit::OSVR_ProjectionMatrix projection =
+      ConvertProjectionMatrix(renderInfo.projection);
+    GLdouble projectionGL[16];
+    osvr::renderkit::OSVR_Projection_to_OpenGL(projectionGL, projection);
 
-    // Draw a cube with a 5-meter radius as the room we are floating in.
-    draw_cube(5.0);
+    GLdouble viewGL[16];
+    osvr::renderkit::OSVR_PoseState_to_OpenGL(viewGL, renderInfo.pose);
+
+    /// Draw a cube with a 5-meter radius as the room we are floating in.
+    roomCube.draw(projectionGL, viewGL);
 }
 
 int main(int argc, char* argv[]) {
@@ -188,6 +445,32 @@ int main(int argc, char* argv[]) {
     osvr::clientkit::Interface rightButton1 =
         context.getInterface("/controller/right/1");
     rightButton1.registerCallback(&myButtonCallback, &quit);
+
+    // Use SDL to open a window and then get an OpenGL context for us.
+    // Note: This window is not the one that will be used for rendering
+    // the OSVR display, but one that will be cleared to a slowly-changing
+    // constant color so we can see that we're able to render to both
+    // contexts.
+    if (!osvr::renderkit::SDLInitQuit()) {
+      std::cerr << "Could not initialize SDL"
+        << std::endl;
+      return 100;
+    }
+    SDL_Window *myWindow = SDL_CreateWindow(
+      "Test window, not used", 30, 30, 300, 100,
+      SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+    if (myWindow == nullptr) {
+      std::cerr << "SDL window open failed: Could not get window"
+        << std::endl;
+      return 101;
+    }
+    SDL_GLContext myGLContext;
+    myGLContext = SDL_GL_CreateContext(myWindow);
+    if (myGLContext == 0) {
+      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
+        "OpenGL context" << std::endl;
+      return 102;
+    }
 
     // Open OpenGL and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,
@@ -242,6 +525,14 @@ int main(int argc, char* argv[]) {
 
     std::vector<OSVR_RenderBufferOpenGL> colorBuffers;
     std::vector<GLuint> depthBuffers; //< Depth/stencil buffers to render into
+
+    // Initialize the sample shader with our window's context open,
+    // so that our shaders will be associated with it.
+    // NOTE: When the RenderManager internals are changed so that it
+    // does not share an OpenGL context with the application, this
+    // causes the display to be rendered black.  Because it now defaults
+    // to doing this, we see the display in the window.
+    SDL_GL_MakeCurrent(myWindow, myGLContext);
 
     // Construct the buffers we're going to need for our render-to-texture
     // code.
@@ -345,6 +636,10 @@ int main(int argc, char* argv[]) {
                 colorBuffers[i].colorBufferName,
                 depthBuffers[i]);
         }
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+          std::cout << "After OSVR rendering: OpenGL error " << err << std::endl;
+        }
 
         OSVR_RenderManagerPresentState presentState;
         if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
@@ -363,7 +658,7 @@ int main(int argc, char* argv[]) {
             if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferOpenGL(
                 presentState, colorBuffers[i], renderInfo, fullView))) {
                 std::cerr << "Could not present render buffer " << i << std::endl;
-                return 202;
+                quit = true;
             }
         }
 
@@ -372,6 +667,22 @@ int main(int argc, char* argv[]) {
             std::cerr << "Could not finish presenting render buffers" << std::endl;
             quit = true;
         }
+
+        // Draw something in our window, just looping the background color.
+        // Note that we need to bind the correct framebuffer (0 in this case)
+        // because we're binding a different one in our draw calls.
+        static GLfloat bg = 0;
+        SDL_GL_MakeCurrent(myWindow, myGLContext);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(static_cast<GLint>(0),
+          static_cast<GLint>(0),
+          static_cast<GLint>(300),
+          static_cast<GLint>(100));
+        glClearColor(bg, bg, bg, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        SDL_GL_SwapWindow(myWindow);
+        bg += 0.003f;
+        if (bg > 1) { bg = 0; }
     }
 
     // Clean up after ourselves.
@@ -385,81 +696,4 @@ int main(int argc, char* argv[]) {
     osvrDestroyRenderManager(render);
 
     return 0;
-}
-
-static GLfloat matspec[4] = { 0.5, 0.5, 0.5, 0.0 };
-static float red_col[] = { 1.0, 0.0, 0.0 };
-static float grn_col[] = { 0.0, 1.0, 0.0 };
-static float blu_col[] = { 0.0, 0.0, 1.0 };
-static float yel_col[] = { 1.0, 1.0, 0.0 };
-static float lightblu_col[] = { 0.0, 1.0, 1.0 };
-static float pur_col[] = { 1.0, 0.0, 1.0 };
-
-void draw_cube(double radius) {
-    GLfloat matspec[4] = { 0.5, 0.5, 0.5, 0.0 };
-    glPushMatrix();
-    glScaled(radius, radius, radius);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, matspec);
-    glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
-    glBegin(GL_POLYGON);
-    glColor3fv(lightblu_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, lightblu_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, lightblu_col);
-    glNormal3f(0.0, 0.0, -1.0);
-    glVertex3f(1.0, 1.0, -1.0);
-    glVertex3f(1.0, -1.0, -1.0);
-    glVertex3f(-1.0, -1.0, -1.0);
-    glVertex3f(-1.0, 1.0, -1.0);
-    glEnd();
-    glBegin(GL_POLYGON);
-    glColor3fv(blu_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blu_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, blu_col);
-    glNormal3f(0.0, 0.0, 1.0);
-    glVertex3f(-1.0, 1.0, 1.0);
-    glVertex3f(-1.0, -1.0, 1.0);
-    glVertex3f(1.0, -1.0, 1.0);
-    glVertex3f(1.0, 1.0, 1.0);
-    glEnd();
-    glBegin(GL_POLYGON);
-    glColor3fv(yel_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, yel_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, yel_col);
-    glNormal3f(0.0, -1.0, 0.0);
-    glVertex3f(1.0, -1.0, 1.0);
-    glVertex3f(-1.0, -1.0, 1.0);
-    glVertex3f(-1.0, -1.0, -1.0);
-    glVertex3f(1.0, -1.0, -1.0);
-    glEnd();
-    glBegin(GL_POLYGON);
-    glColor3fv(grn_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, grn_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, grn_col);
-    glNormal3f(0.0, 1.0, 0.0);
-    glVertex3f(1.0, 1.0, 1.0);
-    glVertex3f(1.0, 1.0, -1.0);
-    glVertex3f(-1.0, 1.0, -1.0);
-    glVertex3f(-1.0, 1.0, 1.0);
-    glEnd();
-    glBegin(GL_POLYGON);
-    glColor3fv(pur_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, pur_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, pur_col);
-    glNormal3f(-1.0, 0.0, 0.0);
-    glVertex3f(-1.0, 1.0, 1.0);
-    glVertex3f(-1.0, 1.0, -1.0);
-    glVertex3f(-1.0, -1.0, -1.0);
-    glVertex3f(-1.0, -1.0, 1.0);
-    glEnd();
-    glBegin(GL_POLYGON);
-    glColor3fv(red_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red_col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, red_col);
-    glNormal3f(1.0, 0.0, 0.0);
-    glVertex3f(1.0, -1.0, 1.0);
-    glVertex3f(1.0, -1.0, -1.0);
-    glVertex3f(1.0, 1.0, -1.0);
-    glVertex3f(1.0, 1.0, 1.0);
-    glEnd();
-    glPopMatrix();
 }
