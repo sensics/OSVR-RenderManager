@@ -50,7 +50,6 @@ Russ Taylor <russ@sensics.com>
 #include <string>
 #include <stdlib.h> // For exit()
 
-
 // @todo There shouldn't be two OSVR_ProjectionMatrix types in the API.
 inline osvr::renderkit::OSVR_ProjectionMatrix ConvertProjectionMatrix(::OSVR_ProjectionMatrix matrix)
 {
