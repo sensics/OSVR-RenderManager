@@ -2093,7 +2093,7 @@ namespace renderkit {
             p.addCandidatePNPID("OVR"); // 0xD23E
         } else if (p.m_displayConfiguration->getVendor() == "OSVR" ||
                    p.m_displayConfiguration->getVendor() == "Sensics") {
-            // There are two possible vendor IDs for OSVR.  We push them both
+            // There are three possible vendor IDs for OSVR.  We push them all
             // here.
             p.addCandidatePNPID("SVR"); // 0xD24E
             p.addCandidatePNPID("SEN"); // 0xAE4C
