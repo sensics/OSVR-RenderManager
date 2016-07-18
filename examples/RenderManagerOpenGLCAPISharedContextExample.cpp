@@ -574,7 +574,8 @@ int main(int argc, char* argv[]) {
         // so that we can present it to Direct3D for DirectMode
         GLuint colorBufferName = 0;
         if (OSVR_RETURN_SUCCESS
-            != osvrRenderManagerCreateColorBufferOpenGL(width, height, &colorBufferName)) {
+              != osvrRenderManagerCreateColorBufferOpenGL(width, height, GL_RGBA,
+              &colorBufferName)) {
             std::cerr << "Could not create color buffer." << std::endl;
             return -5;
         }

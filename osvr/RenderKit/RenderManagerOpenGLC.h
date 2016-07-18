@@ -156,7 +156,7 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoFromColl
     OSVR_RenderInfoOpenGL* renderInfoOut);
 
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerCreateColorBufferOpenGL(
-    GLsizei width, GLsizei height, GLuint *colorBufferNameOut);
+    GLsizei width, GLsizei height, GLenum format, GLuint *colorBufferNameOut);
 
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerCreateDepthBufferOpenGL(
     GLsizei width, GLsizei height, GLuint *depthBufferNameOut);
