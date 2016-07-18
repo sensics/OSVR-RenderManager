@@ -309,6 +309,10 @@ int main(int argc, char* argv[]) {
     int height = static_cast<int>(renderInfo[0].viewport.height);
 
     // Give an empty image to OpenGL ( the last "0" means "empty" )
+    // Note that whether or not the second GL_RGBA is turned into
+    // GL_BGRA, the first one should remain GL_RGBA -- it is specifying
+    // the size.  If the second is changed to GL_RGB or GL_BGR, then
+    // the first should become GL_RGB.
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, 0);
 
