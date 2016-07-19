@@ -132,7 +132,7 @@ void RenderView(
 }
 
 void Usage(std::string name) {
-  std::cerr << "Usage: " << name << " [millsecondRenderinDelay]" << std::endl;
+  std::cerr << "Usage: " << name << " [millisecondRenderingDelay]" << std::endl;
   exit(-1);
 }
 
