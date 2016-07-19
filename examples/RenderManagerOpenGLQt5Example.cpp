@@ -31,7 +31,6 @@
 #include <osvr/RenderKit/RenderManager.h>
 
 #include <QtCore/QObject>
-#include <QtCore/QDebug>
 #include <QtCore/QTimer>
 
 #include <QtGui/QOpenGLFunctions_3_2_Compatibility>
@@ -135,12 +134,6 @@ class Qt5ToolkitImpl {
     bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
         auto widget = new QWidget();
 
-        /*
-        qDebug() << "Size:" << p.width << p.height;
-        qDebug() << "Pos:" << p.xPos << p.yPos;
-        qDebug() << "Dis:" << p.displayIndex << p.fullScreen;
-        // */
-
         widget->setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
         widget->setGeometry(p->xPos, p->yPos, p->width, p->height);
         widget->setWindowTitle(p->windowTitle);
@@ -155,24 +148,23 @@ class Qt5ToolkitImpl {
         // If we're creating multiple windows, share the context from the
         // first one and be able to share display lists and objects with
         // the other widget.
-        // @todo This is not working -- the second window is never exposed
-        // and never drawn to.  If you keep the windows from being
-        // frameless, then the second window's title and region show up but
-        // the glwidget is apparently never exposed.
         if (glwidgets.size()) {
           gl = new QGLWidget(nullptr, nullptr, glwidgets.at(0));
           gl->context()->create(glwidgets.at(0)->context());
-        }
-        else {
+        } else {
           gl = new QGLWidget();
         }
         layout->addWidget(gl);
 
-        if (p->visible) {
-          widget->show();
+        // If we don't call show() to keep the window from becoming
+        // visible, then something about the OpenGL context is not
+        // initialized correctly and glewInit() fails inside our
+        // DirectRender initialization code.  So we always show it
+        // and then we hide it again if we don't want to see it.
+        widget->show();
+        if (!p->visible) {
+          widget->hide();
         }
-
-        //qDebug() << widget->geometry();
 
         glwidgets.push_back(gl);
         widgets.push_back(widget);
