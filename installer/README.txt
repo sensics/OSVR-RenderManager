@@ -46,6 +46,13 @@ Source code for RenderManager, including example programs, is available at:
   https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.51:
+ *ftr Now shares OpenGL context with app by default
+  bug Now looks for AMD cards second, avoiding false-positive DirectMode finds
+  ftr Added the ability to open OpenGL textures BGR as well as RGB
+  bug nVidia DirectMode driver no longer forces device into DirectMode
+  ftr Added OSVR HDK 2.0 to devices usable in DirectMode
+  bug Better saving/restoring of render state during rendering pass
 0.6.50:
  *ftr Now builds as part of the OSVR-Android-Build project
  *ftr Completed implementation of OpenGL C API, along with example
