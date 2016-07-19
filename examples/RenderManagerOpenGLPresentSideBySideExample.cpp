@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
     //  Note that this texture format must be RGBA and unsigned byte,
     // so that we can present it to Direct3D for DirectMode
     GLuint colorBufferName = 0;
-    glGenRenderbuffers(1, &colorBufferName);
+    glGenTextures(1, &colorBufferName);
     osvr::renderkit::RenderBuffer rb;
     rb.OpenGL = new osvr::renderkit::RenderBufferOpenGL;
     rb.OpenGL->colorBufferName = colorBufferName;
