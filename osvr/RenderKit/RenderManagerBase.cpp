@@ -1902,21 +1902,23 @@ namespace renderkit {
     {
       RenderManagerD3D11Base *ret = nullptr;
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11) || defined(RM_USE_AMD_DIRECT_D3D11) || defined(RM_USE_INTEL_DIRECT_D3D11)
-  #if defined(RM_USE_AMD_DIRECT_D3D11)
-      if ((ret == nullptr) && RenderManagerAMDD3D11::DirectModeAvailable() ) {
-        // See if we have an AMD card.  This is done by
-        // creating an instance of an AMD RenderManager, which will only
-        // be doing okay if it could load the libraries it needs.
-        ret = new RenderManagerAMDD3D11(context, params);
+#if defined(RM_USE_NVIDIA_DIRECT_D3D11)
+      if ((ret == nullptr) && RenderManagerNVidiaD3D11::DirectModeAvailable()) {
+        ret = new RenderManagerNVidiaD3D11(context, params);
         if (!ret->doingOkay()) {
           delete ret;
           ret = nullptr;
         }
       }
-  #endif
-  #if defined(RM_USE_NVIDIA_DIRECT_D3D11)
-      if ((ret == nullptr) && RenderManagerNVidiaD3D11::DirectModeAvailable() ) {
-        ret = new RenderManagerNVidiaD3D11(context, params);
+#endif
+#if defined(RM_USE_AMD_DIRECT_D3D11)
+      // Our method for determining whether there is an AMD card currently
+      // has a false positive if there has ever been an AMD driver on the
+      // system, so we check for this after all other vendor-specific
+      // approaches so that we can run on machines that have had the AMD
+      // removed and another card put in.
+      if ((ret == nullptr) && RenderManagerAMDD3D11::DirectModeAvailable()) {
+        ret = new RenderManagerAMDD3D11(context, params);
         if (!ret->doingOkay()) {
           delete ret;
           ret = nullptr;
