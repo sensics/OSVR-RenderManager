@@ -168,8 +168,14 @@ class Qt5ToolkitImpl {
         }
         layout->addWidget(gl);
 
-        if (p->visible) {
-          widget->show();
+        // If we don't call show() to keep the window from becoming
+        // visible, then something about the OpenGL context is not
+        // initialized correctly and glewInit() fails inside our
+        // DirectRender initialization code.  So we always show it
+        // and then we hide it again if we don't want to see it.
+        widget->show();
+        if (!p->visible) {
+          widget->hide();
         }
 
         //qDebug() << widget->geometry();
