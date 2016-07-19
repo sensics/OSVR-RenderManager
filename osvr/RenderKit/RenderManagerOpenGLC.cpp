@@ -172,7 +172,7 @@ OSVR_ReturnCode osvrRenderManagerCreateColorBufferOpenGL(
       return OSVR_RETURN_FAILURE;
     }
     
-    glGenRenderbuffers(1, colorBufferNameOut);
+    glGenTextures(1, colorBufferNameOut);
     glBindTexture(GL_TEXTURE_2D, *colorBufferNameOut);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, format, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -142,7 +142,7 @@ void RenderView(
 void Usage(std::string name) {
     std::cerr << "Usage: " << name 
       << " [-random]"
-      << " millsecondRenderinDelay" << std::endl;
+      << " millisecondRenderingDelay" << std::endl;
     std::cerr << "  -random: Each frame, delay from 0 to the specified delay"
       << std::endl;
     exit(-1);
