@@ -2009,10 +2009,10 @@ namespace renderkit {
             // this is what the code should be doing:
             // pipelineConfig =
             // osvr::client::RenderManagerConfigFactory::createShared(context->get());
-        } catch (std::exception& /*e*/) {
+        } catch (std::exception& e) {
             std::cerr << "createRenderManager: Could not parse "
-                         "/render_manager_parameters string from server."
-                      << std::endl;
+                      "/render_manager_parameters string from server: "
+                      << e.what() << std::endl;
             return nullptr;
         }
         if (pipelineConfig == nullptr) {
