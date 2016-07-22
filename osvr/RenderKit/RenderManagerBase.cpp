@@ -1895,9 +1895,8 @@ namespace renderkit {
     /// Used to open a Direct3D DirectRender RenderManager based on
     /// what kind of graphics card is installed in the machine.
     static RenderManagerD3D11Base *openRenderManagerDirectMode(
-      OSVR_ClientContext context
-      , RenderManager::ConstructorParameters
-      params
+      OSVR_ClientContext context,
+      RenderManager::ConstructorParameters params
       )
     {
       RenderManagerD3D11Base *ret = nullptr;
