@@ -1902,7 +1902,8 @@ namespace renderkit {
       RenderManagerD3D11Base *ret = nullptr;
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11) || defined(RM_USE_AMD_DIRECT_D3D11) || defined(RM_USE_INTEL_DIRECT_D3D11)
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11)
-      if ((ret == nullptr) && RenderManagerNVidiaD3D11::DirectModeAvailable()) {
+      if ((ret == nullptr) && RenderManagerNVidiaD3D11::DirectModeAvailable(
+          params.m_directVendorIds)) {
         ret = new RenderManagerNVidiaD3D11(context, params);
         if (!ret->doingOkay()) {
           delete ret;
