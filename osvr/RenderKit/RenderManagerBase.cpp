@@ -2254,8 +2254,8 @@ namespace renderkit {
         }
 
         // Check and see if the render manager is doing okay.  If not, return
-        // nullptr after deleting it.
-        if (!ret->doingOkay()) {
+        // nullptr.
+        if (!ret || !ret->doingOkay()) {
             return nullptr;
         }
 

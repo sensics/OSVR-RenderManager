@@ -42,7 +42,8 @@ namespace renderkit {
         // Is the renderer currently working?
         bool OSVR_RENDERMANAGER_EXPORT doingOkay() override {
             // We check both our harnessed renderer and us.
-            if (m_D3D11Renderer->doingOkay() && m_doingOkay) {
+            if ((m_D3D11Renderer.get() != nullptr) &&
+                  m_D3D11Renderer->doingOkay() && m_doingOkay) {
                 return true;
             } else {
                 return false;
