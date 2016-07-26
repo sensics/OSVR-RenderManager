@@ -15,7 +15,7 @@ installers provided at the [developer downloads site](http://osvr.github.io/usin
 Those who don't have access to the NDA repositories get using:
 
 ```
-git clone git@github.com:sensics/OSVR-RenderManager.git
+git clone https://github.com/sensics/OSVR-RenderManager.git
 cd OSVR-RenderManager
 git submodule init vendor/vrpn
 git submodule update
