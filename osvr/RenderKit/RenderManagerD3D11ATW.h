@@ -135,6 +135,12 @@ namespace osvr {
 
                 // Try to open the display in the harnessed
                 // RenderManager.  Return false if it fails.
+                if (!mRenderManager) {
+                  std::cerr << "RenderManagerD3D11ATW::OpenDisplay: No "
+                    "harnessed RenderManager" << std::endl;
+                  ret.status = OpenStatus::FAILURE;
+                  return ret;
+                }
                 ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
                   std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
