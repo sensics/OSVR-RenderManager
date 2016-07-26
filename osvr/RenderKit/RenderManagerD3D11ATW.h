@@ -195,6 +195,8 @@ namespace osvr {
                   // sure we wait until rendering has finished on our buffers before
                   // handing them over to the ATW thread.  We flush our queue so that
                   // rendering will get moving right away.
+                  // @todo Enable overlapped rendering on one frame while presentation
+                  // of the previous by doing this waiting on another thread.
                   if (m_completionQuery) {
                     m_D3D11Context->End(m_completionQuery);
                     m_D3D11Context->Flush();
