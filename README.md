@@ -3,8 +3,14 @@
 [![Join the chat at https://gitter.im/sensics/OSVR-RenderManager](https://badges.gitter.im/sensics/OSVR-RenderManager.svg)](https://gitter.im/sensics/OSVR-RenderManager?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This repository holds the open-source code for the OSVR RenderManager developed by
-Sensics.  It is licensed under the Apache-2 license.  It has a set of submodules
-that point to sets of non-open source code to build
+Sensics.  It is licensed under the Apache-2 license.  
+
+RenderManager is an API for rendering and presenting graphics for virtual reality. There is a detailed description below, but in short, it is a codebase that contains:
+- Rendering code that performs time-warp, distortion correction, (per-eye) client side prediction, for multiple graphics APIs
+- Distortion mesh creation from a variety of distortion descriptions
+- An output backend for rendering in extended or direct mode on a range of platforms and drivers
+
+It has a set of submodules that point to sets of non-open source code to build
 vendor-specific extensions to support direct rendering.  These were developed
 under non-disclosure agreements with the vendors.
 
