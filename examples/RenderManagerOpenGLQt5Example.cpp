@@ -107,6 +107,9 @@ class Qt5ToolkitImpl {
     static OSVR_CBool handleEventsImpl(void* data) {
         return ((Qt5ToolkitImpl*)data)->handleEvents();
     }
+    static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut) {
+      return ((Qt5ToolkitImpl*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut);
+    }
 
     QList<QGLWidget*> glwidgets;
     QList<QWidget*> widgets;
@@ -200,6 +203,10 @@ class Qt5ToolkitImpl {
       return true;
     }
     bool handleEvents() {
+      return true;
+    }
+    bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut) {
+      *displayFrameBufferOut = 0;
       return true;
     }
 };
