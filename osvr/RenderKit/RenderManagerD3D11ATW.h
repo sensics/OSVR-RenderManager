@@ -36,6 +36,8 @@ Sensics, Inc.
 #include <functional>
 #include <map>
 
+#include <vrpn_Shared.h>
+
 namespace osvr {
     namespace renderkit {
 
@@ -135,6 +137,12 @@ namespace osvr {
 
                 // Try to open the display in the harnessed
                 // RenderManager.  Return false if it fails.
+                if (!mRenderManager) {
+                  std::cerr << "RenderManagerD3D11ATW::OpenDisplay: No "
+                    "harnessed RenderManager" << std::endl;
+                  ret.status = OpenStatus::FAILURE;
+                  return ret;
+                }
                 ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
                   std::cerr << "RenderManagerD3D11ATW::OpenDisplay: Could not "
@@ -189,6 +197,8 @@ namespace osvr {
                   // sure we wait until rendering has finished on our buffers before
                   // handing them over to the ATW thread.  We flush our queue so that
                   // rendering will get moving right away.
+                  // @todo Enable overlapped rendering on one frame while presentation
+                  // of the previous by doing this waiting on another thread.
                   if (m_completionQuery) {
                     m_D3D11Context->End(m_completionQuery);
                     m_D3D11Context->Flush();
@@ -201,6 +211,7 @@ namespace osvr {
                   }
 
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
+                  // This lock is automatically released when we're done with this function.
                   std::lock_guard<std::mutex> lock(mLock);
                   HRESULT hr;
 
@@ -304,6 +315,14 @@ namespace osvr {
                     std::cerr << "RenderManagerThread::start() - thread loop already started." << std::endl;
                 } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
+                    // Set the scheduling priority of this thread to time-critical.
+#ifdef OSVR_WINDOWS
+                    HANDLE h = mThread->native_handle();
+                    if (!SetThreadPriority(h, THREAD_PRIORITY_TIME_CRITICAL)) {
+                      std::cerr << "RenderManagerD3D11ATW::start():"
+                        " Could not set ATW thread priority" << std::endl;
+                    }
+#endif
                 }
                 mStarted = true;
             }
@@ -322,6 +341,9 @@ namespace osvr {
             }
 
             void threadFunc() {
+                // Used to make sure we don't take too long to render
+                struct timeval lastFrameTime = {};
+
                 bool quit = getQuit();
                 size_t iteration = 0;
                 while (!quit) {
@@ -357,6 +379,9 @@ namespace osvr {
                     if (osvrTimeValueGreater(&threshold, &nextRetrace)) {
                       timeToPresent = true;
                     }
+                    double expectedFrameInterval = static_cast<double>(
+                      timing.hardwareDisplayInterval.seconds +
+                      timing.hardwareDisplayInterval.microseconds / 1e6);
 
                     if (timeToPresent) {
                         // Lock our mutex so that we're not rendering while new buffers are
@@ -368,38 +393,53 @@ namespace osvr {
                             // time-warp calculation in our harnessed RenderManager.
                             osvrClientUpdate(mRenderManager->m_context);
 
-                            {
-                                // make a new RenderBuffers array with the atw thread's buffers
-                                std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
-                                for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
-                                    auto key = mNextFrameInfo.renderBuffers[i].D3D11;
-                                    auto bufferInfoItr = mBufferMap.find(key);
-                                    if (bufferInfoItr == mBufferMap.end()) {
-                                        std::cerr << "No buffer info for key " << (size_t)key << std::endl;
-                                        m_doingOkay = false;
-                                        mQuit = true;
-                                    }
-                                    atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
-                                }
-
-                                // Send the rendered results to the screen, using the
-                                // RenderInfo that was handed to us by the client the last
-                                // time they gave us some images.
-                                if (!mRenderManager->PresentRenderBuffers(
-                                    atwRenderBuffers,
-                                    mNextFrameInfo.renderInfo,
-                                    mNextFrameInfo.renderParams,
-                                    mNextFrameInfo.normalizedCroppingViewports,
-                                    mNextFrameInfo.flipInY)) {
-                                    std::cerr << "PresentRenderBuffers() returned false, maybe because it was asked to quit" << std::endl;
+                            // make a new RenderBuffers array with the atw thread's buffers
+                            std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
+                            for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
+                                auto key = mNextFrameInfo.renderBuffers[i].D3D11;
+                                auto bufferInfoItr = mBufferMap.find(key);
+                                if (bufferInfoItr == mBufferMap.end()) {
+                                    std::cerr << "RenderManagerThread::threadFunc():"
+                                      " No buffer info for key " << (size_t)key << std::endl;
                                     m_doingOkay = false;
                                     mQuit = true;
                                 }
+                                atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
                             }
+
+                            // Send the rendered results to the screen, using the
+                            // RenderInfo that was handed to us by the client the last
+                            // time they gave us some images.
+                            if (!mRenderManager->PresentRenderBuffers(
+                                atwRenderBuffers,
+                                mNextFrameInfo.renderInfo,
+                                mNextFrameInfo.renderParams,
+                                mNextFrameInfo.normalizedCroppingViewports,
+                                mNextFrameInfo.flipInY)) {
+                                std::cerr << "RenderManagerThread::threadFunc():"
+                                  " PresentRenderBuffers() returned false, maybe"
+                                  " because it was asked to quit" << std::endl;
+                                m_doingOkay = false;
+                                mQuit = true;
+                            }
+
+                            struct timeval now;
+                            vrpn_gettimeofday(&now, nullptr);
+                            if (lastFrameTime.tv_sec != 0) {
+                              double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
+                              if (frameInterval > expectedFrameInterval * 1.9) {
+                                std::cerr << "RenderManagerThread::threadFunc(): Missed"
+                                  " 1+ frame at " << iteration <<
+                                  ", expected interval " << expectedFrameInterval * 1e3
+                                  << "ms but got " << frameInterval * 1e3 << std::endl;
+                              }
+                            }
+                            lastFrameTime = now;
 
                             iteration++;
                         }
                     }
+
                     quit = mQuit;
                 }
             }
