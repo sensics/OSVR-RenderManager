@@ -36,6 +36,8 @@ Sensics, Inc.
 #include <functional>
 #include <map>
 
+#include <vrpn_Shared.h>
+
 namespace osvr {
     namespace renderkit {
 
@@ -209,6 +211,7 @@ namespace osvr {
                   }
 
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
+                  // This lock is automatically released when we're done with this function.
                   std::lock_guard<std::mutex> lock(mLock);
                   HRESULT hr;
 
@@ -338,6 +341,9 @@ namespace osvr {
             }
 
             void threadFunc() {
+                // Used to make sure we don't take too long to render
+                struct timeval lastFrameTime = {};
+
                 bool quit = getQuit();
                 size_t iteration = 0;
                 while (!quit) {
@@ -373,6 +379,9 @@ namespace osvr {
                     if (osvrTimeValueGreater(&threshold, &nextRetrace)) {
                       timeToPresent = true;
                     }
+                    double expectedFrameInterval = static_cast<double>(
+                      timing.hardwareDisplayInterval.seconds +
+                      timing.hardwareDisplayInterval.microseconds / 1e6);
 
                     if (timeToPresent) {
                         // Lock our mutex so that we're not rendering while new buffers are
@@ -414,9 +423,23 @@ namespace osvr {
                                 mQuit = true;
                             }
 
+                            struct timeval now;
+                            vrpn_gettimeofday(&now, nullptr);
+                            if (lastFrameTime.tv_sec != 0) {
+                              double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
+                              if (frameInterval > expectedFrameInterval * 1.9) {
+                                std::cerr << "RenderManagerThread::threadFunc(): Missed"
+                                  " 1+ frame at " << iteration <<
+                                  ", expected interval " << expectedFrameInterval * 1e3
+                                  << "ms but got " << frameInterval * 1e3 << std::endl;
+                              }
+                            }
+                            lastFrameTime = now;
+
                             iteration++;
                         }
                     }
+
                     quit = mQuit;
                 }
             }
