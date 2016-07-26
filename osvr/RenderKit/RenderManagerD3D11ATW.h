@@ -384,33 +384,34 @@ namespace osvr {
                             // time-warp calculation in our harnessed RenderManager.
                             osvrClientUpdate(mRenderManager->m_context);
 
-                            {
-                                // make a new RenderBuffers array with the atw thread's buffers
-                                std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
-                                for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
-                                    auto key = mNextFrameInfo.renderBuffers[i].D3D11;
-                                    auto bufferInfoItr = mBufferMap.find(key);
-                                    if (bufferInfoItr == mBufferMap.end()) {
-                                        std::cerr << "No buffer info for key " << (size_t)key << std::endl;
-                                        m_doingOkay = false;
-                                        mQuit = true;
-                                    }
-                                    atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
-                                }
-
-                                // Send the rendered results to the screen, using the
-                                // RenderInfo that was handed to us by the client the last
-                                // time they gave us some images.
-                                if (!mRenderManager->PresentRenderBuffers(
-                                    atwRenderBuffers,
-                                    mNextFrameInfo.renderInfo,
-                                    mNextFrameInfo.renderParams,
-                                    mNextFrameInfo.normalizedCroppingViewports,
-                                    mNextFrameInfo.flipInY)) {
-                                    std::cerr << "PresentRenderBuffers() returned false, maybe because it was asked to quit" << std::endl;
+                            // make a new RenderBuffers array with the atw thread's buffers
+                            std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
+                            for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
+                                auto key = mNextFrameInfo.renderBuffers[i].D3D11;
+                                auto bufferInfoItr = mBufferMap.find(key);
+                                if (bufferInfoItr == mBufferMap.end()) {
+                                    std::cerr << "RenderManagerThread::threadFunc():"
+                                      " No buffer info for key " << (size_t)key << std::endl;
                                     m_doingOkay = false;
                                     mQuit = true;
                                 }
+                                atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
+                            }
+
+                            // Send the rendered results to the screen, using the
+                            // RenderInfo that was handed to us by the client the last
+                            // time they gave us some images.
+                            if (!mRenderManager->PresentRenderBuffers(
+                                atwRenderBuffers,
+                                mNextFrameInfo.renderInfo,
+                                mNextFrameInfo.renderParams,
+                                mNextFrameInfo.normalizedCroppingViewports,
+                                mNextFrameInfo.flipInY)) {
+                                std::cerr << "RenderManagerThread::threadFunc():"
+                                  " PresentRenderBuffers() returned false, maybe"
+                                  " because it was asked to quit" << std::endl;
+                                m_doingOkay = false;
+                                mQuit = true;
                             }
 
                             iteration++;
