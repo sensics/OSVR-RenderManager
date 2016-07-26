@@ -304,6 +304,14 @@ namespace osvr {
                     std::cerr << "RenderManagerThread::start() - thread loop already started." << std::endl;
                 } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
+                    // Set the scheduling priority of this thread to time-critical.
+#ifdef OSVR_WINDOWS
+                    HANDLE h = mThread->native_handle();
+                    if (!SetThreadPriority(h, THREAD_PRIORITY_TIME_CRITICAL)) {
+                      std::cerr << "RenderManagerD3D11ATW::start():"
+                        " Could not set ATW thread priority" << std::endl;
+                    }
+#endif
                 }
                 mStarted = true;
             }
