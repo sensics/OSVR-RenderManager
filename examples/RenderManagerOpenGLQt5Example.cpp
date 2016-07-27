@@ -109,6 +109,9 @@ class Qt5ToolkitImpl {
     static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut) {
       return ((Qt5ToolkitImpl*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut);
     }
+    static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height) {
+        return ((Qt5ToolkitImpl*)data)->getDisplaySizeOverride(display, width, height);
+    }
 
     QList<QGLWidget*> glwidgets;
     QList<QWidget*> widgets;
@@ -127,6 +130,7 @@ class Qt5ToolkitImpl {
         toolkit.swapBuffers = swapBuffersImpl;
         toolkit.setVerticalSync = setVerticalSyncImpl;
         toolkit.handleEvents = handleEventsImpl;
+        toolkit.getDisplaySizeOverride = getDisplaySizeOverrideImpl;
     }
 
     ~Qt5ToolkitImpl() {
@@ -200,6 +204,10 @@ class Qt5ToolkitImpl {
     bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut) {
       *displayFrameBufferOut = 0;
       return true;
+    }
+    bool getDisplaySizeOverride(size_t display, int* width, int* height) {
+        // we don't override the display. Use default behavior.
+        return false;
     }
 };
 
