@@ -99,6 +99,7 @@ typedef struct OSVR_OpenGLToolkitFunctions {
     OSVR_CBool (*swapBuffers)(void* data, size_t display);
     OSVR_CBool (*setVerticalSync)(void* data, OSVR_CBool verticalSync);
     OSVR_CBool (*handleEvents)(void* data);
+    OSVR_CBool (*getDisplayFrameBuffer)(void* data, size_t display, GLint* frameBufferOut);
 } OSVR_OpenGLToolkitFunctions;
 
 typedef struct OSVR_GraphicsLibraryOpenGL {

@@ -73,6 +73,9 @@ class SDLToolkitImpl {
   static OSVR_CBool handleEventsImpl(void* data) {
     return ((SDLToolkitImpl*)data)->handleEvents();
   }
+  static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut) {
+      return ((SDLToolkitImpl*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut);
+  }
 
   // Classes and structures needed to do our rendering.
   class DisplayInfo {
@@ -98,6 +101,7 @@ public:
     toolkit.swapBuffers = swapBuffersImpl;
     toolkit.setVerticalSync = setVerticalSyncImpl;
     toolkit.handleEvents = handleEventsImpl;
+    toolkit.getDisplayFrameBuffer = getDisplayFrameBufferImpl;
   }
 
   ~SDLToolkitImpl() {
@@ -237,6 +241,12 @@ public:
     }
 
     return true;
+  }
+
+  bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut) {
+      // @todo: can this be determined by inspection?
+      *displayFrameBufferOut = 0;
+      return true;
   }
 };
 
@@ -1109,7 +1119,13 @@ namespace renderkit {
         // avoid messing with user code.
         GLint prevFrameBuffer;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        GLint displayFrameBuffer;
+
+        if (!m_toolkit.getDisplayFrameBuffer ||
+            !m_toolkit.getDisplayFrameBuffer(m_toolkit.data, GetDisplayUsedByEye(params.m_index), &displayFrameBuffer)) {
+            displayFrameBuffer = 0;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
 
         // Bind the texture that we're going to use to render into the
         // frame buffer.
