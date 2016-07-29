@@ -68,6 +68,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/Common/IntegerByteSwap.h>
 #include <osvr/ClientKit/ParametersC.h>
 #include <osvr/Util/QuatlibInteropC.h>
+#include <osvr/Util/Logger.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
@@ -273,12 +274,14 @@ namespace renderkit {
 
         /// Construct my logger
         m_log = osvr::util::log::make_logger("RenderManager");
-        if (m_log == nullptr) {
-          std::cerr << "RenderManager::RenderManager(): Could not construct logger."
-            << " No further logging will occur." << std::endl;
-          m_doingOkay = false;
+        if (!m_log) {
+            /// Should not happen.
+            std::cerr << "RenderManager::RenderManager(): Could not construct logger."
+                      << " No further logging will occur." << std::endl;
+            m_doingOkay = false;
+        } else {
+            m_log->debug("RenderManager constructed");
         }
-        if (m_log) m_log->info("RenderManager constructed");
 
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.

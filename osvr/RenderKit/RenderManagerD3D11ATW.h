@@ -25,6 +25,9 @@ Sensics, Inc.
 #pragma once
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
+
+#include <osvr/Util/Logger.h>
+
 #include "RenderManagerD3DBase.h"
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryD3D11.h"
@@ -85,16 +88,19 @@ namespace osvr {
             /// our buffers over to the ATW thread.
             ID3D11Query* m_completionQuery = nullptr;
 
-        public:
+          private:
+            /// Logger to use for writing information, warning, and errors.
+            util::log::LoggerPtr m_log;
+
+          public:
             /**
             * Construct an D3D ATW wrapper around an existing D3D render
             * manager. Takes ownership of the passed in render manager
             * and deletes it when the wrapper is deleted.
             */
-            RenderManagerD3D11ATW(
-                OSVR_ClientContext context,
-                ConstructorParameters p, RenderManagerD3D11Base* D3DToHarness)
-                : RenderManagerD3D11Base(context, p) {
+            RenderManagerD3D11ATW(OSVR_ClientContext context, ConstructorParameters p,
+                                  RenderManagerD3D11Base* D3DToHarness)
+                : RenderManagerD3D11Base(context, p), m_log(util::log::make_logger("RenderManagerD3D11ATW")) {
                 mRenderManager.reset(D3DToHarness);
             }
 

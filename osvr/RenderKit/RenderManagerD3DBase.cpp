@@ -24,6 +24,8 @@ Sensics, Inc.
 // limitations under the License.
 
 #include <osvr/Util/Finally.h>
+#include <osvr/Util/Logger.h>
+
 #include "RenderManagerD3DBase.h"
 #include "GraphicsLibraryD3D11.h"
 #include "ComputeDistortionMesh.h"
@@ -134,10 +136,8 @@ static std::string StringFromD3DError(HRESULT hr) {
 namespace osvr {
 namespace renderkit {
 
-    RenderManagerD3D11Base::RenderManagerD3D11Base(
-        OSVR_ClientContext context,
-        ConstructorParameters p)
-        : RenderManager(context, p) {
+    RenderManagerD3D11Base::RenderManagerD3D11Base(OSVR_ClientContext context, ConstructorParameters p)
+        : RenderManager(context, p), m_log(util::log::make_logger("RenderManagerD3D11Base")) {
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.

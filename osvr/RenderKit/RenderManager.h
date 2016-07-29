@@ -701,9 +701,6 @@ namespace renderkit {
         RenderManager(OSVR_ClientContext context,
                       const ConstructorParameters& p);
 
-        /// Logger to use for writing information, warning, and errors.
-        osvr::util::log::LoggerPtr m_log;
-
         /// Bool telling whether we're doing okay.  When we get a failure
         /// that will prevent rendering, this will be set to false.
         bool m_doingOkay;
@@ -1152,6 +1149,10 @@ namespace renderkit {
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
                             GraphicsLibrary graphicsLibrary);
+
+      private:
+        /// Logger to use for writing information, warning, and errors.
+        util::log::LoggerPtr m_log;
     };
 
     //=========================================================================

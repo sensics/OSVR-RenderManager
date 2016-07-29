@@ -29,6 +29,7 @@ Russ Taylor <russ@sensics.com>
 #include "RenderManagerD3DOpenGL.h"
 #include "GraphicsLibraryD3D11.h"
 #include "GraphicsLibraryOpenGL.h"
+#include <osvr/Util/Logger.h>
 #include <iostream>
 #include <utility>
 
@@ -40,7 +41,7 @@ namespace renderkit {
         ConstructorParameters p,
         std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness)
         : RenderManagerOpenGL(context, p),
-          m_D3D11Renderer(std::move(D3DToHarness)) {
+          m_D3D11Renderer(std::move(D3DToHarness)), m_log(util::log::make_logger("RenderManagerD3D11OpenGL")) {
 
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order

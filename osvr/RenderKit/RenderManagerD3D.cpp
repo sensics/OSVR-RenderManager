@@ -26,18 +26,20 @@ Sensics, Inc.
 #include "RenderManagerD3D.h"
 #include "GraphicsLibraryD3D11.h"
 #include "RenderManagerSDLInitQuit.h"
-#include <iostream>
+
+#include <osvr/Util/Logger.h>
 #include "SDL_syswm.h"
+
 #include <d3d11.h>
 #include <DirectXMath.h>
+
+#include <iostream>
 
 namespace osvr {
 namespace renderkit {
 
-    RenderManagerD3D11::RenderManagerD3D11(
-        OSVR_ClientContext context,
-        ConstructorParameters p)
-        : RenderManagerD3D11Base(context, p) { }
+    RenderManagerD3D11::RenderManagerD3D11(OSVR_ClientContext context, ConstructorParameters p)
+        : RenderManagerD3D11Base(context, p), m_log(util::log::make_logger("RenderManagerD3D11")) {}
 
     RenderManagerD3D11::~RenderManagerD3D11() {
         for (size_t i = 0; i < m_displays.size(); i++) {

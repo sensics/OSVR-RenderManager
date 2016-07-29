@@ -42,6 +42,7 @@ Sensics, Inc.
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
 #include "ComputeDistortionMesh.h"
+#include <osvr/Util/Logger.h>
 #include <iostream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -357,10 +358,8 @@ namespace renderkit {
         return (err != GL_NO_ERROR);
     }
 
-    RenderManagerOpenGL::RenderManagerOpenGL(
-        OSVR_ClientContext context,
-        ConstructorParameters p)
-        : RenderManager(context, p) {
+    RenderManagerOpenGL::RenderManagerOpenGL(OSVR_ClientContext context, ConstructorParameters p)
+        : RenderManager(context, p), m_log(util::log::make_logger("RenderManagerOpenGL")) {
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.
