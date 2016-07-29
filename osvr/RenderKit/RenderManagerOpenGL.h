@@ -34,6 +34,7 @@ Sensics, Inc.
 #include <windows.h>
 #endif
 
+// clang-format off
 #ifdef OSVR_RM_USE_OPENGLES20
   // @todo This presumes we're compiling on Android.
   #include <GLES2/gl2.h>
@@ -69,6 +70,7 @@ Sensics, Inc.
     #include <GL/gl.h>
   #endif
 #endif
+// clang-format on
 
 #include <stdlib.h>
 

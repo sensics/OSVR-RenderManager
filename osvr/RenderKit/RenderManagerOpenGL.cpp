@@ -25,6 +25,8 @@ Sensics, Inc.
 #include "RenderManagerOpenGLVersion.h"
 #include <SDL.h>
 #include "RenderManagerSDLInitQuit.h"
+
+// clang-format off
 #ifdef OSVR_RM_USE_OPENGLES20
   #define glDeleteVertexArrays glDeleteVertexArraysOES
   #define glGenVertexArrays glGenVertexArraysOES
@@ -35,6 +37,8 @@ Sensics, Inc.
     #include <GL/wglew.h>
   #endif
 #endif
+// clang-format on
+
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
 #include "ComputeDistortionMesh.h"
