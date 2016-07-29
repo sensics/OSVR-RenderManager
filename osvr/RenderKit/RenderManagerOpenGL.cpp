@@ -598,8 +598,9 @@ namespace renderkit {
         if (!m_toolkit.setVerticalSync ||
             !m_toolkit.setVerticalSync(m_toolkit.data, m_params.m_verticalSync)
           ) {
-          if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: can't set vertical"
-            " sync behavior" << std::endl;
+            if (m_log)
+                m_log->error() << "RenderManagerOpenGL::OpenDisplay: can't set vertical"
+                                  " sync behavior";
         }
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay after vsync setting");
@@ -658,11 +659,11 @@ namespace renderkit {
           if (m_toolkit.removeOpenGLContexts) {
             m_toolkit.removeOpenGLContexts(m_toolkit.data);
           }
-          if (m_log) m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not link "
-                         "shader program "
-                      << std::endl;
-            ret.status = FAILURE;
-            return ret;
+          if (m_log)
+              m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not link "
+                                "shader program ";
+          ret.status = FAILURE;
+          return ret;
         }
         checkForGLError("RenderManagerOpenGL::OpenDisplay after program link");
 
@@ -854,8 +855,9 @@ namespace renderkit {
 
         size_t const numEyes = GetNumEyes();
         if (numEyes > distort.size()) {
-            if (m_log) m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Not "
-                "enough distortion parameters for all eyes" 
+            if (m_log)
+                m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Not "
+                                  "enough distortion parameters for all eyes";
             if (m_toolkit.removeOpenGLContexts) {
               m_toolkit.removeOpenGLContexts(m_toolkit.data);
             }
