@@ -310,7 +310,7 @@ static bool checkShaderError(GLuint shaderId, osvr::util::log::LoggerPtr m_log) 
         GLint maxLength = 0;
         glGetProgramiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
         if (maxLength > 1) {
-          std::unique_ptr<GLchar> infoLog(new GLchar[maxLength + 1]);
+          std::unique_ptr<GLchar[]> infoLog(new GLchar[maxLength + 1]);
           glGetProgramInfoLog(shaderId, maxLength, NULL, infoLog.get());
           if (m_log) m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
             << "::checkShaderError: Message returned from shader compiler: "
@@ -331,7 +331,7 @@ static bool checkProgramError(GLuint programId, osvr::util::log::LoggerPtr m_log
         int infoLength = 0;
         glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLength);
         if (infoLength > 1) {
-          std::unique_ptr<GLchar> infoLog(new GLchar[infoLength + 1]);
+          std::unique_ptr<GLchar[]> infoLog(new GLchar[infoLength + 1]);
           glGetProgramInfoLog(programId, infoLength, NULL, infoLog.get());
           if (m_log) m_log->error() << "osvr::renderkit::RenderManager::RenderManagerOpenGL"
             << "::checkProgramError: Message returned from shader compiler: "
