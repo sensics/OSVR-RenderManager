@@ -76,6 +76,9 @@ class SDLToolkitImpl {
   static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut) {
       return ((SDLToolkitImpl*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut);
   }
+  static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height) {
+      return ((SDLToolkitImpl*)data)->getDisplaySizeOverride(display, width, height);
+  }
 
   // Classes and structures needed to do our rendering.
   class DisplayInfo {
@@ -102,6 +105,7 @@ public:
     toolkit.setVerticalSync = setVerticalSyncImpl;
     toolkit.handleEvents = handleEventsImpl;
     toolkit.getDisplayFrameBuffer = getDisplayFrameBufferImpl;
+    toolkit.getDisplaySizeOverride = getDisplaySizeOverrideImpl;
   }
 
   ~SDLToolkitImpl() {
@@ -248,6 +252,11 @@ public:
       *displayFrameBufferOut = 0;
       return true;
   }
+
+  bool getDisplaySizeOverride(size_t display, int* width, int* height) {
+      // we don't override the display. Use default behavior.
+      return false;
+  }
 };
 
 //==========================================================================
@@ -370,6 +379,15 @@ namespace renderkit {
         // Construct the appropriate GraphicsLibrary pointer.
         m_library.OpenGL = new GraphicsLibraryOpenGL;
         m_buffers.OpenGL = new RenderBufferOpenGL;
+
+        // @todo: there's only one m_displayWidth and m_displayHeight member pair
+        // and it corresponds to display 0. Probably should be made more generic?
+        size_t display = 0;
+        int widthOverride, heightOverride;
+        if (m_toolkit.getDisplaySizeOverride && m_toolkit.getDisplaySizeOverride(m_toolkit.data, display, &widthOverride, &heightOverride)) {
+            m_displayWidth = widthOverride;
+            m_displayHeight = heightOverride;
+        }
     }
 
     RenderManagerOpenGL::~RenderManagerOpenGL() {
