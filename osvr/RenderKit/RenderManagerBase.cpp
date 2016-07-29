@@ -317,8 +317,7 @@ namespace renderkit {
         if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
                                    &m_roomFromHeadInterface) ==
               OSVR_RETURN_FAILURE) {
-            if (m_log) m_log->error() << "RenderManager::RenderManager(): Can't get interface "
-                      << headSpaceName;
+            m_log->error() << "RenderManager::RenderManager(): Can't get interface " << headSpaceName;
             m_doingOkay = false;
         }
         osvrPose3SetIdentity(&m_roomFromHead);
@@ -335,8 +334,7 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-          if (m_log) m_log->error()
-              << "RenderManager::SetDisplayCallback: NULL callback handler";
+            m_log->error() << "RenderManager::SetDisplayCallback: NULL callback handler";
             return false;
         }
 
@@ -355,8 +353,8 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            if (m_log) m_log->error() << "RenderManager::SetViewProjectionCallback: NULL "
-                << "callback handler";
+            m_log->error() << "RenderManager::SetViewProjectionCallback: NULL "
+                           << "callback handler";
             return false;
         }
 
@@ -375,8 +373,7 @@ namespace renderkit {
 
         // Make sure we have valid data
         if (callback == nullptr) {
-            if (m_log) m_log->error()
-                << "RenderManager::AddRenderCallback: NULL callback handler";
+            m_log->error() << "RenderManager::AddRenderCallback: NULL callback handler";
             return false;
         }
 
@@ -395,8 +392,8 @@ namespace renderkit {
             if (osvrClientGetInterface(m_context, interfaceName.c_str(),
                                        &cb.m_interface) ==
                 OSVR_RETURN_FAILURE) {
-                if (m_log) m_log->error() << "RenderManager::AddRenderCallback(): Can't get "
-                             << "interface " << interfaceName;
+                m_log->error() << "RenderManager::AddRenderCallback(): Can't get "
+                               << "interface " << interfaceName;
             }
         }
 
@@ -425,9 +422,8 @@ namespace renderkit {
                     if (osvrClientFreeInterface(m_context,
                                                 ci.m_interface) ==
                         OSVR_RETURN_FAILURE) {
-                      if (m_log) m_log->error()
-                            << "RenderManager::RemoveRenderCallback(): Could "
-                               "not free the interface for this callback.";
+                        m_log->error() << "RenderManager::RemoveRenderCallback(): Could "
+                                          "not free the interface for this callback.";
                         return false;
                     }
                 }
@@ -440,9 +436,9 @@ namespace renderkit {
     }
 
     RenderManager::~RenderManager() {
-        if (m_log) {
-          m_log->info("RenderManager deconstructed");
-          m_log->flush();
+        {
+            m_log->info("RenderManager deconstructed");
+            m_log->flush();
         }
 
         // Unregister any remaining callback handlers for devices that
@@ -467,15 +463,15 @@ namespace renderkit {
 
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            if (m_log) m_log->error() << "RenderManager::Render(): Display not opened.";
+            m_log->error() << "RenderManager::Render(): Display not opened.";
             return false;
         }
 
         // Make sure we've set up for the Render() path.
         if (!m_renderPathSetupDone) {
           if (!RenderPathSetup()) {
-            if (m_log) m_log->error() << "RenderManager::Render(): RenderPathSetup() failed.";
-            return false;
+              m_log->error() << "RenderManager::Render(): RenderPathSetup() failed.";
+              return false;
           }
           m_renderPathSetupDone = true;
         }
@@ -483,8 +479,7 @@ namespace renderkit {
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-            if (m_log) m_log->error()
-                << "RenderManager::Render(): client context update failed.";
+            m_log->error() << "RenderManager::Render(): client context update failed.";
             return false;
         }
 
@@ -505,9 +500,7 @@ namespace renderkit {
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
             if (!RenderDisplayInitialize(display)) {
-                if (m_log) m_log->error()
-                    << "RenderManager::Render(): Could not initialize display "
-                    << display;
+                m_log->error() << "RenderManager::Render(): Could not initialize display " << display;
                 return false;
             }
 
@@ -529,8 +522,7 @@ namespace renderkit {
                 // Every eye is on its own display now, so we need to
                 // initialize and finalize the displays as well.
                 if (!RenderEyeInitialize(eye)) {
-                    if (m_log) m_log->error()
-                        << "RenderManager::Render(): Could not initialize eye.";
+                    m_log->error() << "RenderManager::Render(): Could not initialize eye.";
                     return false;
                 }
                 if (m_viewCallback.m_callback != nullptr) {
@@ -572,16 +564,13 @@ namespace renderkit {
 
                 // Done with this eye.
                 if (!RenderEyeFinalize(eye)) {
-                    if (m_log) m_log->error()
-                        << "RenderManager::Render(): Could not finalize eye.";
+                    m_log->error() << "RenderManager::Render(): Could not finalize eye.";
                     return false;
                 }
             }
 
             if (!RenderDisplayFinalize(display)) {
-                if (m_log) m_log->error()
-                    << "RenderManager::Render(): Could not finalize display "
-                    << display;
+                m_log->error() << "RenderManager::Render(): Could not finalize display " << display;
                 return false;
             }
         }
@@ -630,7 +619,7 @@ namespace renderkit {
 
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            if (m_log) m_log->error() << "RenderManager::GetRenderInfo(): Display not opened.";
+            m_log->error() << "RenderManager::GetRenderInfo(): Display not opened.";
             ret.clear();
             return ret;
         }
@@ -638,8 +627,8 @@ namespace renderkit {
         // Update the transformations so that we have the most-recent
         // state in them.
         if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-            if (m_log) m_log->error() << "RenderManager::GetRenderInfo(): client context "
-                         "update failed.";
+            m_log->error() << "RenderManager::GetRenderInfo(): client context "
+                              "update failed.";
             ret.clear();
             return ret;
         }
@@ -675,8 +664,8 @@ namespace renderkit {
             // By passing m_callbacks.size(), we guarantee world space.
             if (!ConstructModelView(m_callbacks.size(), eye, params,
                                     info.pose)) {
-                if (m_log) m_log->error() << "RenderManagerBase::GetRenderInfo(): Could not "
-                             "ConstructModelView";
+                m_log->error() << "RenderManagerBase::GetRenderInfo(): Could not "
+                                  "ConstructModelView";
                 ret.clear();
                 return ret;
             }
@@ -731,22 +720,21 @@ namespace renderkit {
         bool flipInY) {
         // Make sure we're doing okay.
         if (!doingOkay()) {
-            if (m_log) m_log->error()
-                << "RenderManager::PresentRenderBuffers(): Display not opened.";
+            m_log->error() << "RenderManager::PresentRenderBuffers(): Display not opened.";
             return false;
         }
 
         // Make sure we've registered some render buffers
         if (!m_renderBuffersRegistered) {
-            if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): Buffers not "
-                         "registered.";
+            m_log->error() << "RenderManager::PresentRenderBuffers(): Buffers not "
+                              "registered.";
             return false;
         }
 
         // Initialize the presentation for the whole frame.
         if (!PresentFrameInitialize()) {
-            if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                         "PresentFrameInitialize() failed.";
+            m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                              "PresentFrameInitialize() failed.";
             return false;
         }
 
@@ -777,8 +765,8 @@ namespace renderkit {
                 // Update the client context so we keep getting all required
                 // callbacks called during our busy-wait.
                 if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
-                    if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                                 "client context update failed.";
+                    m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                                      "client context update failed.";
                     return false;
                 }
 
@@ -810,8 +798,8 @@ namespace renderkit {
         if (m_params.m_enableTimeWarp) {
             if (!ComputeAsynchronousTimeWarps(renderInfoUsed, currentRenderInfo,
                                               2.0f)) {
-                if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers: Could not "
-                             "compute time warps";
+                m_log->error() << "RenderManager::PresentRenderBuffers: Could not "
+                                  "compute time warps";
                 return false;
             }
         }
@@ -822,8 +810,8 @@ namespace renderkit {
 
             // Set up the appropriate display before setting up its eye(s).
             if (!PresentDisplayInitialize(display)) {
-                if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                             "PresentDisplayInitialize() failed.";
+                m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                                  "PresentDisplayInitialize() failed.";
                 return false;
             }
 
@@ -877,9 +865,8 @@ namespace renderkit {
                 p.m_index = eye;
                 p.m_rotateDegrees = rotate_pixels_degrees;
                 if (buffers.size() <= eye) {
-                    if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers: Given "
-                              << GetNumEyes() << " eyes, but only "
-                              << buffers.size() << " buffers";
+                    m_log->error() << "RenderManager::PresentRenderBuffers: Given " << GetNumEyes()
+                                   << " eyes, but only " << buffers.size() << " buffers";
                     return false;
                 }
                 p.m_buffer = buffers[eye];
@@ -890,9 +877,9 @@ namespace renderkit {
                 if (m_params.m_enableTimeWarp) {
                     // Apply the asynchronous time warp matrix for this eye.
                     if (m_asynchronousTimeWarps.size() <= eye) {
-                        if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers: "
-                                     "Required Asynchronous Time "
-                                  << "Warp matrix not available";
+                        m_log->error() << "RenderManager::PresentRenderBuffers: "
+                                          "Required Asynchronous Time "
+                                       << "Warp matrix not available";
                         return false;
                     }
                     p.m_timeWarp = &m_asynchronousTimeWarps[eye];
@@ -916,24 +903,24 @@ namespace renderkit {
                 p.m_normalizedCroppingViewport = bufferCrop;
 
                 if (!PresentEye(p)) {
-                    if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                                 "PresentEye failed.";
+                    m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                                      "PresentEye failed.";
                     return false;
                 }
             }
 
             // We're done with this display.
             if (!PresentDisplayFinalize(display)) {
-                if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                             "PresentDisplayFinalize failed.";
+                m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                                  "PresentDisplayFinalize failed.";
                 return false;
             }
         }
 
         // Finalize the rendering for the whole frame.
         if (!PresentFrameFinalize()) {
-            if (m_log) m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                         "PresentFrameFinalize failed.";
+            m_log->error() << "RenderManager::PresentRenderBuffers(): "
+                              "PresentFrameFinalize failed.";
             return false;
         }
 
@@ -1062,8 +1049,8 @@ namespace renderkit {
             }
             return 1;
         default:
-            if (m_log) m_log->error() << "RenderManager::GetNumDisplays(): Unrecognized value: "
-                      << m_params.m_displayConfiguration->getEyes().size();
+            m_log->error() << "RenderManager::GetNumDisplays(): Unrecognized value: "
+                           << m_params.m_displayConfiguration->getEyes().size();
         }
         return 1;
     }
@@ -1216,9 +1203,9 @@ namespace renderkit {
             yFactor = 0.5;
             break;
         default:
-            if (m_log) m_log->error() << "RenderManager::ConstructViewportForRender: "
-                         "Unrecognized Display Mode"
-                      << m_params.m_displayConfiguration->getDisplayMode();
+            m_log->error() << "RenderManager::ConstructViewportForRender: "
+                              "Unrecognized Display Mode"
+                           << m_params.m_displayConfiguration->getDisplayMode();
             return false;
         }
 
@@ -1281,9 +1268,9 @@ namespace renderkit {
             }
             break;
         default:
-            if (m_log) m_log->error() << "RenderManager::ConstructViewportForPresent: "
-                         "Unrecognized Display Mode"
-                      << m_params.m_displayConfiguration->getDisplayMode();
+            m_log->error() << "RenderManager::ConstructViewportForPresent: "
+                              "Unrecognized Display Mode"
+                           << m_params.m_displayConfiguration->getDisplayMode();
             return false;
         }
 
@@ -1409,8 +1396,8 @@ namespace renderkit {
 
         // Make sure that we have as many eyes as were asked for.
         if (whichEye >= GetNumEyes()) {
-            if (m_log) m_log->error() << "RenderManager::ConstructModelView(): Eye index "
-                      << "out of bounds";
+            m_log->error() << "RenderManager::ConstructModelView(): Eye index "
+                           << "out of bounds";
             return false;
         }
 
