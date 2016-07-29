@@ -45,9 +45,6 @@ namespace renderkit {
       public:
         virtual ~RenderManagerD3D11Base();
 
-        // Is the renderer currently working?
-        bool doingOkay() override { return m_doingOkay; }
-
         // Creates the D3D11 device and context to be used
         // to draw things into our window unless they have
         // already been filled in.
@@ -83,7 +80,6 @@ namespace renderkit {
         /// Get the DXGIFactor1 corresponding to the adapter.
         Microsoft::WRL::ComPtr<IDXGIFactory1> getDXGIFactory();
 
-        bool m_doingOkay;   //< Are we doing okay?
         bool m_displayOpen; //< Has our display been opened?
 
         /// The adapter, if and only if explicitly set.
