@@ -7,6 +7,9 @@ TabWidth:        4
 UseTab:          Never
 NamespaceIndentation: Inner
 PointerAlignment: Left
+ColumnLimit:     120
+SortIncludes:    false
+ReflowComments: true
 
 # AccessModifierOffset: -2
 # ConstructorInitializerIndentWidth: 4

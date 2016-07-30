@@ -71,7 +71,6 @@ namespace renderkit {
             ConstructorParameters p,
             std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness);
 
-        bool m_doingOkay;   //< Are we doing okay?
         bool m_displayOpen; //< Has our display been opened?
 
         // We harness a D3D11 DirectMode renderer to do our
@@ -145,6 +144,10 @@ namespace renderkit {
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
                             GraphicsLibrary graphicsLibrary);
+
+      private:
+        /// Logger to use for writing information, warning, and errors.
+        util::log::LoggerPtr m_log;
     };
 
 } // namespace renderkit

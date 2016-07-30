@@ -37,6 +37,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/Util/TimeValueC.h>
+#include <osvr/Util/Log.h>
 
 // Standard includes
 #include <vector>
@@ -109,7 +110,6 @@ namespace renderkit {
     /// Structure that holds timing information about the system.
     /// Each of these times will have the value (0,0) if they are
     /// not available from a particular RenderManager.
-    /// @todo Move these into a C API file
     typedef struct {
         OSVR_TimeValue
             hardwareDisplayInterval; //< Time between refresh of display device
@@ -222,8 +222,6 @@ namespace renderkit {
     /// well, but will also have already been set.
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
-    /// @todo Use this struct as the return info in the callback above,
-    /// and modify examples to go one level deeper to get the info.
     typedef struct {
         GraphicsLibrary library; //< Graphics library context to use
         OSVR_ViewportDescription
@@ -242,8 +240,12 @@ namespace renderkit {
         /// correctly.
         virtual OSVR_RENDERMANAGER_EXPORT ~RenderManager();
 
-        /// Is the renderer currently working?
-        virtual bool OSVR_RENDERMANAGER_EXPORT doingOkay() = 0;
+        /// Is the renderer currently working?  Derived classes can override
+        /// this to do additional checking as needed, but should also call the
+        /// base-class method.
+        virtual bool OSVR_RENDERMANAGER_EXPORT doingOkay() {
+          return m_doingOkay;
+        }
 
         ///-------------------------------------------------------------
         /// @brief Did we get all we asked for, some of it, or nothing
@@ -586,7 +588,6 @@ namespace renderkit {
                                        /// screen?
             int m_windowXPosition;     //< Where to put the window
             int m_windowYPosition;     //< Where to put the window
-            /// @todo Implement this
             Display_Rotation m_displayRotation; //< Present mode: Rotate display
             // about Z when presenting
             unsigned m_bitsPerColor; //< Color depth of the window we want
@@ -699,6 +700,10 @@ namespace renderkit {
         /// @brief Constructor given OSVR context and parameters
         RenderManager(OSVR_ClientContext context,
                       const ConstructorParameters& p);
+
+        /// Bool telling whether we're doing okay.  When we get a failure
+        /// that will prevent rendering, this will be set to false.
+        bool m_doingOkay;
 
         /// Mutex to provide thread safety to this class and its
         /// subclasses.  NOTE: All subclasses must lock this mutex
@@ -893,10 +898,6 @@ namespace renderkit {
         /// location.
         /// Be sure to modify (transpose, etc.) as needed for other rendering
         /// libraries.
-        /// @todo Can we make an opaque Eigen matrix/transform type so that we
-        /// don't need to copy in the computation and get a more useful type but
-        /// also
-        /// don't need to #include the Eigen headers in this class?
         typedef struct { float data[16]; } matrix16;
         std::vector<matrix16> m_asynchronousTimeWarps;
 
@@ -1148,6 +1149,10 @@ namespace renderkit {
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
                             GraphicsLibrary graphicsLibrary);
+
+      private:
+        /// Logger to use for writing information, warning, and errors.
+        util::log::LoggerPtr m_log;
     };
 
     //=========================================================================
@@ -1178,10 +1183,6 @@ namespace renderkit {
     createRenderManager(OSVR_ClientContext context,
                         const std::string& renderLibraryName,
                         GraphicsLibrary graphicsLibrary = GraphicsLibrary());
-
-    //=========================================================================
-    /// C API for the RenderManager (will be in a separate file).
-    /// @todo
 
 } // namespace renderkit
 } // namespace osvr
