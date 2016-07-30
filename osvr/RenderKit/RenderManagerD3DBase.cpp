@@ -869,8 +869,8 @@ namespace renderkit {
         // Create distortion meshes for each of the eyes.
         size_t const numEyes = GetNumEyes();
         if (numEyes > distort.size()) {
-            std::cerr << "RenderManagerD3D11Base::UpdateDistortionMesh: "
-                "Not enough distortion parameters for all eyes" << std::endl;
+            m_log->error() << "RenderManagerD3D11Base::UpdateDistortionMesh: "
+                "Not enough distortion parameters for all eyes";
             return false;
         }
 
@@ -949,11 +949,9 @@ namespace renderkit {
                 D3D11_SUBRESOURCE_DATA subResData = { &meshBuffer.indices[0], 0, 0 };
                 hr = m_D3D11device->CreateBuffer(&indexBufferDesc, &subResData, &indexBuffer);
                 if (FAILED(hr)) {
-                    std::cerr << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
-                        "create index buffer"
-                        << std::endl;
-                    std::cerr << "  Direct3D error type: " << StringFromD3DError(hr)
-                        << std::endl;
+                    m_log->error() << "RenderManagerD3D11Base::UpdateDistortionMeshesInternal: Could not "
+                        "create index buffer";
+                    m_log->error() << "  Direct3D error type: " << StringFromD3DError(hr);
                     return false;
                 }
                 meshBuffer.indexBuffer.Attach(indexBuffer);
@@ -1358,7 +1356,7 @@ namespace renderkit {
             break;
         default:
             // @todo re-enable this log when this code is moved to registration (and use the logger API that hasn't been merged yet)
-            //std::cerr << "osvr::renderkit::RenderManagerD3D11Base::PresentEye - unknown render target texture format. Defaulting to DXGI_FORMAT_R8G8B8A8_UNORM." << std::endl;
+            //m_log->error() << "osvr::renderkit::RenderManagerD3D11Base::PresentEye - unknown render target texture format. Defaulting to DXGI_FORMAT_R8G8B8A8_UNORM.";
             shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
             break;
         }

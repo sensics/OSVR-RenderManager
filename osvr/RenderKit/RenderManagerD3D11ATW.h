@@ -143,8 +143,8 @@ namespace osvr {
                 // Try to open the display in the harnessed
                 // RenderManager.  Return false if it fails.
                 if (!mRenderManager) {
-                  std::cerr << "RenderManagerD3D11ATW::OpenDisplay: No "
-                    "harnessed RenderManager" << std::endl;
+                  m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: No "
+                    "harnessed RenderManager";
                   ret.status = OpenStatus::FAILURE;
                   return ret;
                 }
@@ -327,8 +327,8 @@ namespace osvr {
 #ifdef OSVR_WINDOWS
                     HANDLE h = mThread->native_handle();
                     if (!SetThreadPriority(h, THREAD_PRIORITY_TIME_CRITICAL)) {
-                      std::cerr << "RenderManagerD3D11ATW::start():"
-                        " Could not set ATW thread priority" << std::endl;
+                      m_log->error() << "RenderManagerD3D11ATW::start():"
+                        " Could not set ATW thread priority";
                     }
 #endif
                 }
@@ -435,10 +435,10 @@ namespace osvr {
                             if (lastFrameTime.tv_sec != 0) {
                               double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
                               if (frameInterval > expectedFrameInterval * 1.9) {
-                                std::cerr << "RenderManagerThread::threadFunc(): Missed"
+                                m_log->error() << "RenderManagerThread::threadFunc(): Missed"
                                   " 1+ frame at " << iteration <<
                                   ", expected interval " << expectedFrameInterval * 1e3
-                                  << "ms but got " << frameInterval * 1e3 << std::endl;
+                                  << "ms but got " << frameInterval * 1e3;
                               }
                             }
                             lastFrameTime = now;

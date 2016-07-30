@@ -473,18 +473,16 @@ namespace renderkit {
           }
         }
         if (oglMap == nullptr) {
-          std::cerr
+          m_log->error()
             << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal(): Unregistered buffer"
-            << " (call RegisterRenderBuffers before presenting)"
-            << std::endl;
+            << " (call RegisterRenderBuffers before presenting)";
           return false;
         }
         if (renderBuffers[b].OpenGL->colorBufferName != oglMap->OpenGLTexture) {
-          std::cerr
+          m_log->error()
             << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal(): Mis-matched buffer"
             << " (call RegisterRenderBuffers whenever a new render-texture "
-            "is created)"
-            << std::endl;
+            "is created)";
           return false;
         }
         RenderBuffer rb;
