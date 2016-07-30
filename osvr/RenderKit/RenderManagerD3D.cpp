@@ -116,9 +116,8 @@ namespace renderkit {
         // pAdapter earlier)
         auto dxgiFactory = getDXGIFactory();
         if (!dxgiFactory) {
-            std::cerr
-                << "RenderManagerD3D11::OpenDisplay: Could not get dxgiFactory"
-                << std::endl;
+            m_log->error()
+                << "RenderManagerD3D11::OpenDisplay: Could not get dxgiFactory";
             return withFailure();
         }
 
@@ -143,9 +142,9 @@ namespace renderkit {
                 windowTitle.c_str(), windowX, m_params.m_windowYPosition,
                 widthRotated, heightRotated, flags);
             if (m_displays[display].m_window == nullptr) {
-                std::cerr
+              m_log->error()
                     << "RenderManagerD3D11::OpenDisplay: Could not get window "
-                    << "for display " << display << std::endl;
+                    << "for display " << display;
                 return withFailure();
             }
             SDL_SysWMinfo wmInfo;

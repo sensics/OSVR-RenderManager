@@ -95,11 +95,14 @@ class SDLToolkitImpl {
   SDL_GLContext
     m_GLContext; //< The context we use to render to all displays
 
+  osvr::util::log::LoggerPtr m_log;
+
 public:
-  SDLToolkitImpl() {
+  SDLToolkitImpl(osvr::util::log::LoggerPtr log) {
     memset(&toolkit, 0, sizeof(toolkit));
     toolkit.size = sizeof(toolkit);
     toolkit.data = this;
+    m_log = log;
 
     toolkit.create = createImpl;
     toolkit.destroy = destroyImpl;
@@ -121,9 +124,8 @@ public:
   bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
     // Initialize the SDL video subsystem.
     if (!osvr::renderkit::SDLInitQuit()) {
-      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not "
-        "initialize SDL"
-        << std::endl;
+      m_log->error() << "RenderManagerOpenGL::addOpenGLContext: Could not "
+        "initialize SDL";
       return false;
     }
 
@@ -177,17 +179,15 @@ public:
     m_displays.back().m_window = SDL_CreateWindow(
       p->windowTitle, p->xPos, p->yPos, p->width, p->height, flags);
     if (m_displays.back().m_window == nullptr) {
-      std::cerr
-        << "RenderManagerOpenGL::addOpenGLContext: Could not get window"
-        << std::endl;
+      m_log->error()
+        << "RenderManagerOpenGL::addOpenGLContext: Could not get window";
       return false;
     }
 
     m_GLContext = SDL_GL_CreateContext(m_displays.back().m_window);
     if (m_GLContext == nullptr) {
-      std::cerr << "RenderManagerOpenGL::addOpenGLContext: Could not get "
-        "OpenGL context"
-        << std::endl;
+      m_log->error() << "RenderManagerOpenGL::addOpenGLContext: Could not get "
+        "OpenGL context";
       return false;
     }
 
@@ -200,9 +200,8 @@ public:
     }
     while (m_displays.size() > 0) {
       if (m_displays.back().m_window == nullptr) {
-        std::cerr << "RenderManagerOpenGL::closeOpenGLContext: No "
-          "window pointer"
-          << std::endl;
+        m_log->error() << "RenderManagerOpenGL::closeOpenGLContext: No "
+          "window pointer";
         return false;
       }
       SDL_DestroyWindow(m_displays.back().m_window);
@@ -222,17 +221,15 @@ public:
   bool setVerticalSync(bool verticalSync) {
     if (verticalSync) {
       if (SDL_GL_SetSwapInterval(1) != 0) {
-        std::cerr << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
-          "not set vertical retrace on"
-          << std::endl;
+        m_log->error() << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+          "not set vertical retrace on";
         return false;
       }
     }
     else {
       if (SDL_GL_SetSwapInterval(0) != 0) {
-        std::cerr << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
-          "not set vertical retrace off"
-          << std::endl;
+        m_log->error() << "RenderManagerOpenGL::OpenDisplay: Warning: Could "
+          "not set vertical retrace off";
         return false;
       }
     }
@@ -370,7 +367,7 @@ namespace renderkit {
         if (p.m_graphicsLibrary.OpenGL && p.m_graphicsLibrary.OpenGL->toolkit) {
           m_toolkit = *p.m_graphicsLibrary.OpenGL->toolkit;
         } else {
-          SDLToolkitImpl *SDLToolKit = new SDLToolkitImpl;
+          SDLToolkitImpl *SDLToolKit = new SDLToolkitImpl(m_log);
           m_toolkit = *SDLToolKit->getToolkit();
         }
 
@@ -1220,9 +1217,8 @@ namespace renderkit {
       if (!ConstructViewportForPresent(
         eye, viewportDesc,
         m_params.m_displayConfiguration->getSwapEyes())) {
-        std::cerr << "RenderManagerOpenGL::SolidColorEye(): Could not "
-          "construct viewport"
-          << std::endl;
+        m_log->error() << "RenderManagerOpenGL::SolidColorEye(): Could not "
+          "construct viewport";
         return false;
       }
       // Adjust the viewport based on how much the display window is

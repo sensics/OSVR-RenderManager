@@ -274,14 +274,7 @@ namespace renderkit {
 
         /// Construct my logger
         m_log = osvr::util::log::make_logger("RenderManager");
-        if (!m_log) {
-            /// Should not happen.
-            std::cerr << "RenderManager::RenderManager(): Could not construct logger."
-                      << " No further logging will occur." << std::endl;
-            m_doingOkay = false;
-        } else {
-            m_log->debug("RenderManager constructed");
-        }
+        m_log->debug("RenderManager constructed");
 
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
@@ -943,17 +936,15 @@ namespace renderkit {
         const RGBColorf &color) {
       // Make sure we're doing okay.
       if (!doingOkay()) {
-        std::cerr
-          << "RenderManager::PresentSolidColorInternal(): Display not opened."
-          << std::endl;
+        m_log->error()
+          << "RenderManager::PresentSolidColorInternal(): Display not opened.";
         return false;
       }
 
       // Initialize the presentation for the whole frame.
       if (!PresentFrameInitialize()) {
-        std::cerr << "RenderManager::PresentSolidColorInternal(): "
-          "PresentFrameInitialize() failed."
-          << std::endl;
+        m_log->error() << "RenderManager::PresentSolidColorInternal(): "
+          "PresentFrameInitialize() failed.";
         return false;
       }
 
@@ -963,9 +954,8 @@ namespace renderkit {
 
         // Set up the appropriate display before setting up its eye(s).
         if (!PresentDisplayInitialize(display)) {
-          std::cerr << "RenderManager::PresentSolidColorInternal(): "
-            "PresentDisplayInitialize() failed."
-            << std::endl;
+          m_log->error() << "RenderManager::PresentSolidColorInternal(): "
+            "PresentDisplayInitialize() failed.";
           return false;
         }
 
@@ -978,27 +968,24 @@ namespace renderkit {
           size_t eye = eyeInDisplay + display * GetNumEyesPerDisplay();
 
           if (!SolidColorEye(eye, color)) {
-            std::cerr << "RenderManager::PresentSolidColorInternal(): "
-              "PresentEye failed."
-              << std::endl;
+            m_log->error() << "RenderManager::PresentSolidColorInternal(): "
+              "PresentEye failed.";
             return false;
           }
         }
 
         // We're done with this display.
         if (!PresentDisplayFinalize(display)) {
-          std::cerr << "RenderManager::PresentSolidColorInternal(): "
-            "PresentDisplayFinalize failed."
-            << std::endl;
+          m_log->error() << "RenderManager::PresentSolidColorInternal(): "
+            "PresentDisplayFinalize failed.";
           return false;
         }
       }
 
       // Finalize the rendering for the whole frame.
       if (!PresentFrameFinalize()) {
-        std::cerr << "RenderManager::PresentSolidColorInternal(): "
-          "PresentFrameFinalize failed."
-          << std::endl;
+        m_log->error() << "RenderManager::PresentSolidColorInternal(): "
+          "PresentFrameFinalize failed.";
         return false;
       }
 
@@ -1935,6 +1922,10 @@ namespace renderkit {
         // Null pointer return in case we can't open one.
         std::unique_ptr<RenderManager> ret;
 
+        /// Logger to use for writing information, warning, and errors.
+        util::log::LoggerPtr m_log =
+          osvr::util::log::make_logger("createRenderManager");
+
         // Wait until we get a connection to a display object, from which we
         // will
         // read information that we need about display device resolutions and
@@ -1954,18 +1945,14 @@ namespace renderkit {
             end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = end - start;
             if (elapsed.count() >= 1) {
-                std::cerr << "RenderManager::createRenderManager(): Waiting to "
-                             "get Display from server..."
-                          << std::endl;
+                m_log->error() << "Waiting to get Display from server...";
                 start = end;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         } while (displayReturnCode == OSVR_RETURN_FAILURE);
-        std::cerr << "RenderManager::createRenderManager(): Got Display info "
-                     "from server "
+        m_log->error() << "Got Display info from server "
                      "(ignore earlier errors that occured while we were "
-                     "waiting to connect)"
-                  << std::endl;
+                     "waiting to connect)";
 
         // Check the information in the pipeline configuration to determine
         // what kind of renderer to instantiate.  Also fill in the parameters
@@ -1991,16 +1978,15 @@ namespace renderkit {
             // pipelineConfig =
             // osvr::client::RenderManagerConfigFactory::createShared(context->get());
         } catch (std::exception& e) {
-            std::cerr << "createRenderManager: Could not parse "
+            m_log->error() << "Could not parse "
                       "/render_manager_parameters string from server: "
-                      << e.what() << std::endl;
+                      << e.what();
             return nullptr;
         }
         if (pipelineConfig == nullptr) {
-            std::cerr << "createRenderManager: Could not parse "
+            m_log->error() << "Could not parse "
                          "/render_manager_parameters string from server (NULL "
-                         "pipelineconfig)."
-                      << std::endl;
+                         "pipelineconfig).";
             return nullptr;
         }
         p.m_directMode = pipelineConfig->getDirectMode();
@@ -2035,9 +2021,8 @@ namespace renderkit {
                 Display_Rotation::TwoSeventy;
             break;
         default:
-            std::cerr << "createRenderManager: Unrecognized display rotation ("
-                      << rotation << ") in rendermanager config file"
-                      << std::endl;
+            m_log->error() << "Unrecognized display rotation ("
+                      << rotation << ") in rendermanager config file";
             return nullptr;
         }
         p.m_bitsPerColor = pipelineConfig->getBitsPerColor();
@@ -2063,9 +2048,8 @@ namespace renderkit {
               osvrRenderManagerGetString(contextParameter, "/display");
             p.m_displayConfiguration.reset(new OSVRDisplayConfiguration(jsonString));
         } catch (std::exception& /*e*/) {
-            std::cerr << "createRenderManager: Could not parse /display string "
-                         "from server."
-                      << std::endl;
+            m_log->error() << "Could not parse /display string "
+                         "from server.";
             return nullptr;
         }
 
@@ -2129,16 +2113,14 @@ namespace renderkit {
                 ret.reset(openRenderManagerDirectMode(contextParameter, p));
               }
               if (ret == nullptr) {
-                std::cerr << "createRenderManager: Could not open the"
-                  << " requested DirectMode display" << std::endl;
+                m_log->error() << "Could not open the"
+                  << " requested DirectMode display";
               }
             } else {
               ret.reset(new RenderManagerD3D11(contextParameter, p));
             }
 #else
-              std::cerr << "createRenderManager: D3D11 render library "
-                "not compiled in"
-                << std::endl;
+              m_log->error() << "D3D11 render library not compiled in";
               return nullptr;
 #endif
         } else if (p.m_renderLibrary == "OpenGL") {
@@ -2166,16 +2148,12 @@ namespace renderkit {
                      ++eye) {
                     if (p2.m_distortionParameters[eye].m_distortionCOP.size() <
                         2) {
-                        std::cerr << "createRenderManager: Insufficient "
-                                     "distortion parameters"
-                                  << std::endl;
+                        m_log->error() << "Insufficient distortion parameters";
                         return nullptr;
                     }
                     if (p2.m_distortionParameters[eye].m_distortionD.size() <
                         2) {
-                        std::cerr << "createRenderManager: Insufficient "
-                                     "distortion parameters"
-                                  << std::endl;
+                        m_log->error() << "Insufficient distortion parameters";
                         return nullptr;
                     }
                     float original =
@@ -2207,31 +2185,27 @@ namespace renderkit {
                   host.reset(openRenderManagerDirectMode(contextParameter, p2));
                 }
                 if (host == nullptr) {
-                  std::cerr << "createRenderManager: Could not open the"
-                    << " requested harnessed DirectMode display" << std::endl;
+                  m_log->error() << "Could not open the"
+                    << " requested harnessed DirectMode display";
                 }
 
                 ret.reset(
                   new RenderManagerD3D11OpenGL(contextParameter, p, std::move(host)));
 #else
-                std::cerr << "createRenderManager: OpenGL/Direct3D Interop not "
-                  "compiled in"
-                  << std::endl;
+                m_log->error() << "OpenGL/Direct3D Interop not compiled in";
                 return nullptr;
 #endif
             } else {
 #ifdef RM_USE_OPENGL
                 ret.reset(new RenderManagerOpenGL(contextParameter, p));
 #else
-                std::cerr << "createRenderManager: OpenGL render library not "
-                             "compiled in"
-                          << std::endl;
+                m_log->error() << "OpenGL render library not compiled in";
                 return nullptr;
 #endif
             }
         } else {
-            std::cerr << "createRenderManager: Unrecognized render library: "
-                      << p.m_renderLibrary << std::endl;
+            m_log->error() << "Unrecognized render library: "
+                      << p.m_renderLibrary;
             return nullptr;
         }
 
