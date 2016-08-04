@@ -2078,6 +2078,8 @@ namespace renderkit {
         } else if (p.m_displayConfiguration->getVendor() == "VRGate") {
           p.addCandidatePNPID("VRG"); // 0x475A
           p.addCandidatePNPID("TSB"); // 0x6252
+        } else if (p.m_displayConfiguration->getVendor() == "Vrvana") {
+          p.addCandidatePNPID("VRV"); // 0x565A
         }
         p.m_directModeIndex = -1; // -1 means select based on resolution
 
