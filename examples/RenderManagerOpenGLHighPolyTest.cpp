@@ -34,6 +34,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#include <vrpn_Shared.h>
 
 #include <GL/glew.h>
 
@@ -493,8 +494,7 @@ class MeshCube {
     }
 };
 
-static MeshCube roomCube(5.0f);
-static MeshCube handsCube(0.05f);
+static MeshCube *roomCube = nullptr;
 
 // Set to true when it is time for the application to quit.
 // Handlers below that set it to true when the user causes
@@ -643,63 +643,45 @@ void DrawWorld(
     osvr::renderkit::OSVR_PoseState_to_OpenGL(viewGL, pose);
 
     /// Draw a cube with a 5-meter radius as the room we are floating in.
-    roomCube.draw(projectionGL, viewGL);
+    roomCube->draw(projectionGL, viewGL);
 }
 
-// This is used to draw both hands, but a different callback could be
-// provided for each hand if desired.
-void DrawHand(
-    void* userData //< Passed into AddRenderCallback
-    , osvr::renderkit::GraphicsLibrary library //< Graphics library context to use
-    , osvr::renderkit::RenderBuffer buffers //< Buffers to use
-    , osvr::renderkit::OSVR_ViewportDescription
-        viewport //< Viewport we're rendering into
-    , OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-    , osvr::renderkit::OSVR_ProjectionMatrix
-        projection //< Projection matrix set by RenderManager
-    , OSVR_TimeValue deadline //< When the frame should be sent to the screen
-    ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr
-            << "DrawHand: No OpenGL GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr << "DrawHand: No OpenGL RenderBuffer, this should not happen"
-                  << std::endl;
-        return;
-    }
+void Usage(std::string name) {
+  std::cerr << "Usage: " << name << " [TrianglesPerSide]" << std::endl;
+  std::cerr << "       Default triangles per side = 1e3" << std::endl;
 
-    osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
-
-    GLdouble projectionGL[16];
-    osvr::renderkit::OSVR_Projection_to_OpenGL(projectionGL, projection);
-
-    GLdouble viewGL[16];
-    osvr::renderkit::OSVR_PoseState_to_OpenGL(viewGL, pose);
-    handsCube.draw(projectionGL, viewGL);
+  exit(-1);
 }
 
 int main(int argc, char* argv[]) {
+    // Parse the command line
+    double trianglesPerSide = 1e3;
+    int realParams = 0;
+    for (int i = 1; i < argc; i++) {
+      if (argv[i][0] == '-') {
+        Usage(argv[0]);
+      }
+      else {
+        switch (++realParams) {
+        case 1:
+          trianglesPerSide = atof(argv[i]);
+          break;
+        default:
+          Usage(argv[0]);
+        }
+      }
+    }
+    if (realParams > 1) {
+      Usage(argv[0]);
+    }
+    size_t triangles = static_cast<size_t>(
+      trianglesPerSide * 6);
+    roomCube = new MeshCube(5.0, triangles);
+
     // Get an OSVR client context to use to access the devices
     // that we need.
     osvr::clientkit::ClientContext context(
         "com.osvr.renderManager.openGLExample");
-
-    // Construct button devices and connect them to a callback
-    // that will set the "quit" variable to true when it is
-    // pressed.  Use button "1" on the left-hand or
-    // right-hand controller.
-    osvr::clientkit::Interface leftButton1 =
-        context.getInterface("/controller/left/1");
-    leftButton1.registerCallback(&myButtonCallback, &quit);
-
-    osvr::clientkit::Interface rightButton1 =
-        context.getInterface("/controller/right/1");
-    rightButton1.registerCallback(&myButtonCallback, &quit);
 
     // Open OpenGL and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,
@@ -719,11 +701,8 @@ int main(int argc, char* argv[]) {
     // Set callback to handle setting up rendering in a display
     render->SetDisplayCallback(SetupDisplay);
 
-    // Register callbacks to render things in left hand, right
-    // hand, and world space.
+    // Register callback to render things in world space.
     render->AddRenderCallback("/", DrawWorld);
-    render->AddRenderCallback("/me/hands/left", DrawHand);
-    render->AddRenderCallback("/me/hands/right", DrawHand);
 
 // Set up a handler to cause us to exit cleanly.
 #ifdef _WIN32
@@ -758,6 +737,11 @@ int main(int argc, char* argv[]) {
     // platforms, this can cause a spurious  error 1280.
     glGetError();
 
+    // Frame timing
+    size_t countFrames = 0;
+    struct timeval startFrames;
+    vrpn_gettimeofday(&startFrames, nullptr);
+
     // Continue rendering until it is time to quit.
     while (!quit) {
         // Update the context so we get our callbacks called and
@@ -770,9 +754,22 @@ int main(int argc, char* argv[]) {
                 << std::endl;
             quit = true;
         }
+
+        // Print timing info
+        struct timeval nowFrames;
+        vrpn_gettimeofday(&nowFrames, nullptr);
+        double duration = vrpn_TimevalDurationSeconds(nowFrames, startFrames);
+        countFrames++;
+        if (duration >= 2.0) {
+          std::cout << "Rendering at " << countFrames / duration << " fps"
+            << std::endl;
+          startFrames = nowFrames;
+          countFrames = 0;
+        }
     }
 
     // Close the Renderer interface cleanly.
+    delete roomCube;
     delete render;
 
     return 0;
