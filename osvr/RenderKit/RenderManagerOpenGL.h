@@ -219,10 +219,20 @@ namespace renderkit {
         bool PresentDisplayFinalize(size_t display) override;
         bool PresentFrameFinalize() override;
 
+        // Convert context parameters from C++-style context parameters
+        // to C-style parameters, allocating space for the name.  To avoid
+        // leaking memory, be sure to call ReleaseContextParams() on the
+        // resulting parameters when done with them.
         inline void ConvertContextParams(
           const osvr::renderkit::RenderManagerOpenGL::GLContextParams& contextParams,
           OSVR_OpenGLContextParams& contextParamsOut) {
-          contextParamsOut.windowTitle = contextParams.windowTitle.c_str();
+          char *title = new char[contextParams.windowTitle.size() + 1];
+          // Note: This will not cause a constraint violation because we've
+          // satisfied all of the constraints, so we don't need to wrap it in
+          // a handler.
+          strncpy_s(title, contextParams.windowTitle.size() + 1,
+            contextParams.windowTitle.c_str(), contextParams.windowTitle.size() + 1);
+          contextParamsOut.windowTitle = title;
           contextParamsOut.fullScreen = contextParams.fullScreen;
           contextParamsOut.width = contextParams.width;
           contextParamsOut.height = contextParams.height;
@@ -231,6 +241,11 @@ namespace renderkit {
           contextParamsOut.bitsPerPixel = contextParams.bitsPerPixel;
           contextParamsOut.numBuffers = contextParams.numBuffers;
           contextParamsOut.visible = contextParams.visible;
+        }
+
+        inline void ReleaseContextParams(
+          OSVR_OpenGLContextParams& contextParamsOut) {
+          delete[] contextParamsOut.windowTitle;
         }
 
         /// See if we had an OpenGL error
