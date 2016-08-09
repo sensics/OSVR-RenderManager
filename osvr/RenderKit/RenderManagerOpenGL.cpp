@@ -25,6 +25,7 @@ Sensics, Inc.
 #include "RenderManagerOpenGLVersion.h"
 #include <SDL.h>
 #include "RenderManagerSDLInitQuit.h"
+#include <osvr/Util/Finally.h>
 
 // clang-format off
 #ifdef OSVR_RM_USE_OPENGLES20
@@ -410,6 +411,12 @@ namespace renderkit {
 
             m_distortionMeshBuffer.clear();
 
+            // Remove all of the windows/contexts we created if they are
+            // still open.
+            if (m_toolkit.removeOpenGLContexts) {
+              m_toolkit.removeOpenGLContexts(m_toolkit.data);
+            }
+
             /// @todo Clean up anything else we need to
 
             m_displayOpen = false;
@@ -569,6 +576,18 @@ namespace renderkit {
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay after context creation");
 
+        //======================================================
+        // We make use of the util::finally() lambda function to
+        // make sure that we remove the OpenGL contexts if we exit
+        // with an error.
+        auto removeContexts = osvr::util::finally([&]{
+          if (ret.status == FAILURE) {
+            if (m_toolkit.removeOpenGLContexts) {
+              m_toolkit.removeOpenGLContexts(m_toolkit.data);
+            }
+          }
+        });
+
 #ifndef OSVR_RM_USE_OPENGLES20
         //======================================================
         // We need to call glewInit() so that we have access to
@@ -576,9 +595,6 @@ namespace renderkit {
         glewExperimental = true; // Needed for core profile
         if (glewInit() != GLEW_OK) {
             m_log->error() << "RenderManagerOpenGL::OpenDisplay: Can't initialize GLEW";
-            if (m_toolkit.removeOpenGLContexts) {
-              m_toolkit.removeOpenGLContexts(m_toolkit.data);
-            }
             ret.status = FAILURE;
             return ret;
         }
@@ -596,7 +612,6 @@ namespace renderkit {
                 m_log->error() << "RenderManagerOpenGL::OpenDisplay: can't set vertical"
                                   " sync behavior";
         }
-
         checkForGLError("RenderManagerOpenGL::OpenDisplay after vsync setting");
 
         //======================================================
@@ -614,9 +629,6 @@ namespace renderkit {
             GLchar* strInfoLog = new GLchar[infoLogLength + 1];
             glGetShaderInfoLog(vertexShaderId, infoLogLength, NULL, strInfoLog);
 
-            if (m_toolkit.removeOpenGLContexts) {
-              m_toolkit.removeOpenGLContexts(m_toolkit.data);
-            }
             m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
                               "construct vertex shader:\n"
                            << strInfoLog;
@@ -633,9 +645,6 @@ namespace renderkit {
             GLchar* strInfoLog = new GLchar[infoLogLength + 1];
             glGetShaderInfoLog(fragmentShaderId, infoLogLength, NULL, strInfoLog);
 
-            if (m_toolkit.removeOpenGLContexts) {
-              m_toolkit.removeOpenGLContexts(m_toolkit.data);
-            }
             m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
                               "construct fragment shader:\n"
                            << strInfoLog;
@@ -650,9 +659,6 @@ namespace renderkit {
         glAttachShader(m_programId, fragmentShaderId);
         glLinkProgram(m_programId);
         if (!checkProgramError(m_programId, m_log)) {
-          if (m_toolkit.removeOpenGLContexts) {
-            m_toolkit.removeOpenGLContexts(m_toolkit.data);
-          }
           if (m_log)
               m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not link "
                                 "shader program ";
@@ -673,9 +679,6 @@ namespace renderkit {
 
         if (!UpdateDistortionMeshesInternal(SQUARE,
                                             m_params.m_distortionParameters)) {
-          if (m_toolkit.removeOpenGLContexts) {
-            m_toolkit.removeOpenGLContexts(m_toolkit.data);
-          }
           m_log->error() << "RenderManagerOpenGL::OpenDisplay: Could not "
                             "construct distortion mesh";
           ret.status = FAILURE;
@@ -852,9 +855,6 @@ namespace renderkit {
             if (m_log)
                 m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Not "
                                   "enough distortion parameters for all eyes";
-            if (m_toolkit.removeOpenGLContexts) {
-              m_toolkit.removeOpenGLContexts(m_toolkit.data);
-            }
             return false;
         }
 
@@ -875,9 +875,6 @@ namespace renderkit {
                 m_log->error() << "RenderManagerOpenGL::UpdateDistortionMesh: Could "
                                   "not create mesh "
                                << "for eye " << eye;
-                if (m_toolkit.removeOpenGLContexts) {
-                  m_toolkit.removeOpenGLContexts(m_toolkit.data);
-                }
                 return false;
             }
 
