@@ -193,7 +193,7 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND GLEW_FOUND)
 	#-----------------------------------------------------------------------------
 	# OpenGL test program using the OpenGL Core profile that renders lots of polygons
 	add_executable(RenderManagerOpenGLHighPolyTest RenderManagerOpenGLHighPolyTest.cpp)
-	target_link_libraries(RenderManagerOpenGLHighPolyTest PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
+	target_link_libraries(RenderManagerOpenGLHighPolyTest PRIVATE vendored-vrpn osvrRM::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
   target_compile_features(RenderManagerOpenGLHighPolyTest PRIVATE cxx_range_for)
 	if(OSVRRM_INSTALL_EXAMPLES)
 		install(TARGETS
