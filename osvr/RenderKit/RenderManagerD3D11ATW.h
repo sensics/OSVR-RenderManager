@@ -189,6 +189,15 @@ namespace osvr {
                 return ret;
             }
 
+            // Calls the wrapped RenderManager's GetTimingInfo() call so that
+            // the application can find out the frame rate info.  The other
+            // entries will not be as useful, given that ATW is being used to
+            // interpolate, but they are also returned.
+            bool OSVR_RENDERMANAGER_EXPORT
+              GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override {
+                return mRenderManager->GetTimingInfo(whichEye, info);
+              };
+
         protected:
 
           bool PresentRenderBuffersInternal(const std::vector<RenderBuffer>& renderBuffers,
