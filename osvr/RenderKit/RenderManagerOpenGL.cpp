@@ -554,9 +554,16 @@ namespace renderkit {
 
           // For now, append the display ID to the title.
           /// @todo Make a different title for each window in the config file
+          ReleaseContextParams(pC); // @todo Remove when there is one per display
           char displayId = '0' + static_cast<int>(display);
           std::string windowTitle = p.windowTitle + displayId;
-          pC.windowTitle = windowTitle.c_str();
+          std::unique_ptr<char> title(new char[windowTitle.size() + 1]);
+          // Note: This will not cause a constraint violation because we've
+          // satisfied all of the constraints, so we don't need to wrap it in
+          // a handler.
+          strncpy_s(title.get(), windowTitle.size() + 1,
+            windowTitle.c_str(), windowTitle.size() + 1);
+          pC.windowTitle = title.get();
 
           // For now, move the X position of the second display to the
           // right of the entire display for the left one.

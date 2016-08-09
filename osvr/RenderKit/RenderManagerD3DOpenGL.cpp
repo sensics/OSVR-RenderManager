@@ -117,6 +117,7 @@ namespace renderkit {
                               "context";
             return ret;
         }
+        ReleaseContextParams(pC);
         glewExperimental = true; // Needed for core profile
         if (glewInit() != GLEW_OK) {
           if (m_toolkit.removeOpenGLContexts) {
