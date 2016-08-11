@@ -1037,10 +1037,10 @@ namespace renderkit {
         // rendering presentation, we need to make sure that rendering has
         // finished before moving on to the steps that follow.  This
         // includes:
-        //    Direct Rendering with vsync or app-blocking vsync
-        //    Time warp with a specific delay
-        if ((m_params.m_maxMSBeforeVsyncTimeWarp) ||
-            (m_params.m_directMode &&
+        //    Direct Rendering with vsync or app-blocking vsync.
+        // It does not include:
+        //    Time-warp with maxMsBefore, since we'll only be closer when done
+        if ((m_params.m_directMode &&
             (m_params.m_verticalSync || m_params.m_verticalSyncBlocksRendering))) {
 
           if (m_completionQuery) {
