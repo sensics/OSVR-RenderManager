@@ -648,7 +648,7 @@ void DrawWorld(
 
 void Usage(std::string name) {
   std::cerr << "Usage: " << name << " [TrianglesPerSide]" << std::endl;
-  std::cerr << "       Default triangles per side = 1e3" << std::endl;
+  std::cerr << "       Default triangles per cube face = 1e3" << std::endl;
 
   exit(-1);
 }
@@ -677,6 +677,8 @@ int main(int argc, char* argv[]) {
     size_t triangles = static_cast<size_t>(
       trianglesPerSide * 6);
     roomCube = new MeshCube(5.0, triangles);
+    std::cout << "Rendering " << trianglesPerSide << " triangles per cube face" << std::endl;
+    std::cout << "Rendering " << triangles << " triangles total" << std::endl;
 
     // Get an OSVR client context to use to access the devices
     // that we need.
