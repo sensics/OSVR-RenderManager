@@ -61,7 +61,7 @@
 			"timeWarp": {
 				"enabled": true,
 				"asynchronous": true,
-				"maxMsBeforeVSync": 5
+				"maxMsBeforeVSync": 0
 			}
 		}
 	},
