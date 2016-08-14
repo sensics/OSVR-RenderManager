@@ -215,7 +215,6 @@ int main(int argc, char* argv[]) {
         (openResults.status == OSVR_OPEN_STATUS_FAILURE)) {
 
         std::cerr << "Could not open display" << std::endl;
-        delete render;
         return 2;
     }
 
