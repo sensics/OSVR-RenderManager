@@ -30,7 +30,7 @@ Sensics, Inc.
 #include "RenderManagerOpenGLVersion.h"
 #include "RenderManagerOpenGLC.h"
 
-#ifdef _WIN32
+#if defined(OSVR_WINDOWS)
 #include <windows.h>
 #endif
 
@@ -230,8 +230,14 @@ namespace renderkit {
           // Note: This will not cause a constraint violation because we've
           // satisfied all of the constraints, so we don't need to wrap it in
           // a handler.
+#if defined(OSVR_WINDOWS)
           strncpy_s(title, contextParams.windowTitle.size() + 1,
             contextParams.windowTitle.c_str(), contextParams.windowTitle.size() + 1);
+#else
+          strncpy(title, contextParams.windowTitle.c_str(),
+            contextParams.windowTitle.size());
+          title[contextParams.windowTitle.size()] = '\0';
+#endif
           contextParamsOut.windowTitle = title;
           contextParamsOut.fullScreen = contextParams.fullScreen;
           contextParamsOut.width = contextParams.width;
