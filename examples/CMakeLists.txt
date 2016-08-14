@@ -119,22 +119,39 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND)
 	target_include_directories(convenience_gldeps INTERFACE ${OPENGL_INCLUDE_DIRS})
 
 if (SDL2_FOUND)
-    #-----------------------------------------------------------------------------
-    # OpenGL Example program using the OpenGL Core profile and a shared context
-    add_executable(RenderManagerOpenGLSharedContextExample RenderManagerOpenGLSharedContextExample.cpp)
-    target_link_libraries(RenderManagerOpenGLSharedContextExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
-    target_compile_features(RenderManagerOpenGLSharedContextExample PRIVATE cxx_range_for)
-    if(OSVRRM_INSTALL_EXAMPLES)
-      install(TARGETS
-              RenderManagerOpenGLSharedContextExample
-              RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    endif()
+  #-----------------------------------------------------------------------------
+  # OpenGL Example program using the OpenGL Core profile and a shared context
+  add_executable(RenderManagerOpenGLSharedContextExample RenderManagerOpenGLSharedContextExample.cpp)
+  target_link_libraries(RenderManagerOpenGLSharedContextExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
+  target_compile_features(RenderManagerOpenGLSharedContextExample PRIVATE cxx_range_for)
+  if(OSVRRM_INSTALL_EXAMPLES)
+    install(TARGETS
+            RenderManagerOpenGLSharedContextExample
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
 
 	#-----------------------------------------------------------------------------
 	# OpenGL Example program that uses the C API and a shared context.
 	add_executable(RenderManagerOpenGLCAPISharedContextExample RenderManagerOpenGLCAPISharedContextExample.cpp)
 	target_link_libraries(RenderManagerOpenGLCAPISharedContextExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
   target_compile_features(RenderManagerOpenGLCAPISharedContextExample PRIVATE cxx_range_for)
+  if(OSVRRM_INSTALL_EXAMPLES)
+    install(TARGETS
+            RenderManagerOpenGLCAPISharedContextExample
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
+
+ 	#-----------------------------------------------------------------------------
+	# OpenGL Example program that uses the Get()/Present() interface, not Render().
+	add_executable(RenderManagerOpenGLSharedContextPresentExample RenderManagerOpenGLSharedContextPresentExample.cpp)
+	target_link_libraries(RenderManagerOpenGLSharedContextPresentExample PRIVATE osvrRM::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
+  target_compile_features(RenderManagerOpenGLSharedContextPresentExample PRIVATE cxx_range_for)
+  if(OSVRRM_INSTALL_EXAMPLES)
+    install(TARGETS
+            RenderManagerOpenGLSharedContextPresentExample
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
+
 endif()
 
 
