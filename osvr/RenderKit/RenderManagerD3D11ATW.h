@@ -424,7 +424,9 @@ namespace osvr {
                             // Send the rendered results to the screen, using the
                             // RenderInfo that was handed to us by the client the last
                             // time they gave us some images.
-                            if (!mRenderManager->PresentRenderBuffers(
+							struct timeval beforePresent;
+							vrpn_gettimeofday(&beforePresent, nullptr);
+							if (!mRenderManager->PresentRenderBuffers(
                                 atwRenderBuffers,
                                 mNextFrameInfo.renderInfo,
                                 mNextFrameInfo.renderParams,
@@ -446,6 +448,9 @@ namespace osvr {
                                   " 1+ frame at " << iteration <<
                                   ", expected interval " << expectedFrameInterval * 1e3
                                   << "ms but got " << frameInterval * 1e3;
+								m_log->info() << "  (PresentRenderBuffers took "
+									<< vrpn_TimevalDurationSeconds(now, beforePresent) * 1e3
+									<< "ms)";
                               }
                             }
                             lastFrameTime = now;
