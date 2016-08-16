@@ -215,12 +215,14 @@ int main(int argc, char* argv[]) {
         (openResults.status == OSVR_OPEN_STATUS_FAILURE)) {
 
         std::cerr << "Could not open display" << std::endl;
-        return 2;
+		osvrDestroyRenderManager(render);
+		return 2;
     }
 
     // Set up the rendering state we need.
     if (!SetupRendering()) {
-        return 3;
+		osvrDestroyRenderManager(render);
+		return 3;
     }
 
     // Do a call to get the information we need to construct our
@@ -233,7 +235,8 @@ int main(int argc, char* argv[]) {
     if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
         render, renderParams, &renderInfoCollection))) {
         std::cerr << "Could not get render info" << std::endl;
-        return 5;
+		osvrDestroyRenderManager(render);
+		return 5;
     }
 
     OSVR_RenderInfoCount numRenderInfo;
@@ -252,7 +255,8 @@ int main(int argc, char* argv[]) {
     if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartRegisterRenderBuffers(
         &registerBufferState))) {
         std::cerr << "Could not start registering render buffers" << std::endl;
-        return -4;
+		osvrDestroyRenderManager(render);
+		return -4;
     }
 
     for (size_t i = 0; i < numRenderInfo; i++) {
@@ -262,7 +266,8 @@ int main(int argc, char* argv[]) {
         if (OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionOpenGL(
             renderInfoCollection, i, &renderInfo)) {
             std::cerr << "Could not get render info " << i << std::endl;
-            return 1;
+			osvrDestroyRenderManager(render);
+			return 1;
         }
 
         // Determine the appropriate size for the frame buffer to be used for
@@ -285,7 +290,8 @@ int main(int argc, char* argv[]) {
               != osvrRenderManagerCreateColorBufferOpenGL(width, height, GL_RGBA,
               &colorBufferName)) {
             std::cerr << "Could not create color buffer." << std::endl;
-            return -5;
+			osvrDestroyRenderManager(render);
+			return -5;
         }
 
         OSVR_RenderBufferOpenGL rb;
@@ -297,7 +303,8 @@ int main(int argc, char* argv[]) {
         if (OSVR_RETURN_SUCCESS
             != osvrRenderManagerCreateDepthBufferOpenGL(width, height, &depthrenderbuffer)) {
             std::cerr << "Could not create depth buffer." << std::endl;
-            return -5;
+			osvrDestroyRenderManager(render);
+			return -5;
         }
         rb.depthStencilBufferName = depthrenderbuffer;
         depthBuffers.push_back(depthrenderbuffer);
@@ -305,7 +312,8 @@ int main(int argc, char* argv[]) {
         if (OSVR_RETURN_SUCCESS != osvrRenderManagerRegisterRenderBufferOpenGL(
             registerBufferState, rb)) {
             std::cerr << "Could not register render buffer " << i << std::endl;
-            return -5;
+			osvrDestroyRenderManager(render);
+			return -5;
         }
     }
 
@@ -330,7 +338,8 @@ int main(int argc, char* argv[]) {
         if (OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
             render, renderParams, &renderInfoCollection)) {
             std::cerr << "Could not get render info in the main loop" << std::endl;
-            return -1;
+			osvrDestroyRenderManager(render);
+			return -1;
         }
 
         osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
@@ -350,7 +359,8 @@ int main(int argc, char* argv[]) {
         if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
             &presentState))) {
             std::cerr << "Could not start presenting render buffers" << std::endl;
-            return 201;
+			osvrDestroyRenderManager(render);
+			return 201;
         }
         OSVR_ViewportDescription fullView;
         fullView.left = fullView.lower = 0;
@@ -363,7 +373,8 @@ int main(int argc, char* argv[]) {
             if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferOpenGL(
                 presentState, colorBuffers[i], renderInfo, fullView))) {
                 std::cerr << "Could not present render buffer " << i << std::endl;
-                return 202;
+				osvrDestroyRenderManager(render);
+				return 202;
             }
         }
 
