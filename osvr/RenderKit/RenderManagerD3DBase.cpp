@@ -1041,8 +1041,9 @@ namespace renderkit {
         //    Direct Rendering with vsync or app-blocking vsync.
         // It does not include:
         //    Time-warp with maxMsBefore, since we'll only be closer when done
-        if ((m_params.m_directMode &&
-            (m_params.m_verticalSync || m_params.m_verticalSyncBlocksRendering))) {
+        //    Asynchronous time warp, since that wait is handled in that class.
+        if (m_params.m_directMode && !m_params.m_asynchronousTimeWarp &&
+            (m_params.m_verticalSync || m_params.m_verticalSyncBlocksRendering)) {
 
           if (m_completionQuery) {
             m_D3D11Context->End(m_completionQuery);
