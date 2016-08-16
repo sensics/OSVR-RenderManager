@@ -198,9 +198,6 @@ namespace renderkit {
 
         friend class RenderManagerD3D11OpenGL;
         friend class RenderManagerD3D11ATW;
-      private:
-        /// Logger to use for writing information, warning, and errors.
-        util::log::LoggerPtr m_log;
     };
 
 } // namespace renderkit

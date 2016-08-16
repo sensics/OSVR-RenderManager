@@ -145,9 +145,6 @@ namespace renderkit {
                             const std::string& renderLibraryName,
                             GraphicsLibrary graphicsLibrary);
 
-      private:
-        /// Logger to use for writing information, warning, and errors.
-        util::log::LoggerPtr m_log;
     };
 
 } // namespace renderkit

@@ -39,7 +39,7 @@ namespace osvr {
 namespace renderkit {
 
     RenderManagerD3D11::RenderManagerD3D11(OSVR_ClientContext context, ConstructorParameters p)
-        : RenderManagerD3D11Base(context, p), m_log(util::log::make_logger("RenderManagerD3D11")) {}
+        : RenderManagerD3D11Base(context, p) {}
 
     RenderManagerD3D11::~RenderManagerD3D11() {
         for (size_t i = 0; i < m_displays.size(); i++) {
