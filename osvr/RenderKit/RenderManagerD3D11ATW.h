@@ -444,7 +444,7 @@ namespace osvr {
                             if (lastFrameTime.tv_sec != 0) {
                               double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
                               if (frameInterval > expectedFrameInterval * 1.9) {
-                                m_log->error() << "RenderManagerThread::threadFunc(): Missed"
+                                m_log->info() << "RenderManagerThread::threadFunc(): Missed"
                                   " 1+ frame at " << iteration <<
                                   ", expected interval " << expectedFrameInterval * 1e3
                                   << "ms but got " << frameInterval * 1e3;
