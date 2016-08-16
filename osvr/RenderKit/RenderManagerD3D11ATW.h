@@ -88,10 +88,6 @@ namespace osvr {
             /// our buffers over to the ATW thread.
             ID3D11Query* m_completionQuery = nullptr;
 
-          private:
-            /// Logger to use for writing information, warning, and errors.
-            util::log::LoggerPtr m_log;
-
           public:
             /**
             * Construct an D3D ATW wrapper around an existing D3D render
@@ -100,7 +96,7 @@ namespace osvr {
             */
             RenderManagerD3D11ATW(OSVR_ClientContext context, ConstructorParameters p,
                                   RenderManagerD3D11Base* D3DToHarness)
-                : RenderManagerD3D11Base(context, p), m_log(util::log::make_logger("RenderManagerD3D11ATW")) {
+                : RenderManagerD3D11Base(context, p) {
                 mRenderManager.reset(D3DToHarness);
             }
 
@@ -133,7 +129,8 @@ namespace osvr {
                 // but don't open an additional display -- we're
                 // going to pass all display-related things down to
                 // our render thread.
-                if (!SetDeviceAndContext()) {
+				m_log->info() << "RenderManagerD3D11ATW::OpenDisplay: Calling SetDeviceAndContext()";
+				if (!SetDeviceAndContext()) {
                     m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: Could not "
                                       "create device and context";
                     ret.status = OpenStatus::FAILURE;
@@ -148,6 +145,7 @@ namespace osvr {
                   ret.status = OpenStatus::FAILURE;
                   return ret;
                 }
+				m_log->info() << "RenderManagerD3D11ATW::OpenDisplay: Calling harnessed OpenDisplay()";
                 ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
                     m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: Could not "

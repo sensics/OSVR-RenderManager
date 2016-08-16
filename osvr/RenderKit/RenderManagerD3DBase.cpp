@@ -137,7 +137,7 @@ namespace osvr {
 namespace renderkit {
 
     RenderManagerD3D11Base::RenderManagerD3D11Base(OSVR_ClientContext context, ConstructorParameters p)
-        : RenderManager(context, p), m_log(util::log::make_logger("RenderManagerD3D11Base")) {
+        : RenderManager(context, p) {
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.
@@ -206,6 +206,7 @@ namespace renderkit {
             m_doingOkay = false;
             return false;
         }
+		m_log->info("RenderManagerD3D11Base::SetDeviceAndContext: Created D3D11 device");
       }
 
       //======================================================

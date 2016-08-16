@@ -41,7 +41,7 @@ namespace renderkit {
         ConstructorParameters p,
         std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness)
         : RenderManagerOpenGL(context, p),
-          m_D3D11Renderer(std::move(D3DToHarness)), m_log(util::log::make_logger("RenderManagerD3D11OpenGL")) {
+          m_D3D11Renderer(std::move(D3DToHarness)) {
 
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order

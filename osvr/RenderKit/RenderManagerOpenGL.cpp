@@ -355,7 +355,7 @@ namespace renderkit {
     }
 
     RenderManagerOpenGL::RenderManagerOpenGL(OSVR_ClientContext context, ConstructorParameters p)
-        : RenderManager(context, p), m_log(util::log::make_logger("RenderManagerOpenGL")) {
+        : RenderManager(context, p) {
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.
