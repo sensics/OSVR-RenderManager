@@ -711,6 +711,20 @@ namespace renderkit {
         const std::vector<OSVR_ViewportDescription>&
                                        normalizedCroppingViewports,
         bool flipInY) {
+
+        // Used to time various portions of the code
+        struct timeval start, stop;
+        struct timeval allStart, allStop;
+        timePresentRenderBuffers = 0;
+        timePresentFrameInitilize = 0;
+        timeWaitForSync = 0;
+        timePresentDisplayInitialize = 0;
+        timePresentEye = 0;
+        timePresentDisplayFinalize = 0;
+        timePresentFrameFinalize = 0;
+
+        vrpn_gettimeofday(&allStart, nullptr);
+
         // Make sure we're doing okay.
         if (!doingOkay()) {
             m_log->error() << "RenderManager::PresentRenderBuffers(): Display not opened.";
@@ -725,11 +739,14 @@ namespace renderkit {
         }
 
         // Initialize the presentation for the whole frame.
+        vrpn_gettimeofday(&start, nullptr);
         if (!PresentFrameInitialize()) {
             m_log->error() << "RenderManager::PresentRenderBuffers(): "
                               "PresentFrameInitialize() failed.";
             return false;
         }
+        vrpn_gettimeofday(&stop, nullptr);
+        timePresentFrameInitilize += vrpn_TimevalDurationSeconds(stop, start);
 
         // If we're doing Time Warp and we have a positive maximum
         // milliseconds until vsync, and we are able to read the timing
@@ -737,6 +754,7 @@ namespace renderkit {
         // are, then we continue to update our context state until we're
         // within the required threshold.
 
+        vrpn_gettimeofday(&start, nullptr);
         if (m_params.m_enableTimeWarp &&
             (m_params.m_maxMSBeforeVsyncTimeWarp > 0)) {
             int count = 0;
@@ -782,6 +800,8 @@ namespace renderkit {
                 ++count;
             } while (!proceed);
         }
+        vrpn_gettimeofday(&stop, nullptr);
+        timeWaitForSync += vrpn_TimevalDurationSeconds(stop, start);
 
         // Use the current and previous parameters to construct info
         // needed to perform Time Warp.
@@ -802,11 +822,14 @@ namespace renderkit {
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
             // Set up the appropriate display before setting up its eye(s).
+            vrpn_gettimeofday(&start, nullptr);
             if (!PresentDisplayInitialize(display)) {
                 m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                   "PresentDisplayInitialize() failed.";
                 return false;
             }
+            vrpn_gettimeofday(&stop, nullptr);
+            timePresentDisplayInitialize += vrpn_TimevalDurationSeconds(stop, start);
 
             // Render for each eye, setting up the appropriate projection
             // and viewport.
@@ -895,30 +918,42 @@ namespace renderkit {
                 }
                 p.m_normalizedCroppingViewport = bufferCrop;
 
+                vrpn_gettimeofday(&start, nullptr);
                 if (!PresentEye(p)) {
                     m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                       "PresentEye failed.";
                     return false;
                 }
+                vrpn_gettimeofday(&stop, nullptr);
+                timePresentEye += vrpn_TimevalDurationSeconds(stop, start);
             }
 
             // We're done with this display.
+            vrpn_gettimeofday(&start, nullptr);
             if (!PresentDisplayFinalize(display)) {
                 m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                   "PresentDisplayFinalize failed.";
                 return false;
             }
+            vrpn_gettimeofday(&stop, nullptr);
+            timePresentDisplayFinalize += vrpn_TimevalDurationSeconds(stop, start);
         }
 
         // Finalize the rendering for the whole frame.
+        vrpn_gettimeofday(&start, nullptr);
         if (!PresentFrameFinalize()) {
             m_log->error() << "RenderManager::PresentRenderBuffers(): "
                               "PresentFrameFinalize failed.";
             return false;
         }
+        vrpn_gettimeofday(&stop, nullptr);
+        timePresentFrameFinalize += vrpn_TimevalDurationSeconds(stop, start);
 
         // Keep track of the timing information.
         /// @todo
+
+        vrpn_gettimeofday(&allStop, nullptr);
+        timePresentRenderBuffers = vrpn_TimevalDurationSeconds(allStop, allStart);
 
         return true;
     }

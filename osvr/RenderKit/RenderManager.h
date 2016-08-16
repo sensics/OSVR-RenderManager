@@ -852,6 +852,16 @@ namespace renderkit {
         RenderParams m_renderParamsForRender;
         std::vector<RenderInfo> m_renderInfoForRender;
 
+        /// Timing information on how long each portion of the previous
+        /// frames' PresentRenderBuffersInternal() took.
+        double timePresentRenderBuffers = 0;
+        double timePresentFrameInitilize = 0;
+        double timeWaitForSync = 0;
+        double timePresentDisplayInitialize = 0;
+        double timePresentEye = 0;
+        double timePresentDisplayFinalize = 0;
+        double timePresentFrameFinalize = 0;
+
         /// NOTE: The base-class implementation constructs a texture matrix
         /// that is apropriate for use in OpenGL.  Other rendering libraries
         /// that
