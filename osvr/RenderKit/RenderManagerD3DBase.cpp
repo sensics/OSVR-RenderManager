@@ -201,11 +201,12 @@ namespace renderkit {
           D3D11_SDK_VERSION, &m_D3D11device, &foundAPI,
           &m_D3D11Context);
         if (FAILED(hr)) {
-            m_log->error() << "RenderManagerD3D11Base::SetDevice: Could not "
+            m_log->error() << "RenderManagerD3D11Base::SetDeviceAndContext: Could not "
                               "create D3D11 device";
             m_doingOkay = false;
             return false;
         }
+		m_log->info("RenderManagerD3D11Base::SetDeviceAndContext: Created D3D device");
       }
 
       //======================================================
