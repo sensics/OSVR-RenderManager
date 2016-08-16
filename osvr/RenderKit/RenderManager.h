@@ -105,19 +105,21 @@ namespace renderkit {
             OpenGL; //< #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
     };
 
-    /// @brief Returns timing information about the rendering system
+    /// @brief Timing information about the rendering system
     ///
     /// Structure that holds timing information about the system.
     /// Each of these times will have the value (0,0) if they are
     /// not available from a particular RenderManager.
     typedef struct {
-        OSVR_TimeValue
-            hardwareDisplayInterval; //< Time between refresh of display device
-        OSVR_TimeValue timeSincelastVerticalRetrace; //< Time since the last
-        // retrace ended (the last presentation)
-        OSVR_TimeValue timeUntilNextPresentRequired; //< How long until must
-        // send images to RenderManager to display before the next frame is
-        // presented.
+        /// Time between refresh of display device
+        OSVR_TimeValue hardwareDisplayInterval;
+
+        /// Time since the last retrace ended (the last presentation)
+        OSVR_TimeValue timeSincelastVerticalRetrace;
+
+        /// How long until the app must send images to RenderManager
+        /// to display before the next frame is presented.
+        OSVR_TimeValue timeUntilNextPresentRequired;
     } RenderTimingInfo;
 
     /// @brief Simple structure for representing a float based RGB color
@@ -499,7 +501,7 @@ namespace renderkit {
           PresentSolidColor(const RGBColorf &color);
 
         ///-------------------------------------------------------------
-        /// @brief Get rendering-time statistics
+        /// @brief Get rendering-time statistics for upcoming frame
         ///
         /// Provides statistics about when the last frame finished, what
         /// the hardware's frame rate is, what the rendering frame rate is.
@@ -510,11 +512,11 @@ namespace renderkit {
         /// NOTE: Every derived class that can fill in this information should
         /// override this function and do so, returning true.
         virtual bool OSVR_RENDERMANAGER_EXPORT GetTimingInfo(
-            size_t whichEye //!< Each eye has a potentially different timing
-            ,
-            RenderTimingInfo& info //!< Info that is returned
+                // @todo Each display has a potentially different timing
+                size_t whichEye, //!< Each eye has a potentially different timing
+                RenderTimingInfo& info //!< Info that is returned
             ) {
-            return false;
+                return false;
         }
 
         ///-------------------------------------------------------------
