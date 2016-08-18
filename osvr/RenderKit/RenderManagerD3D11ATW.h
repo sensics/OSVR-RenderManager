@@ -84,10 +84,6 @@ namespace osvr {
             bool mStarted = false;
             bool mFirstFramePresented = false;
 
-            /// Used to keep track of when rendering has completed so we can hand
-            /// our buffers over to the ATW thread.
-            ID3D11Query* m_completionQuery = nullptr;
-
           public:
             /**
             * Construct an D3D ATW wrapper around an existing D3D render
@@ -113,10 +109,6 @@ namespace osvr {
                   if (i->second.textureCopy != nullptr) {
                     i->second.textureCopy->Release();
                   }
-                }
-                if (m_completionQuery) {
-                  m_completionQuery->Release();
-                  m_completionQuery = nullptr;
                 }
             }
 
@@ -158,21 +150,6 @@ namespace osvr {
                 // use to do its graphics state set-up.
                 m_library.D3D11->device = m_D3D11device;
                 m_library.D3D11->context = m_D3D11Context;
-
-                //======================================================
-                // Construct our completion query that will be used to
-                // wait for rendering completion.
-                {
-                  D3D11_QUERY_DESC desc = {};
-                  desc.Query = D3D11_QUERY_EVENT;
-                  HRESULT hr = m_D3D11device->CreateQuery(&desc, &m_completionQuery);
-                  if (FAILED(hr)) {
-                      m_log->error() << "RenderManagerD3D11ATW::OpenDisplay: "
-                                        "Warning: Failed to create completion event query: code "
-                                     << hr;
-                      m_completionQuery = nullptr;
-                  }
-                }
 
                 //======================================================
                 // Start our ATW sub-thread.
@@ -217,16 +194,7 @@ namespace osvr {
                   // rendering will get moving right away.
                   // @todo Enable overlapped rendering on one frame while presentation
                   // of the previous by doing this waiting on another thread.
-                  if (m_completionQuery) {
-                    m_D3D11Context->End(m_completionQuery);
-                    m_D3D11Context->Flush();
-                    while (S_FALSE ==
-                      m_D3D11Context->GetData(m_completionQuery, nullptr, 0, 0)) {
-                      // We don't want to miss the completion because Windows has
-                      // swapped us out, so we busy-wait here on the completion
-                      // event.
-                    }
-                  }
+                  WaitForRenderCompletion();
 
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
                   // This lock is automatically released when we're done with this function.
@@ -424,7 +392,7 @@ namespace osvr {
                             // Send the rendered results to the screen, using the
                             // RenderInfo that was handed to us by the client the last
                             // time they gave us some images.
-							if (!mRenderManager->PresentRenderBuffers(
+                            if (!mRenderManager->PresentRenderBuffers(
                                 atwRenderBuffers,
                                 mNextFrameInfo.renderInfo,
                                 mNextFrameInfo.renderParams,
@@ -443,12 +411,12 @@ namespace osvr {
                               double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
                               if (frameInterval > expectedFrameInterval * 1.9) {
                                 m_log->info() << "RenderManagerThread::threadFunc(): Missed"
-                                  " 1+ frame at " << iteration <<
-                                  ", expected interval " << expectedFrameInterval * 1e3
-                                  << "ms but got " << frameInterval * 1e3;
-								m_log->info() << "  (PresentRenderBuffers took "
-									<< mRenderManager->timePresentRenderBuffers * 1e3
-									<< "ms)";
+                                    " 1+ frame at " << iteration <<
+                                    ", expected interval " << expectedFrameInterval * 1e3
+                                    << "ms but got " << frameInterval * 1e3;
+                                m_log->info() << "  (PresentRenderBuffers took "
+                                    << mRenderManager->timePresentRenderBuffers * 1e3
+                                    << "ms)";
                                 m_log->info() << "  (FrameInit "
                                     << mRenderManager->timePresentFrameInitilize * 1e3
                                     << ", WaitForSync "
