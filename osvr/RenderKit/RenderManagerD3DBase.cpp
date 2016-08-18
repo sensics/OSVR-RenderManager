@@ -37,6 +37,7 @@ Sensics, Inc.
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <vrpn_Shared.h>
 
 static const char* distortionVertexShader =
     "cbuffer cbPerObject"
@@ -206,7 +207,7 @@ namespace renderkit {
             m_doingOkay = false;
             return false;
         }
-	m_log->info("RenderManagerD3D11Base::SetDeviceAndContext: Created D3D11 device");
+    	m_log->info("RenderManagerD3D11Base::SetDeviceAndContext: Created D3D11 device");
       }
 
       //======================================================
@@ -1015,6 +1016,25 @@ namespace renderkit {
         return ret;
     }
 
+    bool RenderManagerD3D11Base::WaitForRenderCompletion() {
+        if (!m_completionQuery) {
+            // We can't do this because we don't have an object to
+            // wait on.
+            return false;
+        }
+
+        m_D3D11Context->End(m_completionQuery);
+        m_D3D11Context->Flush();
+        while (S_FALSE ==
+            m_D3D11Context->GetData(m_completionQuery, nullptr, 0, 0)) {
+            // We don't want to miss the completion because Windows has
+            // swapped us out, so we busy-wait here on the completion
+            // event.
+        }
+
+        return true;
+    }
+
     bool RenderManagerD3D11Base::RenderDisplayFinalize(size_t display) {
         return PresentDisplayFinalize(display);
     }
@@ -1022,41 +1042,6 @@ namespace renderkit {
     bool RenderManagerD3D11Base::RenderFrameFinalize() {
         return PresentRenderBuffersInternal(
             m_renderBuffers, m_renderInfoForRender, m_renderParamsForRender);
-    }
-
-    bool RenderManagerD3D11Base::PresentFrameInitialize() {
-        // @todo Consider making this into a WaitForRenderingCompletion() function
-        // derived from the base class and require implementation in all
-        // classes, putting the appropriate thing into each one.  Call this
-        // function in the base class, putting the guards below into it rather
-        // than here.  OpenGL will do glFinish().
-        // ISSUE: We don't actually want OpenGL to do this, because we've
-        // wrapped its DirectRender around D3D on Windows.  Maybe we need
-        // to leave thinks funky like this, but think about it some more.
-
-        // If we're doing anything that requires careful timing of the
-        // rendering presentation, we need to make sure that rendering has
-        // finished before moving on to the steps that follow.  This
-        // includes:
-        //    Direct Rendering with vsync or app-blocking vsync.
-        // It does not include:
-        //    Time-warp with maxMsBefore, since we'll only be closer when done
-        if ((m_params.m_directMode &&
-            (m_params.m_verticalSync || m_params.m_verticalSyncBlocksRendering))) {
-
-          if (m_completionQuery) {
-            m_D3D11Context->End(m_completionQuery);
-            m_D3D11Context->Flush();
-            while (S_FALSE ==
-              m_D3D11Context->GetData(m_completionQuery, nullptr, 0, 0)) {
-              // We don't want to miss the completion because Windows has
-              // swapped us out, so we busy-wait here on the completion
-              // event.
-            }
-          }
-        }
-
-        return true;
     }
 
     bool RenderManagerD3D11Base::PresentEye(PresentEyeParameters params) {

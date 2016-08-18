@@ -168,6 +168,9 @@ namespace renderkit {
                                      std::vector<RenderInfo> currentRenderInfo,
                                      float assumedDepth = 2.0f) override;
 
+        /// Wait for rendering completion on our D3D11 context and device.
+        virtual bool WaitForRenderCompletion();
+
         //===================================================================
         // Overloaded render functions from the base class.  Not all of the
         // ones that need overloading are here; derived classes must decide
@@ -189,7 +192,7 @@ namespace renderkit {
         bool RenderDisplayFinalize(size_t display) override;
         bool RenderFrameFinalize() override;
 
-        bool PresentFrameInitialize() override;
+        bool PresentFrameInitialize() override { return true; }
         bool PresentEye(PresentEyeParameters params) override;
 
         /// Used to keep track of when rendering has completed so we can hand
