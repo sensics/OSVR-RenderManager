@@ -79,6 +79,8 @@ Russ Taylor <russ@sensics.com>
 #include <json/value.h>
 #include <json/reader.h>
 
+#include <vrpn_Shared.h>
+
 // Standard includes
 #include <chrono>
 #include <thread>
