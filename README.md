@@ -6,7 +6,7 @@ This repository holds the open-source code for the OSVR RenderManager developed 
 Sensics.  It is licensed under the Apache-2 license.  
 
 RenderManager is an API for rendering and presenting graphics for virtual reality. There is a detailed description below, but in short, it is a codebase that contains:
-- Rendering code that performs time-warp, distortion correction, (per-eye) client side prediction, for multiple graphics APIs
+- Rendering code that performs time-warp, distortion correction, (per-eye) client-side prediction, for multiple graphics APIs
 - Distortion mesh creation from a variety of distortion descriptions
 - An output backend for rendering in extended or direct mode on a range of platforms and drivers
 
@@ -81,7 +81,11 @@ full rate even when the application renders too slowly to present a new image ea
 Applications that want to avoid an extra copy of their render buffer to the
 ATW thread can do internal double-buffered rendering and present alternate sets
 of buffers.  An example D3D11 program doing this ATW double-buffered rendering
-is available in the examples directory.
+is available in the examples directory.  NOTE: As of 8/18/2016, pre-emptive GPU
+scheduling is only available on nVidia Pascal-series cards (eg. GeForce 1080), and
+only with GeForce driver version 372.54 or later.  In other cases, ATW cannot
+pre-empt a long-running render thread so is useful only for cases where the
+application renders infrequently by with low GPU load (such as the example programs).
 
 * **Client-side prediction:** When used with trackers that report velocity or
 angular velocity, RenderManager predicts the time each eye will be rendered based
@@ -109,7 +113,7 @@ non-DirectMode operation, these show up within the operating system's virtual sc
 be either full-screen or windowed.  For DirectMode operation, they provide full-
 screen operation on one or more displays.
 
-* **OverFill & Oversampling:** To enable time warp to work, the rendered view must
+* **OverFill & Oversampling:** To avoid borders during time warp, the rendered view must
 be larger than the image to be presented on a given frame.  This provides a border
 around the image that can be pulled in as the user's viewport rotates.  Also, the
 distortion caused by lenses in VR systems can cause a magnification of the screen
