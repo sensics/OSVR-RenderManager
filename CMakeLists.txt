@@ -385,7 +385,9 @@ endif()
 # The goal with this variable is so that the same CMakeLists file that is used to build
 # the examples in-tree can be shipped to build the examples out-of-tree.
 set(OSVRRM_INSTALL_EXAMPLES ON)
-add_subdirectory(examples)
+if(NOT ANDROID)
+	add_subdirectory(examples)
+endif()
 
 install(TARGETS
 	osvrRenderManager
@@ -516,4 +518,3 @@ if(BUILD_TESTS)
 	set(HEADER_BASE "${CMAKE_CURRENT_SOURCE_DIR}/osvr")
 	add_subdirectory(tests)
 endif()
-

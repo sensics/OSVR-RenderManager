@@ -69,6 +69,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/ClientKit/ParametersC.h>
 #include <osvr/Util/QuatlibInteropC.h>
 #include <osvr/Util/Logger.h>
+#include <vrpn_Shared.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
