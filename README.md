@@ -36,8 +36,9 @@ git clone --recursive git@github.com:sensics/OSVR-RenderManager.git
 This code is built using CMake, and as of 2/23/2016 compiled on Windows, Linux
 (tested on Ubuntu) and Mac-OSX.  It makes use of SDL2 to construct windows and
 GLEW to set OpenGL settings, so install those packages before compiling.  It
-also requires Eigen3, which is built as part of OSVR or can be installed
-separately.  The Linux and Mac ports only support OpenGL and
+also requires Eigen3, which is built as part of OSVR (so you can manually point
+CMake at its build) or can be installed separately (*sudo apt-get install
+libeigen3-dev* on Ubuntu, for example).  The Linux and Mac ports only support OpenGL and
 do not yet support direct-to-display (DirectMode) rendering.  The Android compile
 is done using the [OSVR-Android-Build](https://github.com/OSVR/OSVR-Android-Build)
 project.
