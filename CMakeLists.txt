@@ -175,7 +175,7 @@ if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND (SDL2_FOUND OR AND
 	message(STATUS " - OpenGL support: enabled")
 	set(RM_USE_OPENGL TRUE)
 	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
-    if (OPENGLES2_FOUND AND ANDROID)
+	if (OPENGLES2_FOUND AND ANDROID)
 		message(STATUS " - OpenGLES2 support: enabled")
 		set(RM_USE_OPENGLES20 TRUE)
 	endif()
@@ -363,7 +363,7 @@ target_link_libraries(osvrRenderManager
 	PRIVATE
 	JsonCpp::JsonCpp
 	osvr::osvrClient
-  osvr::osvrUtil
+	osvr::osvrUtil
 	vendored-vrpn
 	vendored-quat)
 osvrrm_copy_deps(osvr::osvrClientKit osvr::osvrClient osvr::osvrCommon osvr::osvrUtil)
@@ -467,8 +467,8 @@ generate_compatibility_version_file(
 export(TARGETS
 	osvrRenderManager
 	${OSVR_RENDERMANAGER_EXPORTED_TARGETS}
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerTargets.cmake"
-    NAMESPACE osvrRenderManager::
+	FILE "${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerTargets.cmake"
+	NAMESPACE osvrRenderManager::
 )
 
 # Register the current build dir as a package search location
@@ -489,10 +489,10 @@ if(WIN32)
 endif()
 
 install(EXPORT osvrRenderManagerTargets
-    FILE osvrRenderManagerTargets.cmake
-    NAMESPACE osvrRenderManager::
-    DESTINATION ${CONFIG_INSTALL_DIR}
-    COMPONENT Devel)
+	FILE osvrRenderManagerTargets.cmake
+	NAMESPACE osvrRenderManager::
+	DESTINATION ${CONFIG_INSTALL_DIR}
+	COMPONENT Devel)
 
 install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
@@ -516,4 +516,3 @@ if(BUILD_TESTS)
 	set(HEADER_BASE "${CMAKE_CURRENT_SOURCE_DIR}/osvr")
 	add_subdirectory(tests)
 endif()
-
