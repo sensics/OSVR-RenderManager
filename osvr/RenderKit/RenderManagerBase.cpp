@@ -30,6 +30,8 @@ Russ Taylor <russ@sensics.com>
 #include "DistortionParameters.h"
 #include "UnstructuredMeshInterpolator.h"
 #include "osvr_display_configuration.h"
+#include "DirectModeVendors.h"
+#include "CleanPNPIDString.h"
 
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
@@ -2093,31 +2095,33 @@ namespace renderkit {
         // Determine the appropriate display VendorIds based on the name of the
         // display device.  Don't push any back if we don't recognize the vendor
         // name.
-        if (p.m_displayConfiguration->getVendor() == "Oculus") {
-            p.addCandidatePNPID("OVR"); // 0xD23E
-        } else if (p.m_displayConfiguration->getVendor() == "OSVR" ||
-                   p.m_displayConfiguration->getVendor() == "Sensics") {
-            // There are three possible vendor IDs for OSVR.  We push them all
-            // here.
-            p.addCandidatePNPID("SVR"); // 0xD24E
-            p.addCandidatePNPID("SEN"); // 0xAE4C
-            p.addCandidatePNPID("AUO"); // 0xAF06 ?
-        } else if (p.m_displayConfiguration->getVendor() == "Dell") {
-            p.addCandidatePNPID("DEL"); // 0xAC10 - for testing
-        } else if (p.m_displayConfiguration->getVendor() == "VVR") {
-            p.addCandidatePNPID("VVR"); // 0xD25A
-        } else if (p.m_displayConfiguration->getVendor() == "Vuzix") {
-            p.addCandidatePNPID("IWR"); // 0xF226
-        } else if (p.m_displayConfiguration->getVendor() == "HTC") {
-          p.addCandidatePNPID("HVR"); // 0xD222
-        } else if (p.m_displayConfiguration->getVendor() == "AVR") {
-          p.addCandidatePNPID("AVR"); // 0xD206
-        } else if (p.m_displayConfiguration->getVendor() == "VRGate") {
-          p.addCandidatePNPID("VRG"); // 0x475A
-          p.addCandidatePNPID("TSB"); // 0x6252
-        } else if (p.m_displayConfiguration->getVendor() == "Vrvana") {
-          p.addCandidatePNPID("VRV"); // 0x565A
+        {
+            auto& vendors = getDefaultVendors();
+            const auto vendorFromDescriptor = p.m_displayConfiguration->getVendor();
+            bool found = false;
+            m_log->info() << "Display descriptor reports vendor as " << vendorFromDescriptor;
+            for (auto& vendor : vendors) {
+                if (vendor.getDisplayDescriptorVendor() == vendorFromDescriptor) {
+                    m_log->info() << "Adding direct mode candidate PNPID " << vendor.getPNPIDCString()
+                                  << " described as " << vendor.getDescription();
+                    p.addCandidatePNPID(vendor.getPNPIDCString());
+                    found = true;
+                }
+            }
+#ifndef RM_NO_CUSTOM_VENDORS
+            if (!found && vendorFromDescriptor.size() == 3) {
+                // this may be a PNPID itself...
+                auto cleanId = vendorid::cleanPotentialPNPID(vendorFromDescriptor);
+                if (!cleanId.empty()) {
+                    m_log->info()
+                        << "No built-in match found, but vendor could match PNPID format, so adding as a candidate "
+                        << cleanId;
+                    p.addCandidatePNPID(cleanId.c_str());
+                }
+            }
+#endif
         }
+
         p.m_directModeIndex = -1; // -1 means select based on resolution
 
         // Construct the distortion parameters based on the local display
