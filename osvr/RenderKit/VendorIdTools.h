@@ -84,6 +84,16 @@ namespace renderkit {
         /// compared, doesn't decay to a pointer type, but is otherwise the same in size and performance: a std::array
         /// of char with 4 elements (3 non-null and a null terminator)
         using PNPIDNullTerminatedStdArray = std::array<char, 4>;
+
+        /// Create a PNPIDNullTerminatedStdArray given a string literal (const char [4])
+        ///
+        /// Direct construction of PNPIDNullTerminatedStdArray from a const char [4], even wrapped in curly braces, is a
+        /// bit hit or miss - where misses include important environments like GCC 4.9, hence this helper function,
+        /// which also ensures null termination (but not any of the other invariants/requirements of a PNPID!)
+        inline PNPIDNullTerminatedStdArray stringLiteralPNPIDToArray(PNPIDStringLiteralType pnpid) {
+            return PNPIDNullTerminatedStdArray{pnpid[0], pnpid[1], pnpid[2], '\0'};
+        }
+
         /// Convert the full two-byte hex VID into a null-terminated
         /// 3-character PNP ID.
         /// Note that NVIDIA likes the byte order flipped.

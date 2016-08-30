@@ -71,15 +71,14 @@ namespace renderkit {
             /// @param dispDescVend A string literal used as a "Vendor" string in an OSVR Display Descriptor (schema v1)
             /// that should trigger searching for devices with this PNPID.
             DirectModeVendorEntry(PNPIDStringLiteralType pnpid, const char* dispDescVend)
-                : pnpid_({pnpid[0], pnpid[1], pnpid[2], pnpid[3]}), displayDescriptorVendor(dispDescVend) {}
+                : pnpid_(stringLiteralPNPIDToArray(pnpid)), displayDescriptorVendor(dispDescVend) {}
             /// @brief Elaborated entry
             /// @param pnpid See above
             /// @param dispDescVend See above
             /// @param desc A human-readable description of devices with this vendor and PNPID. For instance, when a
             /// single vendor has multiple devices with PNPIDs, and/or when multiple vendors share a PNPID.
             DirectModeVendorEntry(PNPIDStringLiteralType pnpid, const char* dispDescVend, const char* desc)
-                : pnpid_({pnpid[0], pnpid[1], pnpid[2], pnpid[3]}), displayDescriptorVendor(dispDescVend),
-                  description(desc) {}
+                : pnpid_(stringLiteralPNPIDToArray(pnpid)), displayDescriptorVendor(dispDescVend), description(desc) {}
             /// @}
 
             /// @brief Returns the PNPID as a std::array of chars including the null terminator:
