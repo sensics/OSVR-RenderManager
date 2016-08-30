@@ -266,41 +266,41 @@ public:
 // Vertex and fragment shaders to perform our combination of asynchronous
 // time warp and distortion correction.
 static const GLchar* distortionVertexShader =
-    "#version 330 core\n"
-    "layout(location = 0) in vec4 position;\n"
-    "layout(location = 1) in vec2 textureCoordinateR;\n"
-    "layout(location = 2) in vec2 textureCoordinateG;\n"
-    "layout(location = 3) in vec2 textureCoordinateB;\n"
-    "out vec2 warpedCoordinateR;\n"
-    "out vec2 warpedCoordinateG;\n"
-    "out vec2 warpedCoordinateB;\n"
-    "uniform mat4 projectionMatrix;\n"
-    "uniform mat4 modelViewMatrix;\n"
-    "uniform mat4 textureMatrix;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = projectionMatrix * modelViewMatrix * position;\n"
-    "   warpedCoordinateR = vec2(textureMatrix * "
-    "      vec4(textureCoordinateR,0,1));\n"
-    "   warpedCoordinateG = vec2(textureMatrix * "
-    "      vec4(textureCoordinateG,0,1));\n"
-    "   warpedCoordinateB = vec2(textureMatrix * "
-    "      vec4(textureCoordinateB,0,1));\n"
-    "}\n";
+"#version 100\n"
+"attribute vec4 position;\n"
+"attribute vec2 textureCoordinateR;\n"
+"attribute vec2 textureCoordinateG;\n"
+"attribute vec2 textureCoordinateB;\n"
+"uniform mat4 projectionMatrix;\n"
+"uniform mat4 modelViewMatrix;\n"
+"uniform mat4 textureMatrix;\n"
+"varying vec2 warpedCoordinateR;\n"
+"varying vec2 warpedCoordinateG;\n"
+"varying vec2 warpedCoordinateB;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = projectionMatrix * modelViewMatrix * position;\n"
+"   warpedCoordinateR = vec2(textureMatrix * "
+"      vec4(textureCoordinateR,0,1));\n"
+"   warpedCoordinateG = vec2(textureMatrix * "
+"      vec4(textureCoordinateG,0,1));\n"
+"   warpedCoordinateB = vec2(textureMatrix * "
+"      vec4(textureCoordinateB,0,1));\n"
+"}\n";
 
 static const GLchar* distortionFragmentShader =
-    "#version 330 core\n"
-    "uniform sampler2D tex;\n"
-    "in vec2 warpedCoordinateR;\n"
-    "in vec2 warpedCoordinateG;\n"
-    "in vec2 warpedCoordinateB;\n"
-    "out vec3 color;\n"
-    "void main()\n"
-    "{\n"
-    "    color.r = texture(tex, warpedCoordinateR).r;\n"
-    "    color.g = texture(tex, warpedCoordinateG).g;\n"
-    "    color.b = texture(tex, warpedCoordinateB).b;\n"
-    "}\n";
+"#version 100\n"
+"precision highp float;\n"
+"uniform sampler2D tex;\n"
+"varying vec2 warpedCoordinateR;\n"
+"varying vec2 warpedCoordinateG;\n"
+"varying vec2 warpedCoordinateB;\n"
+"void main()\n"
+"{\n"
+"    gl_FragColor.r = texture2D(tex, warpedCoordinateR).r;\n"
+"    gl_FragColor.g = texture2D(tex, warpedCoordinateG).g;\n"
+"    gl_FragColor.b = texture2D(tex, warpedCoordinateB).b;\n"
+"}\n";
 
 static bool checkShaderError(GLuint shaderId, osvr::util::log::LoggerPtr m_log) {
     GLint result = GL_FALSE;
@@ -648,6 +648,8 @@ namespace renderkit {
             return ret;
         }
 
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after fragment shader compile");
+
         fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShaderId, 1, &distortionFragmentShader, nullptr);
         glCompileShader(fragmentShaderId);
@@ -664,11 +666,19 @@ namespace renderkit {
             return ret;
         }
 
-        checkForGLError("RenderManagerOpenGL::OpenDisplay after shader compile");
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after fragment shader compile");
 
         m_programId = glCreateProgram();
         glAttachShader(m_programId, vertexShaderId);
         glAttachShader(m_programId, fragmentShaderId);
+
+        glBindAttribLocation(m_programId, 0, "position");
+        glBindAttribLocation(m_programId, 1, "textureCoordinateR");
+        glBindAttribLocation(m_programId, 2, "textureCoordinateG");
+        glBindAttribLocation(m_programId, 3, "textureCoordinateB");
+
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after BindAttribLocation");
+
         glLinkProgram(m_programId);
         if (!checkProgramError(m_programId, m_log)) {
           if (m_log)
