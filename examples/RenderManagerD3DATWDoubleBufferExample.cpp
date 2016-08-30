@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
     renderInfo = render->GetRenderInfo();
 
     std::vector<FrameInfo> frameInfo(2);
-    for (int frame = 0; frame < frameInfo.size(); frame++) {
+    for (size_t frame = 0; frame < frameInfo.size(); frame++) {
         for (size_t i = 0; i < renderInfo.size(); i++) {
 
             // The color buffer for this eye.  We need to put this into

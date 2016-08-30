@@ -120,10 +120,10 @@ namespace renderkit {
         // nearest non-collinear points.
         std::vector<MonoPointDistortionMeshDescription> ySet;
         MonoPointDistortionMeshDescription empty;
-        for (size_t y = 0; y < m_numSamplesY; y++) {
+        for (int y = 0; y < m_numSamplesY; y++) {
             ySet.emplace_back(empty);
         }
-        for (size_t x = 0; x < m_numSamplesX; x++) {
+        for (int x = 0; x < m_numSamplesX; x++) {
             m_grid.emplace_back(ySet);
         }
 

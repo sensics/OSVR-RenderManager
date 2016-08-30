@@ -555,7 +555,7 @@ namespace renderkit {
           // For now, append the display ID to the title.
           /// @todo Make a different title for each window in the config file
           ReleaseContextParams(pC); // @todo Remove when there is one per display
-          char displayId = '0' + static_cast<int>(display);
+          char displayId = '0' + static_cast<char>(display);
           std::string windowTitle = p.windowTitle + displayId;
           std::unique_ptr<char> title(new char[windowTitle.size() + 1]);
           // Note: This will not cause a constraint violation because we've
