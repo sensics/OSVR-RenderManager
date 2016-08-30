@@ -538,12 +538,12 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	osvrrm_no_symbols_in_debug()
 	#-----------------------------------------------------------------------------
 	# Enable DirectMode on attached OSVR HDKs
-	add_executable(EnableOSVRDirectModeAMD "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
+	add_executable(EnableOSVRDirectModeAMD osvr/RenderKit/DirectModeToolSkeleton.h "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
 	target_link_libraries(EnableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
 
 	#-----------------------------------------------------------------------------
 	# Disable DirectMode on attached OSVR HDKs
-	add_executable(DisableOSVRDirectModeAMD "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
+	add_executable(DisableOSVRDirectModeAMD osvr/RenderKit/DirectModeToolSkeleton.h "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
 	target_link_libraries(DisableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
 	osvrrm_restore_symbols_in_debug()
 
