@@ -53,29 +53,26 @@ namespace renderkit {
         static const std::size_t BIT_OFFSET_2 = 0;
 
         static const std::uint16_t LETTER_MASK =
-            2 * 2 * 2 * 2 * 2 -
-            1; /// 5 bits allocated for each letter, so mask is 2^5 -1
+            2 * 2 * 2 * 2 * 2 - 1; /// 5 bits allocated for each letter, so mask is 2^5 -1
 
         /// Convert one A-Z letter to a hex value, unshifted.
         inline std::uint16_t charToHex(char const letter) {
             /// @todo is the mask helpful? It's theoretically redundant, but it
             /// ensures we don't mess up anyone else's spot.
-            return (std::toupper(letter) - BASE_LETTER + BASE_VALUE) &
-                   LETTER_MASK;
+            return (std::toupper(letter) - BASE_LETTER + BASE_VALUE) & LETTER_MASK;
         }
 
         /// Convert one unshifted hex value back to an A-Z letter.
         inline char hexToChar(std::uint16_t isolatedLetter) {
-            return static_cast<char>(isolatedLetter & LETTER_MASK) -
-                   BASE_VALUE + BASE_LETTER;
+            return static_cast<char>(isolatedLetter & LETTER_MASK) - BASE_VALUE + BASE_LETTER;
         }
 
         /// Convert something stringy of length 3, intended to be a PNPID,
         /// into the hex equivalent.
         /// Note that NVIDIA likes the byte order flipped.
         template <typename T> inline std::uint16_t pnpidToHex(T const& pnpid) {
-            return (charToHex(pnpid[0]) << BIT_OFFSET_0) |
-                   (charToHex(pnpid[1]) << BIT_OFFSET_1) |
+            return (charToHex(pnpid[0]) << BIT_OFFSET_0) | //
+                   (charToHex(pnpid[1]) << BIT_OFFSET_1) | //
                    (charToHex(pnpid[2]) << BIT_OFFSET_2);
         }
 
@@ -90,10 +87,13 @@ namespace renderkit {
         /// Convert the full two-byte hex VID into a null-terminated
         /// 3-character PNP ID.
         /// Note that NVIDIA likes the byte order flipped.
-        inline std::array<char, 4> fullHexVidToPnp(std::uint16_t vid) {
-            return std::array<char, 4>{hexToChar(vid >> BIT_OFFSET_0),
-                                       hexToChar(vid >> BIT_OFFSET_1),
-                                       hexToChar(vid >> BIT_OFFSET_2), '\0'};
+        inline PNPIDNullTerminatedStdArray fullHexVidToPnp(std::uint16_t vid) {
+            return PNPIDNullTerminatedStdArray{
+                hexToChar(vid >> BIT_OFFSET_0), //< shift off to put first character in bits 0-7 then decode
+                hexToChar(vid >> BIT_OFFSET_1), //< shift off for second character then decode
+                hexToChar(vid >> BIT_OFFSET_2), //< shift off for third character then decode
+                '\0'                            //< always null terminated
+            };
         }
     } // namespace vendorid
     using vendorid::pnpidToHex;
