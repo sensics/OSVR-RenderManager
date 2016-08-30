@@ -37,19 +37,21 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <type_traits>
 
 namespace osvr {
 namespace renderkit {
     namespace vendorid {
         using PNPIDNullTerminatedType = std::array<char, 4>;
+        using PNPIDStringLiteralType = std::add_lvalue_reference<const char[4]>::type;
         class DirectModeVendorEntry {
           public:
-            explicit DirectModeVendorEntry(const PNPIDNullTerminatedType& pnpid)
-                : pnpid_(pnpid), displayDescriptorVendor(pnpid.data()) {}
-            DirectModeVendorEntry(const PNPIDNullTerminatedType& pnpid, const char* dispDescVend)
-                : pnpid_(pnpid), displayDescriptorVendor(dispDescVend) {}
-            DirectModeVendorEntry(const PNPIDNullTerminatedType& pnpid, const char* dispDescVend, const char* desc)
-                : pnpid_(pnpid), displayDescriptorVendor(dispDescVend), description(desc) {}
+            explicit DirectModeVendorEntry(PNPIDStringLiteralType pnpid) : DirectModeVendorEntry(pnpid, pnpid) {}
+            DirectModeVendorEntry(PNPIDStringLiteralType pnpid, const char* dispDescVend)
+                : pnpid_({pnpid[0], pnpid[1], pnpid[2], pnpid[3]}), displayDescriptorVendor(dispDescVend) {}
+            DirectModeVendorEntry(PNPIDStringLiteralType pnpid, const char* dispDescVend, const char* desc)
+                : pnpid_({pnpid[0], pnpid[1], pnpid[2], pnpid[3]}), displayDescriptorVendor(dispDescVend),
+                  description(desc) {}
 
             /// 3 character, all-caps, in A-Z, PNPID, preferably registered through the UEFI registry.
             PNPIDNullTerminatedType const& getPNPIDCharArray() const { return pnpid_; }
@@ -94,20 +96,22 @@ namespace renderkit {
     using vendorid::DirectModeVendors;
     static DirectModeVendors const& getDefaultVendors() {
         using Vendor = vendorid::DirectModeVendorEntry;
-        static DirectModeVendors vendors =
-            DirectModeVendors{Vendor{{"OVR"}, "Oculus"},
-                              Vendor{{"SEN"}, "Sensics", "Some Sensics professional displays"},
-                              Vendor{{"SVR"}, "Sensics", "Some Sensics professional displays"},
-                              Vendor{{"SEN"}, "OSVR", "Some OSVR HDK units with early firmware/EDID data"},
-                              Vendor{{"SVR"}, "OSVR", "Most OSVR HDK units"},
-                              Vendor{{"AUO"}, "OSVR", "Some OSVR HDK2 firmware versions"},
-                              Vendor{{"VVR"}},
-                              Vendor{{"IWR"}, "Vuzix"},
-                              Vendor{{"HVR"}, "HTC"},
-                              Vendor{{"AVR"}},
-                              Vendor{{"VRG"}, "VRGate"},
-                              Vendor{{"TSB"}, "VRGate"},
-                              Vendor{{"VRV"}, "Vrvana"}};
+        static DirectModeVendors vendors = DirectModeVendors{
+            Vendor{"OVR", "Oculus"},
+            Vendor{"SEN", "Sensics", "Some Sensics professional displays"},
+            Vendor{"SVR", "Sensics", "Some Sensics professional displays"},
+            Vendor{"SEN", "OSVR", "Some OSVR HDK units with early firmware/EDID data"},
+            Vendor{"SVR", "OSVR", "Most OSVR HDK units"},
+            Vendor{"AUO", "OSVR", "Some OSVR HDK2 firmware versions"},
+            Vendor{"VVR"},
+            Vendor{"IWR", "Vuzix"},
+            Vendor{"HVR", "HTC"},
+            Vendor{"AVR"},
+            Vendor{"VRG", "VRGate"},
+            Vendor{"TSB", "VRGate"},
+            Vendor{"VRV", "Vrvana"},
+            /* add new vendors here - keep grouped by display descriptor vendor */
+        };
         return vendors;
     }
 
