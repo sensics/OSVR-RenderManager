@@ -648,6 +648,11 @@ namespace renderkit {
             return ret;
         }
 
+        glBindAttribLocation(vertexShaderId, 0, "position");
+        glBindAttribLocation(vertexShaderId, 1, "textureCoordinateR");
+        glBindAttribLocation(vertexShaderId, 2, "textureCoordinateG");
+        glBindAttribLocation(vertexShaderId, 3, "textureCoordinateB");
+
         fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShaderId, 1, &distortionFragmentShader, nullptr);
         glCompileShader(fragmentShaderId);
