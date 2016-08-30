@@ -44,29 +44,70 @@ namespace renderkit {
     namespace vendorid {
         using PNPIDNullTerminatedType = std::array<char, 4>;
         using PNPIDStringLiteralType = std::add_lvalue_reference<const char[4]>::type;
+
+        /// @brief A class storing an association between a PNPID vendor ID as found in EDID data, a "Vendor" name as
+        /// found in OSVR display descriptor files (schema v1), and an optional user-friendly description.
+        ///
+        /// Used primarily in a static data table processed at runtime (replacing extensive conditionals and ad-hoc code
+        /// repetition) by various apps and libraries.
         class DirectModeVendorEntry {
           public:
+            /// @name Constructors
+            /// @brief Used to create entries in the table of vendors, Identically-named parameters perform identically
+            /// between constructors.
+            /// @{
+            /// @brief Minimal/brief/stealth entry - just PNPID. Sets the display descriptor vendor to be the same as
+            /// the PNPID.
+            /// @param pnpid A 3-character, all caps string literal matching /^[A-Z]+$/ . See getPNPNIDCharArray() for
+            /// details. WARNING: For speed of initialization, your input here is not validated to ensure it is
+            /// all-caps, A-Z only!
             explicit DirectModeVendorEntry(PNPIDStringLiteralType pnpid) : DirectModeVendorEntry(pnpid, pnpid) {}
+            /// @brief Basic/common entry
+            /// @param pnpid See above
+            /// @param dispDescVend A string literal used as a "Vendor" string in an OSVR Display Descriptor (schema v1)
+            /// that should trigger searching for devices with this PNPID.
             DirectModeVendorEntry(PNPIDStringLiteralType pnpid, const char* dispDescVend)
                 : pnpid_({pnpid[0], pnpid[1], pnpid[2], pnpid[3]}), displayDescriptorVendor(dispDescVend) {}
+            /// @brief Elaborated entry
+            /// @param pnpid See above
+            /// @param dispDescVend See above
+            /// @param desc A human-readable description of devices with this vendor and PNPID. For instance, when a
+            /// single vendor has multiple devices with PNPIDs, and/or when multiple vendors share a PNPID.
             DirectModeVendorEntry(PNPIDStringLiteralType pnpid, const char* dispDescVend, const char* desc)
                 : pnpid_({pnpid[0], pnpid[1], pnpid[2], pnpid[3]}), displayDescriptorVendor(dispDescVend),
                   description(desc) {}
+            /// @}
 
-            /// 3 character, all-caps, in A-Z, PNPID, preferably registered through the UEFI registry.
+            /// @brief Returns the PNPID as a std::array of chars including the null terminator:
+            ///
+            /// 3 character, all-caps, in A-Z, PNPID, preferably registered through the UEFI registry. These should
+            /// technically be registered through http://www.uefi.org/PNP_ACPI_Registry (at least respecting assignments
+            /// made there) and must match the vendor ID reported in your EDID data (see Windows "Hardware IDs")
             PNPIDNullTerminatedType const& getPNPIDCharArray() const { return pnpid_; }
 
+            /// @brief Convenience method to access the data of getPNPIDCharArray() as a null-terminated C string.
             const char* getPNPIDCString() const { return pnpid_.data(); }
+
+            /// @brief Converts the PNPID to two hex bytes for use in an EDID, per the formula established by Microsoft,
+            /// then swaps the bytes as seems to be required by most consumers of this data.
             std::uint16_t getFlippedHexPNPID() const {
                 /// @todo will this only work on little-endian systems? Need to figure out why the byte swap is needed.
                 return common::integerByteSwap(pnpidToHex(getPNPIDCharArray()));
             }
+
+            /// @brief Returns the string as provided in the constructor.
             std::string const& getDisplayDescriptorVendor() const { return displayDescriptorVendor; }
+
+            /// @brief Returns the string provided in constructor, if any - if not, it returns the same as
+            /// getDisplayDescriptorVendor()
             std::string const& getDescription() const {
                 return description.empty() ? displayDescriptorVendor : description;
             }
 
           private:
+            /// PNPID as a std::array of chars including the null terminator.
+            /// std::array is used for bounds/type-safety and protection from decay-to-pointer as well as operator
+            /// overloads: it is easily compared, copied, etc.
             PNPIDNullTerminatedType pnpid_;
             /// Vendor string to match in display descriptor.
             std::string displayDescriptorVendor;
