@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
+#include <utility>
 
 namespace osvr {
 namespace renderkit {
@@ -45,6 +46,11 @@ namespace renderkit {
         using PNPIDNullTerminatedType = std::array<char, 4>;
         using PNPIDStringLiteralType = std::add_lvalue_reference<const char[4]>::type;
 
+        /// This is in here, rather than VendorIdTools, since it uses an OSVR header, and that file doesn't need
+        /// anything but some simple standard headers.
+        template <typename T> inline std::uint16_t pnpidToFlippedHex(T&& pnpid) {
+            return common::integerByteSwap(pnpidToHex(std::forward<T>(pnpid)));
+        }
         /// @brief A class storing an association between a PNPID vendor ID as found in EDID data, a "Vendor" name as
         /// found in OSVR display descriptor files (schema v1), and an optional user-friendly description.
         ///
@@ -92,7 +98,7 @@ namespace renderkit {
             /// then swaps the bytes as seems to be required by most consumers of this data.
             std::uint16_t getFlippedHexPNPID() const {
                 /// @todo will this only work on little-endian systems? Need to figure out why the byte swap is needed.
-                return common::integerByteSwap(pnpidToHex(getPNPIDCharArray()));
+                return pnpidToFlippedHex(getPNPIDCharArray());
             }
 
             /// @brief Returns the string as provided in the constructor.
@@ -134,7 +140,10 @@ namespace renderkit {
             return ret;
         }
     } // namespace vendorid
+
+    using vendorid::pnpidToFlippedHex;
     using vendorid::DirectModeVendors;
+
     static DirectModeVendors const& getDefaultVendors() {
         using Vendor = vendorid::DirectModeVendorEntry;
         static DirectModeVendors vendors = DirectModeVendors{
