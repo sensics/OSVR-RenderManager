@@ -671,6 +671,14 @@ namespace renderkit {
         m_programId = glCreateProgram();
         glAttachShader(m_programId, vertexShaderId);
         glAttachShader(m_programId, fragmentShaderId);
+
+        glBindAttribLocation(m_programId, 0, "position");
+        glBindAttribLocation(m_programId, 1, "textureCoordinateR");
+        glBindAttribLocation(m_programId, 2, "textureCoordinateG");
+        glBindAttribLocation(m_programId, 3, "textureCoordinateB");
+
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after BindAttribLocation");
+
         glLinkProgram(m_programId);
         if (!checkProgramError(m_programId, m_log)) {
           if (m_log)
@@ -680,13 +688,6 @@ namespace renderkit {
           return ret;
         }
         checkForGLError("RenderManagerOpenGL::OpenDisplay after program link");
-
-        glBindAttribLocation(m_programId, 0, "position");
-        glBindAttribLocation(m_programId, 1, "textureCoordinateR");
-        glBindAttribLocation(m_programId, 2, "textureCoordinateG");
-        glBindAttribLocation(m_programId, 3, "textureCoordinateB");
-
-        checkForGLError("RenderManagerOpenGL::OpenDisplay after BindAttribLocation");
 
         m_projectionUniformId =
             glGetUniformLocation(m_programId, "projectionMatrix");
