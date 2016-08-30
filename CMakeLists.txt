@@ -508,13 +508,13 @@ if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	#-----------------------------------------------------------------------------
 	# Enable DirectMode on attached OSVR HDKs
 	# TODO rename to EnableOSVRDirectModeNVIDIA
-	add_executable(EnableOSVRDirectMode "${NVIDIA_SRC_DIR}/EnableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
+	add_executable(EnableOSVRDirectMode osvr/RenderKit/DirectModeToolSkeleton.h "${NVIDIA_SRC_DIR}/EnableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
 	target_link_libraries(EnableOSVRDirectMode PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
 
 	#-----------------------------------------------------------------------------
 	# Disable DirectMode on attached OSVR HDKs
 	# TODO rename to DisableOSVRDirectModeNVIDIA
-	add_executable(DisableOSVRDirectMode "${NVIDIA_SRC_DIR}/DisableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
+	add_executable(DisableOSVRDirectMode osvr/RenderKit/DirectModeToolSkeleton.h "${NVIDIA_SRC_DIR}/DisableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
 	target_link_libraries(DisableOSVRDirectMode PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
 
 	#-----------------------------------------------------------------------------
