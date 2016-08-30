@@ -36,6 +36,7 @@
 #include <cstddef>
 #include <cctype>
 #include <array>
+#include <type_traits>
 
 namespace osvr {
 namespace renderkit {
@@ -78,6 +79,14 @@ namespace renderkit {
                    (charToHex(pnpid[2]) << BIT_OFFSET_2);
         }
 
+        /// This is explicitly a reference to a const char array of length 4 (intended for 3 characters and a null
+        /// terminator as a string literal) - this is the tidiest/least gross way to declare that type
+        using PNPIDStringLiteralType = std::add_lvalue_reference<const char[4]>::type;
+
+        /// This is the preferred alternative to PNPIDStringLiteralType's referred-to type since it is easily copied and
+        /// compared, doesn't decay to a pointer type, but is otherwise the same in size and performance: a std::array
+        /// of char with 4 elements (3 non-null and a null terminator)
+        using PNPIDNullTerminatedStdArray = std::array<char, 4>;
         /// Convert the full two-byte hex VID into a null-terminated
         /// 3-character PNP ID.
         /// Note that NVIDIA likes the byte order flipped.

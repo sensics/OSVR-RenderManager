@@ -43,8 +43,6 @@
 namespace osvr {
 namespace renderkit {
     namespace vendorid {
-        using PNPIDNullTerminatedType = std::array<char, 4>;
-        using PNPIDStringLiteralType = std::add_lvalue_reference<const char[4]>::type;
 
         /// This is in here, rather than VendorIdTools, since it uses an OSVR header, and that file doesn't need
         /// anything but some simple standard headers.
@@ -89,7 +87,7 @@ namespace renderkit {
             /// 3 character, all-caps, in A-Z, PNPID, preferably registered through the UEFI registry. These should
             /// technically be registered through http://www.uefi.org/PNP_ACPI_Registry (at least respecting assignments
             /// made there) and must match the vendor ID reported in your EDID data (see Windows "Hardware IDs")
-            PNPIDNullTerminatedType const& getPNPIDCharArray() const { return pnpid_; }
+            PNPIDNullTerminatedStdArray const& getPNPIDCharArray() const { return pnpid_; }
 
             /// @brief Convenience method to access the data of getPNPIDCharArray() as a null-terminated C string.
             const char* getPNPIDCString() const { return pnpid_.data(); }
@@ -114,7 +112,7 @@ namespace renderkit {
             /// PNPID as a std::array of chars including the null terminator.
             /// std::array is used for bounds/type-safety and protection from decay-to-pointer as well as operator
             /// overloads: it is easily compared, copied, etc.
-            PNPIDNullTerminatedType pnpid_;
+            PNPIDNullTerminatedStdArray pnpid_;
             /// Vendor string to match in display descriptor.
             std::string displayDescriptorVendor;
             /// Description - if left empty, getDescription will return displayDescriptorVendor instead.
