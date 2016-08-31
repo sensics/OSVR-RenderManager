@@ -79,11 +79,11 @@ endif()
 
 # Set the debug postfix
 if(WIN32 AND NOT DEFINED CMAKE_DEBUG_POSTFIX)
-    set(OSVR_SET_DEBUG_POSTFIX TRUE)
-    set(CMAKE_DEBUG_POSTFIX "d")
+	set(OSVR_SET_DEBUG_POSTFIX TRUE)
+	set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 if(WIN32 AND OSVR_SET_DEBUG_POSTFIX)
-    set(CMAKE_DEBUG_POSTFIX "")
+	set(CMAKE_DEBUG_POSTFIX "")
 endif()
 
 # These configurations have the tools installed.
