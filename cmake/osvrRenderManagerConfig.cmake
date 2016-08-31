@@ -16,6 +16,7 @@ set(OSVRRM_NEED_GLEW @OSVRRM_NEED_GLEW@)
 
 set(OSVRRM_PREV_CMAKE_MODULES ${CMAKE_MODULE_PATH})
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}" ${CMAKE_MODULE_PATH})
+include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigBuildTreeHints.cmake" OPTIONAL)
 include(osvrStashMapConfig)
 include(CMakeFindDependencyMacro)
 if(OSVRRM_NEED_SDL2)

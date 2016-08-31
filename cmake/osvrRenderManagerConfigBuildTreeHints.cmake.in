@@ -1,0 +1,32 @@
+# Help find OSVR, if required.
+if(NOT osvr_DIR)
+    set(osvr_DIR "@osvr_DIR@")
+endif()
+
+# Help find Eigen3
+if(NOT EIGEN3_INCLUDE_DIR)
+    set(EIGEN3_INCLUDE_DIR "@EIGEN3_INCLUDE_DIR@")
+endif()
+
+# Help with SDL2
+if(OSVRRM_NEED_SDL2)
+    if(NOT SDL2_LIBRARY)
+        set(SDL2_LIBRARY "@SDL2_LIBRARY@")
+    endif()
+    if(NOT SDL2_INCLUDE_DIR)
+        set(SDL2_INCLUDE_DIR "@SDL2_INCLUDE_DIR@")
+    endif()
+endif()
+
+# Help with GLEW
+if(OSVRRM_NEED_GLEW)
+    if(WIN32 AND NOT GLEW_RUNTIME_LIBRARY)
+        set(GLEW_RUNTIME_LIBRARY "@GLEW_RUNTIME_LIBRARY@")
+    endif()
+    if(NOT GLEW_LIBRARY)
+        set(GLEW_LIBRARY "@GLEW_LIBRARY@")
+    endif()
+    if(NOT GLEW_INCLUDE_DIR)
+        set(GLEW_INCLUDE_DIR "@GLEW_INCLUDE_DIR@")
+    endif()
+endif()

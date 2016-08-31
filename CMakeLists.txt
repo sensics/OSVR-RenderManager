@@ -583,6 +583,12 @@ configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
 
+# Path hints for build-tree usage only.
+configure_file("cmake/osvrRenderManagerConfigBuildTreeHints.cmake.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigBuildTreeHints.cmake"
+	@ONLY)
+
+
 # Generate the config file for installed usage.
 set(OSVRRM_IN_BUILD_TREE FALSE)
 set(OSVRRM_D3DCOMPILER_FILE "\${OSVRRM_ROOT}/${CMAKE_INSTALL_BINDIR}/${OSVRRM_D3DCOMPILER_FILENAME}")
