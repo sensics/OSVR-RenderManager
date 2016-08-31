@@ -3,6 +3,13 @@
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigSuperBuildPrefix.cmake" OPTIONAL)
 
 
+if(NOT OSVRRM_IN_BUILD_TREE)
+	# Compute the installation prefix relative to this file.
+	get_filename_component(OSVRRM_ROOT "${CMAKE_CURRENT_LIST_FILE}" PATH)
+	get_filename_component(OSVRRM_ROOT "${OSVRRM_ROOT}" PATH)
+	get_filename_component(OSVRRM_ROOT "${OSVRRM_ROOT}" PATH)
+	get_filename_component(OSVRRM_ROOT "${OSVRRM_ROOT}" PATH)
+endif()
 
 set(OSVRRM_NEED_SDL2 @OSVRRM_NEED_SDL2@)
 set(OSVRRM_NEED_GLEW @OSVRRM_NEED_GLEW@)

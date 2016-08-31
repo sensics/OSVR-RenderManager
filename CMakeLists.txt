@@ -576,10 +576,17 @@ export(TARGETS
 # Register the current build dir as a package search location
 export(PACKAGE osvrRenderManager)
 
+# Generate the config file for build-tree usage.
+set(OSVRRM_IN_BUILD_TREE TRUE)
 configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
 
+# Generate the config file for installed usage.
+set(OSVRRM_IN_BUILD_TREE FALSE)
+configure_file("cmake/osvrRenderManagerConfig.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigInstallTree.cmake"
+	@ONLY)
 
 # Copy over the shared CMake modules for use in a build tree,
 # and install for an install tree.
@@ -608,12 +615,17 @@ install(EXPORT osvrRenderManagerTargets
 
 # Install an install-tree only helper and a generated file
 install(FILES
-	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigVersion.cmake"
 	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/osvrRenderManagerConfigInstalledBoost.cmake"
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
 
+# Install the install-tree version of the CMake config file.
+install(FILES
+	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigInstallTree.cmake"
+	RENAME osvrRenderManagerConfig.cmake
+	DESTINATION ${CONFIG_INSTALL_DIR}
+	COMPONENT Devel)
 
 # Tests
 option(BUILD_TESTS "Build tests" ON)
