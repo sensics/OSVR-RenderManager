@@ -18,13 +18,18 @@ include (GenerateExportHeader)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
+include(osvrStashMapConfig)
+
 #-----------------------------------------------------------------------------
 # This looks for an osvrConfig.cmake file - most of the time it can be
 # autodetected but you might need to specify osvr_DIR to be something like
 # C:/Users/Ryan/Desktop/build/OSVR-Core-vc12 or
 # C:/Users/Ryan/Downloads/OSVR-Core-Snapshot-v0.1-406-gaa55515-build54-vs12-32bit
 # in the CMake GUI or command line
+osvr_stash_common_map_config()
 find_package(osvr REQUIRED)
+osvr_unstash_common_map_config()
+
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
