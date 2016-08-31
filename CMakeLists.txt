@@ -77,13 +77,9 @@ if(WIN32)
 		NO_DEFAULT_PATH)
 endif()
 
-# Set the debug postfix
+# Set the debug postfix default
 if(WIN32 AND NOT DEFINED CMAKE_DEBUG_POSTFIX)
-	set(OSVR_SET_DEBUG_POSTFIX TRUE)
-	set(CMAKE_DEBUG_POSTFIX "d")
-endif()
-if(WIN32 AND OSVR_SET_DEBUG_POSTFIX)
-	set(CMAKE_DEBUG_POSTFIX "")
+	set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "A string to append to the end of target filenames when built in debug mode.")
 endif()
 
 # These configurations have the tools installed.
@@ -411,6 +407,9 @@ set_property(TARGET
 # If we are using dynamic GLEW on Windows, let's copy it.
 if(GLEW_FOUND AND WIN32 AND NOT GLEW_LIBRARY MATCHES ".*s.lib")
 	osvrrm_copy_deps(GLEW::GLEW)
+	set(OSVRRM_NEED_GLEW_COPIED TRUE)
+else()
+	set(OSVRRM_NEED_GLEW_COPIED FALSE)
 endif()
 
 if (OPENGL_FOUND)
@@ -430,10 +429,16 @@ endif()
 
 if (SDL2_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE SDL2::SDL2)
+	set(OSVRRM_NEED_SDL2 TRUE)
+else()
+	set(OSVRRM_NEED_SDL2 FALSE)
 endif()
 
 if(SDL2_DYNAMIC AND WIN32)
 	osvrrm_copy_deps(SDL2::SDL2)
+	set(OSVRRM_NEED_SDL2_COPIED TRUE)
+else()
+	set(OSVRRM_NEED_SDL2_COPIED FALSE)
 endif()
 
 # This also lets it know where to find the header files.
@@ -460,6 +465,10 @@ if(WIN32)
 	# Install d3dcompiler_47
 	install(FILES ${DIRECT3D_COMPILER_REDISTRIBUTABLE}
 		DESTINATION ${CMAKE_INSTALL_BINDIR})
+	get_filename_component(OSVRRM_D3DCOMPILER_FILENAME "${DIRECT3D_COMPILER_REDISTRIBUTABLE}" NAME)
+	set(OSVRRM_NEED_D3DCOMPILER_COPIED TRUE)
+else()
+	set(OSVRRM_NEED_D3DCOMPILER_COPIED FALSE)
 endif()
 
 # The goal with this variable is so that the same CMakeLists file that is used to build
