@@ -32,7 +32,8 @@ function(osvrrm_install_dependencies _destination)
 			${_files}
 			CONFIGURATIONS ${_config}
 			DESTINATION ${_destination}
-			COMPONENT Runtime)
+			COMPONENT Runtime
+			OPTIONAL)
 	endforeach()
 endfunction()
 
