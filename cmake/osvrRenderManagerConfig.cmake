@@ -12,11 +12,13 @@ include(osvrStashMapConfig)
 include(CMakeFindDependencyMacro)
 set(OSVRRM_NEED_SDL2 @OSVRRM_NEED_SDL2@)
 if(OSVRRM_NEED_SDL2)
-	find_dependency(SDL2)
+    # TODO
+	#find_dependency(SDL2)
 endif()
 set(OSVRRM_NEED_GLEW @OSVRRM_NEED_GLEW@)
 if(OSVRRM_NEED_GLEW)
-	find_dependency(GLEW)
+    # TODO
+	#find_dependency(GLEW)
 endif()
 
 # Set up config mapping
