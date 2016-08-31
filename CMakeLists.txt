@@ -575,14 +575,24 @@ configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
 
-# Copy over the shared CMake modules for use in a build tree.
-foreach(HELPER CMakeBoostHelper)
+
+# Copy over the shared CMake modules for use in a build tree,
+# and install for an install tree.
+foreach(HELPER CMakeBoostHelper FindSDL2 FindGLEW CopyImportedTarget osvrStashMapConfig)
 	configure_file("cmake/${HELPER}.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${HELPER}.cmake" COPYONLY)
+	install(FILES
+		"cmake/${HELPER}.cmake"
+		DESTINATION ${CONFIG_INSTALL_DIR}
+		COMPONENT Devel)
 endforeach()
 
 if(WIN32)
 	# Needed by CMakeBoostHelper
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetMSVCVersion.cmake" "${CMAKE_CURRENT_BINARY_DIR}/GetMSVCVersion.cmake" COPYONLY)
+	install(FILES
+		"cmake/GetMSVCVersion.cmake"
+		DESTINATION ${CONFIG_INSTALL_DIR}
+		COMPONENT Devel)
 endif()
 
 install(EXPORT osvrRenderManagerTargets
@@ -591,6 +601,7 @@ install(EXPORT osvrRenderManagerTargets
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
 
+# Install an install-tree only helper and a generated file
 install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigVersion.cmake"
@@ -598,14 +609,6 @@ install(FILES
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
 
-if(WIN32)
-	# Windows-only helpers for CMake
-	install(FILES
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetMSVCVersion.cmake"
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeBoostHelper.cmake"
-		DESTINATION ${CONFIG_INSTALL_DIR}
-		COMPONENT Devel)
-endif()
 
 # Tests
 option(BUILD_TESTS "Build tests" ON)
