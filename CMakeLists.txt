@@ -578,12 +578,14 @@ export(PACKAGE osvrRenderManager)
 
 # Generate the config file for build-tree usage.
 set(OSVRRM_IN_BUILD_TREE TRUE)
+set(OSVRRM_D3DCOMPILER_FILE "${DIRECT3D_COMPILER_REDISTRIBUTABLE}")
 configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
 
 # Generate the config file for installed usage.
 set(OSVRRM_IN_BUILD_TREE FALSE)
+set(OSVRRM_D3DCOMPILER_FILE "\${OSVRRM_ROOT}/${CMAKE_INSTALL_BINDIR}/${OSVRRM_D3DCOMPILER_FILENAME}")
 configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigInstallTree.cmake"
 	@ONLY)

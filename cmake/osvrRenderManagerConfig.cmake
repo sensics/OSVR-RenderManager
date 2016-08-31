@@ -75,6 +75,13 @@ function(osvrrm_install_dependencies _destination)
 			COMPONENT Runtime
 			OPTIONAL)
 	endforeach()
+	set(OSVRRM_NEED_D3DCOMPILER_COPIED @OSVRRM_NEED_D3DCOMPILER_COPIED@)
+	if(OSVRRM_NEED_D3DCOMPILER_COPIED)
+		install(FILES "@OSVRRM_D3DCOMPILER_FILE@"
+			DESTINATION ${_destination}
+			COMPONENT Runtime
+			OPTIONAL)
+	endif()
 endfunction()
 
 # Find SDL2 using the script bundled with RenderManager.
