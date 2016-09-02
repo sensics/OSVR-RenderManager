@@ -1058,7 +1058,6 @@ namespace renderkit {
         // things back no matter how we exit this function, whether at
         // the end or in an error return partway through.
 
-        /// Switch to our vertex/shader programs
         /// Store the user program so we can put it back again before
         /// returning.
         GLint userProgram;
@@ -1067,11 +1066,6 @@ namespace renderkit {
           glUseProgram(userProgram);
         });
         checkForGLError("RenderManagerOpenGL::PresentEye after get user program");
-        glUseProgram(m_programId);
-        if (checkForGLError(
-          "RenderManagerOpenGL::PresentEye after use program")) {
-          return false;
-        }
 
         GLint prevFrameBuffer;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
@@ -1103,6 +1097,12 @@ namespace renderkit {
           }
         });
 
+        /// Switch to our vertex/shader programs
+        glUseProgram(m_programId);
+        if (checkForGLError(
+          "RenderManagerOpenGL::PresentEye after use program")) {
+          return false;
+        }
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
