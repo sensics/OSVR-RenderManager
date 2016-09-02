@@ -34,6 +34,7 @@ Sensics, Inc.
   #define glDeleteVertexArrays glDeleteVertexArraysOES
   #define glGenVertexArrays glGenVertexArraysOES
   #define glBindVertexArray glBindVertexArrayOES
+  #define GL_VERTEX_ARRAY_BINDING GL_VERTEX_ARRAY_BINDING_OES
 #else
   #include <GL/glew.h>
   #ifdef _WIN32
