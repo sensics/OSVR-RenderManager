@@ -23,7 +23,14 @@
 // limitations under the License.
 
 // Internal Includes
-#include <GL/glew.h>
+#include "RenderManagerOpenGLVersion.h"
+#ifndef OSVR_RM_USE_OPENGLES20
+    #include <GL/glew.h>
+    #ifdef _WIN32
+        #include <GL/wglew.h>
+    #endif
+#endif
+
 #include <osvr/RenderKit/RenderManagerOpenGLC.h>
 #include <osvr/RenderKit/RenderManager.h>
 #include <osvr/RenderKit/RenderManagerImpl.h>
@@ -153,11 +160,15 @@ OSVR_ReturnCode osvrRenderManagerCreateColorBufferOpenGL(
     GLint internalFormat;
     switch (format) {
     case GL_RGBA:
+#if !defined(OSVR_RM_USE_OPENGLES20) && !defined(OSVR_RM_USE_OPENGLES30)
     case GL_BGRA:
+#endif
       internalFormat = GL_RGBA;
       break;
     case GL_RGB:
+#if !defined(OSVR_RM_USE_OPENGLES20) && !defined(OSVR_RM_USE_OPENGLES30)
     case GL_BGR:
+#endif
       internalFormat = GL_RGB;
       break;
     case GL_LUMINANCE:
@@ -193,7 +204,16 @@ OSVR_ReturnCode osvrRenderManagerCreateDepthBufferOpenGL(
     glGetError(); // clear the error queue
     glGenRenderbuffers(1, depthBufferNameOut);
     glBindRenderbuffer(GL_RENDERBUFFER, *depthBufferNameOut);
+
+#if defined(OSVR_RM_USE_OPENGLES20)
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+#elif defined(OSVR_RM_USE_OPENGLES30)
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+#else
+    // GL_DEPTH_COMPONENT only works in non-ES OpenGL
+    // but is it 16 or 24-bit?
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+#endif
 
     return glGetError() == GL_NO_ERROR ? OSVR_RETURN_SUCCESS : OSVR_RETURN_FAILURE;
 }
