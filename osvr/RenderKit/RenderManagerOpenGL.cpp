@@ -1073,6 +1073,18 @@ namespace renderkit {
           glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
         });
 
+        GLint prevTextureUnit;
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTextureUnit);
+        auto resetTextureUnit = util::finally([&]{
+          glActiveTexture(prevTextureUnit);
+        });
+
+        GLint prevTexture;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
+        auto resetTexture = util::finally([&]{
+          glBindTexture(GL_TEXTURE_2D, prevTexture);
+        });
+
         GLint prevVAO;
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
         auto resetVAO = util::finally([&]{
@@ -1203,6 +1215,10 @@ namespace renderkit {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 #endif
+        if (checkForGLError(
+          "RenderManagerOpenGL::PresentEye after texture bind")) {
+          return false;
+        }
 
         // NOTE: No need to clear the buffer in color or depth; we're
         // always overwriting the whole thing.  We do need to store the
@@ -1218,14 +1234,6 @@ namespace renderkit {
 
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after environment setting")) {
-          return false;
-        }
-
-        // @todo save and later restore the state telling which texture is bound
-        // and which vertex attributes are set
-
-        if (checkForGLError(
-          "RenderManagerOpenGL::PresentEye after texture bind")) {
           return false;
         }
 
