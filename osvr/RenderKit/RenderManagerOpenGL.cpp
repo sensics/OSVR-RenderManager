@@ -43,6 +43,7 @@ Sensics, Inc.
 #include "RenderManagerOpenGL.h"
 #include "GraphicsLibraryOpenGL.h"
 #include "ComputeDistortionMesh.h"
+#include <osvr/Util/Finally.h>
 #include <osvr/Util/Logger.h>
 #include <iostream>
 #include <Eigen/Core>
@@ -1050,17 +1051,58 @@ namespace renderkit {
         /// displays per eye.
         size_t display = GetDisplayUsedByEye(params.m_index);
 
+        //-----------------------------------------------------------------
+        // Record all state we change and re-set it to what it was
+        // originally so we don't mess with client rendering.
+        // We make use of the util::finally() lambda function to put
+        // things back no matter how we exit this function, whether at
+        // the end or in an error return partway through.
+
         /// Switch to our vertex/shader programs
         /// Store the user program so we can put it back again before
         /// returning.
         GLint userProgram;
         glGetIntegerv(GL_CURRENT_PROGRAM, &userProgram);
+        auto resetProgram = util::finally([&]{
+          glUseProgram(userProgram);
+        });
         checkForGLError("RenderManagerOpenGL::PresentEye after get user program");
         glUseProgram(m_programId);
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after use program")) {
           return false;
         }
+
+        GLint prevFrameBuffer;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
+        auto resetFrameBuffer = util::finally([&]{
+          glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
+        });
+
+        GLint prevVAO;
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+        auto resetVAO = util::finally([&]{
+          glBindVertexArray(prevVAO);
+        });
+
+        GLboolean depthTest, cullFace;
+        glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+        auto resetDepthTest = util::finally([&]{
+          if (depthTest) {
+            glEnable(GL_DEPTH_TEST);
+          } else {
+            glDisable(GL_DEPTH_TEST);
+          }
+        });
+        glGetBooleanv(GL_CULL_FACE, &cullFace);
+        auto resetCullFace = util::finally([&]{
+          if (cullFace) {
+            glEnable(GL_CULL_FACE);
+          } else {
+            glDisable(GL_CULL_FACE);
+          }
+        });
+
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1138,11 +1180,7 @@ namespace renderkit {
         // Render the geometry to fill the viewport, with the texture
         // mapped onto it.
 
-        // Render to the 0th frame buffer, which is the screen.  Keep track
-        // of which framebuffer was bound before so we can put it back and
-        // avoid messing with user code.
-        GLint prevFrameBuffer;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
+        // Render to the 0th frame buffer, which is the screen.
         GLint displayFrameBuffer;
 
         if (!m_toolkit.getDisplayFrameBuffer ||
@@ -1170,16 +1208,11 @@ namespace renderkit {
         // always overwriting the whole thing.  We do need to store the
         // value of the depth-test bit and restore it, turning it off for
         // our use here.
-        // Store the initial values of rendering state that we set, so we
-        // can restore it below.
         // Disable depth testing.
         // Enable 2D texturing.
         // Disable face culling (in case client switched
         // front-face).
 
-        GLboolean depthTest, cullFace;
-        glGetBooleanv(GL_DEPTH_TEST, &depthTest);
-        glGetBooleanv(GL_CULL_FACE, &cullFace);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
 
@@ -1201,25 +1234,6 @@ namespace renderkit {
         glDrawElements(GL_TRIANGLES,
           static_cast<GLsizei>(meshBuffer.indices.size()),
           GL_UNSIGNED_SHORT, 0);
-
-        // Put rendering parameters back the way they were before we set them
-        // above.
-        if (depthTest) {
-          glEnable(GL_DEPTH_TEST);
-        } else {
-          glDisable(GL_DEPTH_TEST);
-        }
-
-        if (cullFace) {
-          glEnable(GL_CULL_FACE);
-        } else {
-          glDisable(GL_CULL_FACE);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
-
-        // Put back the user's vertex/shader program.
-        glUseProgram(userProgram);
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;
