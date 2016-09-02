@@ -18,13 +18,18 @@ include (GenerateExportHeader)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
+include(osvrStashMapConfig)
+
 #-----------------------------------------------------------------------------
 # This looks for an osvrConfig.cmake file - most of the time it can be
 # autodetected but you might need to specify osvr_DIR to be something like
 # C:/Users/Ryan/Desktop/build/OSVR-Core-vc12 or
 # C:/Users/Ryan/Downloads/OSVR-Core-Snapshot-v0.1-406-gaa55515-build54-vs12-32bit
 # in the CMake GUI or command line
+osvr_stash_common_map_config()
 find_package(osvr REQUIRED)
+osvr_unstash_common_map_config()
+
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
@@ -32,20 +37,20 @@ find_package(JsonCpp REQUIRED)
 set(HAVE_NVIDIA_NDA_SUBMODULE FALSE)
 set(HAVE_AMD_NDA_SUBMODULE FALSE)
 if(WIN32)
-  set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
-  if(EXISTS "${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp")
-  	set(HAVE_NVIDIA_NDA_SUBMODULE TRUE)
-  endif()
+	set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
+	if(EXISTS "${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp")
+		set(HAVE_NVIDIA_NDA_SUBMODULE TRUE)
+	endif()
 
-  set(AMD_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
-  if(EXISTS "${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp")
-	  set(HAVE_AMD_NDA_SUBMODULE TRUE)
-  endif()
+	set(AMD_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
+	if(EXISTS "${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp")
+		set(HAVE_AMD_NDA_SUBMODULE TRUE)
+	endif()
 
-  set(INTEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Intel")
-  if(EXISTS "${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp")
-	  set(HAVE_INTEL_NDA_SUBMODULE TRUE)
-  endif()
+	set(INTEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Intel")
+	if(EXISTS "${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp")
+		set(HAVE_INTEL_NDA_SUBMODULE TRUE)
+	endif()
 endif()
 
 # Add one of these libraries for each vendor that we've got a driver
@@ -72,13 +77,9 @@ if(WIN32)
 		NO_DEFAULT_PATH)
 endif()
 
-# Set the debug postfix
+# Set the debug postfix default
 if(WIN32 AND NOT DEFINED CMAKE_DEBUG_POSTFIX)
-    set(OSVR_SET_DEBUG_POSTFIX TRUE)
-    set(CMAKE_DEBUG_POSTFIX "d")
-endif()
-if(WIN32 AND OSVR_SET_DEBUG_POSTFIX)
-    set(CMAKE_DEBUG_POSTFIX "")
+	set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "A string to append to the end of target filenames when built in debug mode.")
 endif()
 
 # These configurations have the tools installed.
@@ -319,6 +320,7 @@ set(OSVRRM_REQUIRED_LIBRARIES_MINSIZEREL)
 function(osvrrm_copy_deps)
 	copy_imported_targets(osvrRenderManager ${ARGN})
 	foreach(_dep ${ARGN})
+		install_imported_target(${_dep} DESTINATION ${OSVRRM_SHARED_LIBRARY_DIR} COMPONENT Runtime)
 		foreach(_config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
 			get_target_property(_lib_location ${_dep} LOCATION_${_config})
 			get_filename_component(_lib_filename "${_lib_location}" NAME)
@@ -326,7 +328,6 @@ function(osvrrm_copy_deps)
 			list(APPEND OSVRRM_REQUIRED_LIBRARIES_${_config} "${_lib_filename}")
 			set(OSVRRM_REQUIRED_LIBRARIES_${_config} "${OSVRRM_REQUIRED_LIBRARIES_${_config}}" PARENT_SCOPE)
 		endforeach()
-		install_imported_target(${_dep} DESTINATION ${OSVRRM_SHARED_LIBRARY_DIR} COMPONENT Runtime)
 	endforeach()
 endfunction()
 
@@ -406,6 +407,9 @@ set_property(TARGET
 # If we are using dynamic GLEW on Windows, let's copy it.
 if(GLEW_FOUND AND WIN32 AND NOT GLEW_LIBRARY MATCHES ".*s.lib")
 	osvrrm_copy_deps(GLEW::GLEW)
+	set(OSVRRM_NEED_GLEW_COPIED TRUE)
+else()
+	set(OSVRRM_NEED_GLEW_COPIED FALSE)
 endif()
 
 if (OPENGL_FOUND)
@@ -425,10 +429,16 @@ endif()
 
 if (SDL2_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE SDL2::SDL2)
+	set(OSVRRM_NEED_SDL2 TRUE)
+else()
+	set(OSVRRM_NEED_SDL2 FALSE)
 endif()
 
 if(SDL2_DYNAMIC AND WIN32)
 	osvrrm_copy_deps(SDL2::SDL2)
+	set(OSVRRM_NEED_SDL2_COPIED TRUE)
+else()
+	set(OSVRRM_NEED_SDL2_COPIED FALSE)
 endif()
 
 # This also lets it know where to find the header files.
@@ -455,6 +465,10 @@ if(WIN32)
 	# Install d3dcompiler_47
 	install(FILES ${DIRECT3D_COMPILER_REDISTRIBUTABLE}
 		DESTINATION ${CMAKE_INSTALL_BINDIR})
+	get_filename_component(OSVRRM_D3DCOMPILER_FILENAME "${DIRECT3D_COMPILER_REDISTRIBUTABLE}" NAME)
+	set(OSVRRM_NEED_D3DCOMPILER_COPIED TRUE)
+else()
+	set(OSVRRM_NEED_D3DCOMPILER_COPIED FALSE)
 endif()
 
 # The goal with this variable is so that the same CMakeLists file that is used to build
@@ -564,14 +578,24 @@ configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
 
-# Copy over the shared CMake modules for use in a build tree.
-foreach(HELPER CMakeBoostHelper)
+
+# Copy over the shared CMake modules for use in a build tree,
+# and install for an install tree.
+foreach(HELPER CMakeBoostHelper FindSDL2 FindGLEW CopyImportedTarget osvrStashMapConfig)
 	configure_file("cmake/${HELPER}.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${HELPER}.cmake" COPYONLY)
+	install(FILES
+		"cmake/${HELPER}.cmake"
+		DESTINATION ${CONFIG_INSTALL_DIR}
+		COMPONENT Devel)
 endforeach()
 
 if(WIN32)
 	# Needed by CMakeBoostHelper
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetMSVCVersion.cmake" "${CMAKE_CURRENT_BINARY_DIR}/GetMSVCVersion.cmake" COPYONLY)
+	install(FILES
+		"cmake/GetMSVCVersion.cmake"
+		DESTINATION ${CONFIG_INSTALL_DIR}
+		COMPONENT Devel)
 endif()
 
 install(EXPORT osvrRenderManagerTargets
@@ -580,6 +604,7 @@ install(EXPORT osvrRenderManagerTargets
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
 
+# Install an install-tree only helper and a generated file
 install(FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigVersion.cmake"
@@ -587,14 +612,6 @@ install(FILES
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
 
-if(WIN32)
-	# Windows-only helpers for CMake
-	install(FILES
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetMSVCVersion.cmake"
-		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/CMakeBoostHelper.cmake"
-		DESTINATION ${CONFIG_INSTALL_DIR}
-		COMPONENT Devel)
-endif()
 
 # Tests
 option(BUILD_TESTS "Build tests" ON)
