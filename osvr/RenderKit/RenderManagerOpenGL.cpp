@@ -23,8 +23,10 @@ Sensics, Inc.
 // limitations under the License.
 
 #include "RenderManagerOpenGLVersion.h"
+#ifndef OSVR_ANDROID
 #include <SDL.h>
 #include "RenderManagerSDLInitQuit.h"
+#endif
 #include <osvr/Util/Finally.h>
 
 // clang-format off
@@ -32,6 +34,7 @@ Sensics, Inc.
   #define glDeleteVertexArrays glDeleteVertexArraysOES
   #define glGenVertexArrays glGenVertexArraysOES
   #define glBindVertexArray glBindVertexArrayOES
+  #define GL_VERTEX_ARRAY_BINDING GL_VERTEX_ARRAY_BINDING_OES
 #else
   #include <GL/glew.h>
   #ifdef _WIN32
@@ -46,10 +49,12 @@ Sensics, Inc.
 #include <osvr/Util/Finally.h>
 #include <osvr/Util/Logger.h>
 #include <iostream>
+#include <limits>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
 
+#ifndef OSVR_ANDROID
 //==========================================================================
 // In case the caller does not specify an OpenGL toolkit to use, we use this
 // SDL-based toolkit by default.
@@ -263,45 +268,87 @@ public:
   }
 };
 
+#endif // #ifndef OSVR_ANDROID
+
 //==========================================================================
 // Vertex and fragment shaders to perform our combination of asynchronous
 // time warp and distortion correction.
-static const GLchar* distortionVertexShader =
-"#version 100\n"
-"attribute vec4 position;\n"
-"attribute vec2 textureCoordinateR;\n"
-"attribute vec2 textureCoordinateG;\n"
-"attribute vec2 textureCoordinateB;\n"
-"uniform mat4 projectionMatrix;\n"
-"uniform mat4 modelViewMatrix;\n"
-"uniform mat4 textureMatrix;\n"
-"varying vec2 warpedCoordinateR;\n"
-"varying vec2 warpedCoordinateG;\n"
-"varying vec2 warpedCoordinateB;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = projectionMatrix * modelViewMatrix * position;\n"
-"   warpedCoordinateR = vec2(textureMatrix * "
-"      vec4(textureCoordinateR,0,1));\n"
-"   warpedCoordinateG = vec2(textureMatrix * "
-"      vec4(textureCoordinateG,0,1));\n"
-"   warpedCoordinateB = vec2(textureMatrix * "
-"      vec4(textureCoordinateB,0,1));\n"
-"}\n";
 
-static const GLchar* distortionFragmentShader =
-"#version 100\n"
-"precision highp float;\n"
-"uniform sampler2D tex;\n"
-"varying vec2 warpedCoordinateR;\n"
-"varying vec2 warpedCoordinateG;\n"
-"varying vec2 warpedCoordinateB;\n"
-"void main()\n"
-"{\n"
-"    gl_FragColor.r = texture2D(tex, warpedCoordinateR).r;\n"
-"    gl_FragColor.g = texture2D(tex, warpedCoordinateG).g;\n"
-"    gl_FragColor.b = texture2D(tex, warpedCoordinateB).b;\n"
-"}\n";
+#ifdef OSVR_RM_USE_OPENGLES20
+    static const GLchar* distortionVertexShader =
+        "#version 100\n"
+        "attribute vec4 position;\n"
+        "attribute vec2 textureCoordinateR;\n"
+        "attribute vec2 textureCoordinateG;\n"
+        "attribute vec2 textureCoordinateB;\n"
+        "uniform mat4 projectionMatrix;\n"
+        "uniform mat4 modelViewMatrix;\n"
+        "uniform mat4 textureMatrix;\n"
+        "varying vec2 warpedCoordinateR;\n"
+        "varying vec2 warpedCoordinateG;\n"
+        "varying vec2 warpedCoordinateB;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = projectionMatrix * modelViewMatrix * position;\n"
+        "   warpedCoordinateR = vec2(textureMatrix * "
+        "      vec4(textureCoordinateR,0,1));\n"
+        "   warpedCoordinateG = vec2(textureMatrix * "
+        "      vec4(textureCoordinateG,0,1));\n"
+        "   warpedCoordinateB = vec2(textureMatrix * "
+        "      vec4(textureCoordinateB,0,1));\n"
+        "}\n";
+
+    static const GLchar* distortionFragmentShader =
+        "#version 100\n"
+        "precision highp float;\n"
+        "uniform sampler2D tex;\n"
+        "varying vec2 warpedCoordinateR;\n"
+        "varying vec2 warpedCoordinateG;\n"
+        "varying vec2 warpedCoordinateB;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_FragColor.r = texture2D(tex, warpedCoordinateR).r;\n"
+        "    gl_FragColor.g = texture2D(tex, warpedCoordinateG).g;\n"
+        "    gl_FragColor.b = texture2D(tex, warpedCoordinateB).b;\n"
+        "}\n";
+#else
+    static const GLchar* distortionVertexShader =
+        "#version 330 core\n"
+        "layout(location = 0) in vec4 position;\n"
+        "layout(location = 1) in vec2 textureCoordinateR;\n"
+        "layout(location = 2) in vec2 textureCoordinateG;\n"
+        "layout(location = 3) in vec2 textureCoordinateB;\n"
+        "out vec2 warpedCoordinateR;\n"
+        "out vec2 warpedCoordinateG;\n"
+        "out vec2 warpedCoordinateB;\n"
+        "uniform mat4 projectionMatrix;\n"
+        "uniform mat4 modelViewMatrix;\n"
+        "uniform mat4 textureMatrix;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = projectionMatrix * modelViewMatrix * position;\n"
+        "   warpedCoordinateR = vec2(textureMatrix * "
+        "      vec4(textureCoordinateR,0,1));\n"
+        "   warpedCoordinateG = vec2(textureMatrix * "
+        "      vec4(textureCoordinateG,0,1));\n"
+        "   warpedCoordinateB = vec2(textureMatrix * "
+        "      vec4(textureCoordinateB,0,1));\n"
+        "}\n";
+
+    static const GLchar* distortionFragmentShader =
+        "#version 330 core\n"
+        "uniform sampler2D tex;\n"
+        "in vec2 warpedCoordinateR;\n"
+        "in vec2 warpedCoordinateG;\n"
+        "in vec2 warpedCoordinateB;\n"
+        "out vec3 color;\n"
+        "void main()\n"
+        "{\n"
+        "    color.r = texture(tex, warpedCoordinateR).r;\n"
+        "    color.g = texture(tex, warpedCoordinateG).g;\n"
+        "    color.b = texture(tex, warpedCoordinateB).b;\n"
+        "}\n";
+#endif
 
 static bool checkShaderError(GLuint shaderId, osvr::util::log::LoggerPtr m_log) {
     GLint result = GL_FALSE;
@@ -348,11 +395,38 @@ namespace renderkit {
 
     /// @todo Make this compile to no-op when debugging is off.
     bool RenderManagerOpenGL::checkForGLError(const std::string& message) {
-        GLenum err = glGetError();
-        if (err != GL_NO_ERROR) {
-            m_log->warn() << message << ": OpenGL error " << err;
+        GLenum err;
+        bool ret = false;
+        while((err = glGetError()) != GL_NO_ERROR) {
+            std::string errorString;
+            switch (err) {
+                case GL_NO_ERROR:
+                    errorString = "GL_NO_ERROR";
+                    break;
+                case GL_INVALID_ENUM:
+                    errorString = "GL_INVALID_ENUM";
+                    break;
+                case GL_INVALID_VALUE:
+                    errorString = "GL_INVALID_VALUE";
+                    break;
+                case GL_INVALID_OPERATION:
+                    errorString = "GL_INVALID_OPERATION";
+                    break;
+                case GL_INVALID_FRAMEBUFFER_OPERATION:
+                    errorString = "GL_INVALID_FRAMEBUFFER_OPERATION";
+                    break;
+                case GL_OUT_OF_MEMORY:
+                    errorString = "GL_OUT_OF_MEMORY";
+                    break;
+                default:
+                    errorString = "(unknown error)";
+                    break;
+            }
+
+            m_log->warn() << message << ": OpenGL error " << errorString << "(" + err << ")";
+            ret = true;
         }
-        return (err != GL_NO_ERROR);
+        return ret;
     }
 
     RenderManagerOpenGL::RenderManagerOpenGL(OSVR_ClientContext context, ConstructorParameters p)
@@ -369,8 +443,10 @@ namespace renderkit {
         if (p.m_graphicsLibrary.OpenGL && p.m_graphicsLibrary.OpenGL->toolkit) {
           m_toolkit = *p.m_graphicsLibrary.OpenGL->toolkit;
         } else {
+#ifndef OSVR_ANDROID
           SDLToolkitImpl *SDLToolKit = new SDLToolkitImpl(m_log);
           m_toolkit = *SDLToolKit->getToolkit();
+#endif
         }
 
         // Construct the appropriate GraphicsLibrary pointer.
@@ -1239,9 +1315,25 @@ namespace renderkit {
 
         auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
         glBindVertexArray(meshBuffer.VAO);
-        glDrawElements(GL_TRIANGLES,
-          static_cast<GLsizei>(meshBuffer.indices.size()),
-          GL_UNSIGNED_SHORT, 0);
+        if (checkForGLError(
+            "RenderManagerOpenGL::PresentEye after glBindVertexArray(meshBuffer.VAO)")) {
+            return false;
+        }
+
+        GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
+        auto maxNumElements = std::numeric_limits<GLsizei>::max();
+        if(numElements >= maxNumElements) {
+            m_log->error() << "meshBuffer.indices.size() [" << numElements
+                << "] is larger than the max value of GLsizei on this platform ["
+                << maxNumElements << "]";
+            return false;
+        }
+
+        glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_SHORT, 0);
+        if (checkForGLError(
+            "RenderManagerOpenGL::PresentEye after glDrawElements")) {
+            //return false;
+        }
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;
