@@ -49,7 +49,6 @@ Sensics, Inc.
 #include <osvr/Util/Finally.h>
 #include <osvr/Util/Logger.h>
 #include <iostream>
-#include <limits>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -1282,14 +1281,6 @@ namespace renderkit {
         }
 
         GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
-        auto maxNumElements = std::numeric_limits<GLsizei>::max();
-        if(numElements >= maxNumElements) {
-            m_log->error() << "meshBuffer.indices.size() [" << numElements
-                << "] is larger than the max value of GLsizei on this platform ["
-                << maxNumElements << "]";
-            return false;
-        }
-
         glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_SHORT, 0);
         if (checkForGLError(
             "RenderManagerOpenGL::PresentEye after glDrawElements")) {
