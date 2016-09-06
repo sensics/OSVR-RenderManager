@@ -607,6 +607,7 @@ int main(int argc, char* argv[]) {
 			return -5;
         }
     }
+    osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
     // Register our constructed buffers so that we can use them for
     // presentation.
@@ -677,6 +678,8 @@ int main(int argc, char* argv[]) {
             std::cerr << "Could not finish presenting render buffers" << std::endl;
             quit = true;
         }
+
+        osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
         // Draw something in our window, just looping the background color.
         // Note that we need to bind the correct framebuffer (0 in this case)

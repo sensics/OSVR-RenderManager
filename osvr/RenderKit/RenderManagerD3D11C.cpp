@@ -68,13 +68,11 @@ ConvertGraphicsLibrary(const osvr::renderkit::GraphicsLibrary& graphicsLibrary,
 inline void
 ConvertRenderBuffer(const OSVR_RenderBufferD3D11& renderBuffer,
                     osvr::renderkit::RenderBuffer& renderBufferOut) {
-    renderBufferOut.D3D11 = nullptr;
     renderBufferOut.OpenGL = nullptr;
     renderBufferOut.D3D11 = new osvr::renderkit::RenderBufferD3D11();
     renderBufferOut.D3D11->colorBuffer = renderBuffer.colorBuffer;
     renderBufferOut.D3D11->colorBufferView = renderBuffer.colorBufferView;
     renderBufferOut.D3D11->depthStencilBuffer = renderBuffer.depthStencilBuffer;
-#pragma warning(suppress : 6011)
     renderBufferOut.D3D11->depthStencilView = renderBuffer.depthStencilView;
 }
 

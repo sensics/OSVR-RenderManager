@@ -63,7 +63,7 @@ namespace osvr {
                 HANDLE sharedResourceHandle;
                 ID3D11Texture2D *textureCopy;   //< nullptr if no copy needed.
             } RenderBufferATWInfo;
-            std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo> mBufferMap;
+            std::map<ID3D11Texture2D*, RenderBufferATWInfo> mBufferMap;
 
             std::mutex mLock;
             std::shared_ptr<std::thread> mThread = nullptr;
@@ -73,7 +73,7 @@ namespace osvr {
             /// by the ATW thread.  Access should be guarded using the mLock to prevent
             /// simultaneous use in both threads.
             struct {
-                std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
+                std::vector<ID3D11Texture2D*> colorBuffers;
                 std::vector<osvr::renderkit::RenderInfo> renderInfo;
                 std::vector<OSVR_ViewportDescription> normalizedCroppingViewports;
                 RenderParams renderParams;
@@ -102,7 +102,7 @@ namespace osvr {
                     mThread->join();
                 }
                 // Delete textures and views that we allocated or otherwise opened
-                std::map<osvr::renderkit::RenderBufferD3D11*, RenderBufferATWInfo>::iterator i;
+                std::map<ID3D11Texture2D*, RenderBufferATWInfo>::iterator i;
                 for (i = mBufferMap.begin(); i != mBufferMap.end(); i++) {
                   i->second.atwBuffer.D3D11->colorBuffer->Release();
                   // We don't release the colorBufferView because we didn't create one.
@@ -205,8 +205,8 @@ namespace osvr {
                   // release them there and acquire them back for the render thread.
                   // This starts us with the render thread owning all of the buffers.
                   // Then clear the buffer list that is owned by the ATW thread.
-                  for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
-                    auto key = mNextFrameInfo.renderBuffers[i].D3D11;
+                  for (size_t i = 0; i < mNextFrameInfo.colorBuffers.size(); i++) {
+                    auto key = mNextFrameInfo.colorBuffers[i];
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
                         m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
@@ -230,14 +230,14 @@ namespace osvr {
                         mQuit = true;
                     }
                   }
-                  mNextFrameInfo.renderBuffers.clear();
+                  mNextFrameInfo.colorBuffers.clear();
 
                   // If we have non-NULL texture-copy pointers in any of the buffers
                   // associated with the presented buffers, copy the texture into
                   // the associated buffer.  This is to handle the case where the client
                   // did not promise not to overwrite the texture before it is presented.
                   for (size_t i = 0; i < renderBuffers.size(); i++) {
-                    auto key = renderBuffers[i].D3D11;
+                    auto key = renderBuffers[i].D3D11->colorBuffer;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
                         m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
@@ -248,7 +248,7 @@ namespace osvr {
                     }
 
                     if (bufferInfoItr->second.textureCopy != nullptr) {
-                      m_D3D11Context->CopyResource(bufferInfoItr->second.textureCopy,
+						m_D3D11Context->CopyResource(bufferInfoItr->second.textureCopy,
                         renderBuffers[i].D3D11->colorBuffer);
                     }
                   }
@@ -258,7 +258,7 @@ namespace osvr {
                   // onto the vector for use by that thread.
                   for (size_t i = 0; i < renderBuffers.size(); i++) {
                       // We need to unlock the render thread's mutex (remember they're locked initially)
-                      auto key = renderBuffers[i].D3D11;
+                      auto key = renderBuffers[i].D3D11->colorBuffer;
                       auto bufferInfoItr = mBufferMap.find(key);
                       if (bufferInfoItr == mBufferMap.end()) {
                           m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
@@ -283,14 +283,14 @@ namespace osvr {
                           m_doingOkay = false;
                           return false;
                       }
-                      mNextFrameInfo.renderBuffers.push_back(renderBuffers[i]);
+                      mNextFrameInfo.colorBuffers.push_back(renderBuffers[i].D3D11->colorBuffer);
                   }
-                  mFirstFramePresented = true;
                   mNextFrameInfo.renderInfo = renderInfoUsed;
                   mNextFrameInfo.flipInY = flipInY;
                   mNextFrameInfo.renderParams = renderParams;
                   mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
-                  return true;
+				  mFirstFramePresented = true;
+				  return true;
             }
 
             void start() {
@@ -378,8 +378,8 @@ namespace osvr {
 
                             // make a new RenderBuffers array with the atw thread's buffers
                             std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
-                            for (size_t i = 0; i < mNextFrameInfo.renderBuffers.size(); i++) {
-                                auto key = mNextFrameInfo.renderBuffers[i].D3D11;
+                            for (size_t i = 0; i < mNextFrameInfo.colorBuffers.size(); i++) {
+								auto key = mNextFrameInfo.colorBuffers[i];
                                 auto bufferInfoItr = mBufferMap.find(key);
                                 if (bufferInfoItr == mBufferMap.end()) {
                                     m_log->error() << "No buffer info for key " << (size_t)key;
@@ -456,7 +456,11 @@ namespace osvr {
             bool PresentFrameFinalize() override { return true; }
 
             bool SolidColorEye(size_t eye, const RGBColorf &color) override {
-              return mRenderManager->SolidColorEye(eye, color);
+				std::lock_guard<std::mutex> lock(mLock);
+				// Stop the rendering thread from overwriting with warped
+				// versions of the most recently presented buffers.
+				mFirstFramePresented = false;
+				return mRenderManager->SolidColorEye(eye, color);
             }
 
             //===================================================================
@@ -649,10 +653,13 @@ namespace osvr {
                     // Render().
                     newInfo.atwBuffer.D3D11->colorBufferView = nullptr; // We don't need this.
 
+					newInfo.atwBuffer.D3D11->depthStencilBuffer = nullptr;
+					newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
+
                     renderBuffers.push_back(newInfo.atwBuffer);
                   }
 
-                  mBufferMap[buffers[i].D3D11] = newInfo;
+                  mBufferMap[buffers[i].D3D11->colorBuffer] = newInfo;
                 }
 
                 if (!mRenderManager->RegisterRenderBuffers(renderBuffers,
