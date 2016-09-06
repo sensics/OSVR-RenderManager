@@ -547,7 +547,7 @@ namespace renderkit {
                 m_renderOversampleFactor = 1.0f;
                 m_enableTimeWarp = true;
                 m_asynchronousTimeWarp = false;
-                m_maxMSBeforeVsyncTimeWarp = 3.0f;
+                m_maxMSBeforeVsyncTimeWarp = 0.0f;
 
                 m_distortionCorrection = false;
 
