@@ -62,6 +62,7 @@ ConvertGraphicsLibrary(const osvr::renderkit::GraphicsLibrary& graphicsLibrary,
 inline void
 ConvertRenderBuffer(const OSVR_RenderBufferOpenGL& renderBuffer,
                     osvr::renderkit::RenderBuffer& renderBufferOut) {
+     renderBufferOut.D3D11 = nullptr;
      renderBufferOut.OpenGL = new osvr::renderkit::RenderBufferOpenGL();
      renderBufferOut.OpenGL->colorBufferName = renderBuffer.colorBufferName;
      renderBufferOut.OpenGL->depthStencilBufferName =
