@@ -27,6 +27,12 @@
 #include <osvr/RenderKit/RenderManagerImpl.h>
 #include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 
+// We pull these in so we know the right types to delete for the
+// RenderBuffers
+#include <d3d11.h>
+#include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+#include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
+
 // Library/third-party includes
 /* none */
 
@@ -91,6 +97,15 @@ OSVR_ReturnCode osvrRenderManagerFinishPresentRenderBuffers(
         shouldFlipY == OSVR_TRUE)) {
       return OSVR_RETURN_FAILURE;
     }
+
+    // Delete any space allocated for the buffers in the ConvertRenderBuffers
+    // routines.  They must have put nullptr in the fields they did not
+    // allocate to avoid a crash here.
+    for (size_t i = 0; i < state->renderBuffers.size(); i++) {
+        delete state->renderBuffers[i].D3D11;
+        delete state->renderBuffers[i].OpenGL;
+    }
+    delete state;
 
     return OSVR_RETURN_SUCCESS;
 }
