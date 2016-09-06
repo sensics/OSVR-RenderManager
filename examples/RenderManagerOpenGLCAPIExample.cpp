@@ -316,6 +316,7 @@ int main(int argc, char* argv[]) {
 			return -5;
         }
     }
+    osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
     // Register our constructed buffers so that we can use them for
     // presentation.
@@ -377,6 +378,7 @@ int main(int argc, char* argv[]) {
 				return 202;
             }
         }
+        osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
         if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
             render, presentState, renderParams, false))) {
