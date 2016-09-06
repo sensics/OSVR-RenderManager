@@ -172,7 +172,6 @@ namespace renderkit {
             RenderManagerOpenGL* renderManager;
             size_t display;
 
-            GLuint VAO;
             GLuint vertexBuffer;
             GLuint indexBuffer;
             std::vector<DistortionVertex> vertices;
