@@ -157,6 +157,7 @@ namespace renderkit {
             Vendor{"VRG", "VRGate"},
             Vendor{"TSB", "VRGate"},
             Vendor{"VRV", "Vrvana"},
+            Vendor{"SAM", "Samsung"},
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
         return vendors;
