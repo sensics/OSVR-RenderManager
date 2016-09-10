@@ -299,7 +299,7 @@ namespace osvr {
                 } else {
                     mThread.reset(new std::thread(std::bind(&RenderManagerD3D11ATW::threadFunc, this)));
                     // Set the scheduling priority of this thread to time-critical.
-#ifdef OSVR_WINDOWS
+#ifdef _WIN32
                     HANDLE h = mThread->native_handle();
                     if (!SetThreadPriority(h, THREAD_PRIORITY_TIME_CRITICAL)) {
                       m_log->error() << "RenderManagerD3D11ATW::start():"
