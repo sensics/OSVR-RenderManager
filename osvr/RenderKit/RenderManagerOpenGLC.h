@@ -31,7 +31,7 @@
 
 // Library/third-party includes
 #include <osvr/Util/PlatformConfig.h>
-#if defined(OSVR_WINDOWS)
+#if defined(_WIN32)
 #include <windows.h>
 #endif
 

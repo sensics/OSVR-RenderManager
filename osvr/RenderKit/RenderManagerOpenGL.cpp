@@ -591,7 +591,7 @@ namespace renderkit {
           // Note: This will not cause a constraint violation because we've
           // satisfied all of the constraints, so we don't need to wrap it in
           // a handler.
-#if defined(OSVR_WINDOWS)
+#if defined(_WIN32)
           strncpy_s(title.get(), windowTitle.size() + 1,
             windowTitle.c_str(), windowTitle.size() + 1);
 #else
