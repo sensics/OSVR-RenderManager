@@ -29,8 +29,10 @@
 
 // We pull these in so we know the right types to delete for the
 // RenderBuffers
+#ifdef _WIN32
 #include <d3d11.h>
 #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+#endif
 #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
 
 // Library/third-party includes
@@ -102,7 +104,9 @@ OSVR_ReturnCode osvrRenderManagerFinishPresentRenderBuffers(
     // routines.  They must have put nullptr in the fields they did not
     // allocate to avoid a crash here.
     for (size_t i = 0; i < state->renderBuffers.size(); i++) {
+#ifdef _WIN32
         delete state->renderBuffers[i].D3D11;
+#endif
         delete state->renderBuffers[i].OpenGL;
     }
     delete state;
