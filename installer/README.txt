@@ -46,6 +46,19 @@ Source code for RenderManager, including example programs, is available at:
   https://github.com/sensics/OSVR-RenderManager
 
 Version notes:
+0.6.52:
+  ftr Android compatibility improvements
+  ftr Removed VAO references for backwards compatibility
+ *ftr Modified OpenGL code to run with GLES 2.0 shaders
+  ftr Added example program using shared contexts and present
+  bug Fixed shared contexts in present mode
+  ftr Performance improvements, improved config file defaults
+  ftr High-polygon-count test application added to enable performance testing
+  bug Modified DLL loading so that it is backwards compatible before Windows 10
+  ftr Several vendor IDs added to DirectMode
+ *ftr Logging support added, providing info on all applications/frameworks
+  bug Adjusted thread priority so ATW runs more smoothly
+  bug Qt example program also working in DirectMode
 0.6.51:
  *ftr Now shares OpenGL context with app by default
   bug Now looks for AMD cards second, avoiding false-positive DirectMode finds
