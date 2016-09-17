@@ -106,7 +106,7 @@ class Qt5ToolkitImpl {
     static OSVR_CBool handleEventsImpl(void* data) {
         return ((Qt5ToolkitImpl*)data)->handleEvents();
     }
-    static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut) {
+    static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLuint* displayFrameBufferOut) {
       return ((Qt5ToolkitImpl*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut);
     }
     static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height) {
@@ -201,7 +201,7 @@ class Qt5ToolkitImpl {
     bool handleEvents() {
       return true;
     }
-    bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut) {
+    bool getDisplayFrameBuffer(size_t display, GLuint* displayFrameBufferOut) {
       *displayFrameBufferOut = 0;
       return true;
     }

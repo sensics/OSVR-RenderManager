@@ -77,7 +77,7 @@ class SDLToolkitImpl {
   static OSVR_CBool handleEventsImpl(void* data) {
     return ((SDLToolkitImpl*)data)->handleEvents();
   }
-  static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut) {
+  static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLuint* displayFrameBufferOut) {
       return ((SDLToolkitImpl*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut);
   }
   static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height) {
@@ -248,7 +248,7 @@ public:
     return true;
   }
 
-  bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut) {
+  bool getDisplayFrameBuffer(size_t display, GLuint* displayFrameBufferOut) {
       // @todo: can this be determined by inspection?
       *displayFrameBufferOut = 0;
       return true;
@@ -1231,7 +1231,7 @@ namespace renderkit {
         // mapped onto it.
 
         // Render to the 0th frame buffer, which is the screen.
-        GLint displayFrameBuffer;
+        GLuint displayFrameBuffer;
 
         if (!m_toolkit.getDisplayFrameBuffer ||
             !m_toolkit.getDisplayFrameBuffer(m_toolkit.data, GetDisplayUsedByEye(params.m_index), &displayFrameBuffer)) {
