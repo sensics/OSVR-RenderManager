@@ -376,7 +376,7 @@ namespace renderkit {
                     break;
             }
 
-            m_log->warn() << message << ": OpenGL error " << errorString << "(" + err << ")";
+            m_log->warn() << message << ": OpenGL error " << errorString << "(" << err << ")";
             ret = true;
         }
         return ret;
