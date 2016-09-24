@@ -724,10 +724,12 @@ namespace renderkit {
         m_modelViewUniformId =
             glGetUniformLocation(m_programId, "modelViewMatrix");
         m_textureUniformId = glGetUniformLocation(m_programId, "textureMatrix");
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after getting uniforms");
 
         // Now that they are linked, we don't need to keep them around.
         glDeleteShader(vertexShaderId);
         glDeleteShader(fragmentShaderId);
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after deleting shaders");
 
         if (!UpdateDistortionMeshesInternal(SQUARE,
                                             m_params.m_distortionParameters)) {
@@ -736,6 +738,7 @@ namespace renderkit {
           ret.status = FAILURE;
           return ret;
         }
+        checkForGLError("RenderManagerOpenGL::OpenDisplay after updating meshes");
 
         //======================================================
         // Fill in our library with the things the application may need to
@@ -924,7 +927,7 @@ namespace renderkit {
         // Record and restore the Vertex Array Object binding so we
         // don't mess with the client's state.
         GLint prevVAO;
-        glGetIntegerv(GL_VERTEX_ARRAY_BUFFER_BINDING, &prevVAO);
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
         auto resetVAO = util::finally([&]{
           glBindVertexArray(prevVAO);
         });
