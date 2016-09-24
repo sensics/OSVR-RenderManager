@@ -830,14 +830,21 @@ namespace renderkit {
     }
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer()
-        : vertexBuffer(0)
-        , indexBuffer(0)
+        : 
+#ifndef OSVR_RM_USE_OPENGLES20
+        VAO(0),
+#endif
+        vertexBuffer(0),
+        indexBuffer(0)
     {   }
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer(
         DistortionMeshBuffer && rhs) {
         renderManager = std::move(rhs.renderManager);
         display = std::move(rhs.display);
+#ifndef OSVR_RM_USE_OPENGLES20
+        VAO = std::move(rhs.VAO);
+#endif
         vertexBuffer = std::move(rhs.vertexBuffer);
         indexBuffer = std::move(rhs.indexBuffer);
         vertices = std::move(rhs.vertices);
@@ -855,6 +862,9 @@ namespace renderkit {
             Clear();
             renderManager = std::move(rhs.renderManager);
             display = std::move(rhs.display);
+#ifndef OSVR_RM_USE_OPENGLES20
+            VAO = std::move(rhs.VAO);
+#endif
             vertexBuffer = std::move(rhs.vertexBuffer);
             indexBuffer = std::move(rhs.indexBuffer);
             vertices = std::move(rhs.vertices);
@@ -870,6 +880,12 @@ namespace renderkit {
             // If makeCurrent() fails give up on destroying OpenGL objects
             return;
         }
+#ifndef OSVR_RM_USE_OPENGLES20
+        if (VAO) {
+            glDeleteVertexArrays(1, &VAO);
+            VAO = 0;
+        }
+#endif
         if (vertexBuffer) {
             glDeleteBuffers(1, &vertexBuffer);
             vertexBuffer = 0;
@@ -889,6 +905,7 @@ namespace renderkit {
             distort //< Distortion parameters
         ) {
 
+#ifdef OSVR_RM_USE_OPENGLES20
         // Record the current state of the array and element
         // buffer bindings and restore them when we leave this
         // function so that we don't mess with the application's
@@ -903,7 +920,15 @@ namespace renderkit {
         auto resetElement = util::finally([&]{
           glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
         });
-
+#else
+        // Record and restore the Vertex Array Object binding so we
+        // don't mess with the client's state.
+        GLint prevVAO;
+        glGetIntegerv(GL_VERTEX_ARRAY_BUFFER_BINDING, &prevVAO);
+        auto resetVAO = util::finally([&]{
+          glBindVertexArray(prevVAO);
+        });
+#endif
 
         // Clear the triangle and quad buffers if we have created them before.
         m_distortionMeshBuffer.clear();
@@ -961,6 +986,12 @@ namespace renderkit {
 
             // Copy the index data
             meshBuffer.indices = mesh.indices;
+
+            // Construct the geometry we're going to render into the eyes
+#ifndef OSVR_RM_USE_OPENGLES20
+            glGenVertexArrays(1, &meshBuffer.VAO);
+            glBindVertexArray(meshBuffer.VAO);
+#endif
 
             glGenBuffers(1, &meshBuffer.vertexBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
@@ -1117,6 +1148,26 @@ namespace renderkit {
           glBindTexture(GL_TEXTURE_2D, prevTexture);
         });
 
+#ifdef OSVR_RM_USE_OPENGLES20
+        GLint prevArray;
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+        auto resetArray = util::finally([&]{
+          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+        });
+
+        GLint prevElement;
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+        auto resetElement = util::finally([&]{
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+        });
+#else
+        GLint prevVAO;
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+        auto resetVAO = util::finally([&]{
+          glBindVertexArray(prevVAO);
+        });
+#endif
+
         GLboolean depthTest, cullFace;
         glGetBooleanv(GL_DEPTH_TEST, &depthTest);
         auto resetDepthTest = util::finally([&]{
@@ -1133,18 +1184,6 @@ namespace renderkit {
           } else {
             glDisable(GL_CULL_FACE);
           }
-        });
-
-        GLint prevArray;
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
-        auto resetArray = util::finally([&]{
-          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
-        });
-
-        GLint prevElement;
-        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
-        auto resetElement = util::finally([&]{
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
         });
 
         /// Switch to our vertex/shader programs
@@ -1277,6 +1316,7 @@ namespace renderkit {
 
         auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
 
+#ifdef OSVR_RM_USE_OPENGLES20
         glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
         size_t const stride = sizeof(DistortionVertex);
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
@@ -1293,6 +1333,13 @@ namespace renderkit {
         glEnableVertexAttribArray(3);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+#else
+        glBindVertexArray(meshBuffer.VAO);
+        if (checkForGLError(
+            "RenderManagerOpenGL::PresentEye after glBindVertexArray(meshBuffer.VAO)")) {
+            return false;
+        }
+#endif
 
         GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
         glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_SHORT, 0);
