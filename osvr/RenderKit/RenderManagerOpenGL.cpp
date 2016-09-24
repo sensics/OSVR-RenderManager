@@ -30,16 +30,9 @@ Sensics, Inc.
 #include <osvr/Util/Finally.h>
 
 // clang-format off
-#ifdef OSVR_RM_USE_OPENGLES20
-  #define glDeleteVertexArrays glDeleteVertexArraysOES
-  #define glGenVertexArrays glGenVertexArraysOES
-  #define glBindVertexArray glBindVertexArrayOES
-  #define GL_VERTEX_ARRAY_BINDING GL_VERTEX_ARRAY_BINDING_OES
-#else
-  #include <GL/glew.h>
-  #ifdef _WIN32
-    #include <GL/wglew.h>
-  #endif
+#include <GL/glew.h>
+#ifdef _WIN32
+  #include <GL/wglew.h>
 #endif
 // clang-format on
 
@@ -837,16 +830,21 @@ namespace renderkit {
     }
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer()
-        : VAO(0)
-        , vertexBuffer(0)
-        , indexBuffer(0)
+        : 
+#ifndef OSVR_RM_USE_OPENGLES20
+        VAO(0),
+#endif
+        vertexBuffer(0),
+        indexBuffer(0)
     {   }
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer(
         DistortionMeshBuffer && rhs) {
         renderManager = std::move(rhs.renderManager);
         display = std::move(rhs.display);
+#ifndef OSVR_RM_USE_OPENGLES20
         VAO = std::move(rhs.VAO);
+#endif
         vertexBuffer = std::move(rhs.vertexBuffer);
         indexBuffer = std::move(rhs.indexBuffer);
         vertices = std::move(rhs.vertices);
@@ -864,7 +862,9 @@ namespace renderkit {
             Clear();
             renderManager = std::move(rhs.renderManager);
             display = std::move(rhs.display);
+#ifndef OSVR_RM_USE_OPENGLES20
             VAO = std::move(rhs.VAO);
+#endif
             vertexBuffer = std::move(rhs.vertexBuffer);
             indexBuffer = std::move(rhs.indexBuffer);
             vertices = std::move(rhs.vertices);
@@ -880,10 +880,12 @@ namespace renderkit {
             // If makeCurrent() fails give up on destroying OpenGL objects
             return;
         }
+#ifndef OSVR_RM_USE_OPENGLES20
         if (VAO) {
             glDeleteVertexArrays(1, &VAO);
             VAO = 0;
         }
+#endif
         if (vertexBuffer) {
             glDeleteBuffers(1, &vertexBuffer);
             vertexBuffer = 0;
@@ -902,6 +904,31 @@ namespace renderkit {
         std::vector<DistortionParameters> const&
             distort //< Distortion parameters
         ) {
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        // Record the current state of the array and element
+        // buffer bindings and restore them when we leave this
+        // function so that we don't mess with the application's
+        // rendering state.
+        GLint prevArray;
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+        auto resetArray = util::finally([&]{
+          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+        });
+        GLint prevElement;
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+        auto resetElement = util::finally([&]{
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+        });
+#else
+        // Record and restore the Vertex Array Object binding so we
+        // don't mess with the client's state.
+        GLint prevVAO;
+        glGetIntegerv(GL_VERTEX_ARRAY_BUFFER_BINDING, &prevVAO);
+        auto resetVAO = util::finally([&]{
+          glBindVertexArray(prevVAO);
+        });
+#endif
 
         // Clear the triangle and quad buffers if we have created them before.
         m_distortionMeshBuffer.clear();
@@ -961,9 +988,11 @@ namespace renderkit {
             meshBuffer.indices = mesh.indices;
 
             // Construct the geometry we're going to render into the eyes
+#ifndef OSVR_RM_USE_OPENGLES20
             glGenVertexArrays(1, &meshBuffer.VAO);
             glBindVertexArray(meshBuffer.VAO);
-            
+#endif
+
             glGenBuffers(1, &meshBuffer.vertexBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
             glBufferData(GL_ARRAY_BUFFER,
@@ -989,8 +1018,6 @@ namespace renderkit {
             glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                 sizeof(decltype(meshBuffer.indices[0])) * meshBuffer.indices.size(),
                 &meshBuffer.indices[0], GL_STATIC_DRAW);
-
-            glBindVertexArray(0);
         }
 
         return true;
@@ -1121,11 +1148,25 @@ namespace renderkit {
           glBindTexture(GL_TEXTURE_2D, prevTexture);
         });
 
+#ifdef OSVR_RM_USE_OPENGLES20
+        GLint prevArray;
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+        auto resetArray = util::finally([&]{
+          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+        });
+
+        GLint prevElement;
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+        auto resetElement = util::finally([&]{
+          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+        });
+#else
         GLint prevVAO;
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
         auto resetVAO = util::finally([&]{
           glBindVertexArray(prevVAO);
         });
+#endif
 
         GLboolean depthTest, cullFace;
         glGetBooleanv(GL_DEPTH_TEST, &depthTest);
@@ -1274,11 +1315,31 @@ namespace renderkit {
         }
 
         auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
+        size_t const stride = sizeof(DistortionVertex);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+          (void*)offsetof(DistortionVertex, pos));
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+          (void*)offsetof(DistortionVertex, texRed));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
+          (void*)offsetof(DistortionVertex, texGreen));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+          (void*)offsetof(DistortionVertex, texBlue));
+        glEnableVertexAttribArray(3);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+#else
         glBindVertexArray(meshBuffer.VAO);
         if (checkForGLError(
             "RenderManagerOpenGL::PresentEye after glBindVertexArray(meshBuffer.VAO)")) {
             return false;
         }
+#endif
 
         GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
         glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_SHORT, 0);
