@@ -152,7 +152,9 @@ namespace renderkit {
             m_modelViewUniformId; //< Pointer to modelView matrix, vertex shader
         GLuint m_textureUniformId; //< Pointer to texture matrix, vertex shader
 
+        // To do with our Render() path.
         std::vector<GLuint> m_frameBuffers;      //< Groups a color buffer and a depth buffer (per display)
+        GLuint m_initialFrameBuffer;    //< Frame buffer when we started rendering.
 
         std::vector<RenderBuffer>
             m_colorBuffers; //< Color buffers to hand to render callbacks
@@ -210,7 +212,7 @@ namespace renderkit {
                          ,
                          OSVR_ProjectionMatrix projection //< Projection to use
                          ) override;
-        bool RenderEyeFinalize(size_t eye) override { return true; }
+        bool RenderEyeFinalize(size_t eye) override;
         bool RenderDisplayFinalize(size_t display) override { return true; }
         bool RenderFrameFinalize() override;
 

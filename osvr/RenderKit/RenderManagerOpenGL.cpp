@@ -468,6 +468,14 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::constructRenderBuffers() {
+        // Put back the frame buffer that was bound before, so we don't
+        // mess with client state.
+        GLint prevFrameBuffer;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
+        auto resetFrameBuffer = util::finally([&]{
+          glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
+        });
+
         //======================================================
         // Create the framebuffer which regroups 0, 1,
         // or more textures, and 0 or 1 depth buffer.
@@ -480,7 +488,6 @@ namespace renderkit {
             }
             GLuint frameBuffer = 0;
             glGenFramebuffers(1, &frameBuffer);
-            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
             m_frameBuffers.push_back(frameBuffer);
         }
 
@@ -768,6 +775,12 @@ namespace renderkit {
     bool RenderManagerOpenGL::RenderEyeInitialize(size_t eye) {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
+        // Store the frame buffer that was active before we started rendering,
+        // so we can put it back when we finalize.
+        GLint fb;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
+        m_initialFrameBuffer = static_cast<GLuint>(fb);
+
         // Render to our framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(GetDisplayUsedByEye(eye)));
         if (checkForGLError(
@@ -802,6 +815,18 @@ namespace renderkit {
         }
 
         if (checkForGLError("RenderManagerOpenGL::RenderEyeInitialize")) {
+            return false;
+        }
+        return true;
+    }
+
+    bool RenderManagerOpenGL::RenderEyeFinalize(size_t eye) {
+        checkForGLError("RenderManagerOpenGL::RenderEyeFinalize starting");
+
+        // Put the frame buffer back to the default one.
+        glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
+        if (checkForGLError(
+                "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
             return false;
         }
         return true;
@@ -1133,6 +1158,7 @@ namespace renderkit {
         });
         checkForGLError("RenderManagerOpenGL::PresentEye after get user program");
 
+        /// Store our framebuffer so we can put it back again before returning.
         GLint prevFrameBuffer;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
         auto resetFrameBuffer = util::finally([&]{
