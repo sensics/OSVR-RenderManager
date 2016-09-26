@@ -1,0 +1,98 @@
+{
+	"renderManagerConfig": {
+		"meta": {
+			"schemaVersion": 1
+		},
+		"renderManagerConfig": {
+			"directModeEnabled": true,
+			"directDisplayIndex": 0,
+			"directHighPriorityEnabled": true,
+			"numBuffers": 2,
+			"verticalSyncEnabled": true,
+			"verticalSyncBlockRenderingEnabled": true,
+			"renderOverfillFactor": 1.2,
+			"renderOversampleFactor": 1.0,
+			
+			"window": {
+				"title": "OSVR",
+				"fullScreenEnabled": true,
+				"xPosition": 1920,
+				"yPosition": 0
+			},
+
+			"display": {
+				"rotation": 0,
+				"bitsPerColor": 8
+			},
+
+			"prediction": {
+				"enabled": true,
+				"staticDelayMS": 16,
+				"leftEyeDelayMS": 0,
+				"rightEyeDelayMS": 0,
+				"localTimeOverride": true
+			},
+
+			"timeWarp": {
+				"enabled": true,
+				"asynchronous": true,
+				"maxMsBeforeVSync": 7
+			}
+		}
+	},
+
+	"display": {
+		"meta": {
+			"schemaVersion": 1
+		},
+		"hmd": {
+			"device": {
+				"properties": {
+					"vendor": "OSVR",
+					"model": "HDK",
+					"num_displays": 1,
+					"Version": "2.0",
+					"Note": "OSVR HDK in DirectMode in landscape mode"
+				}
+			},
+			"field_of_view": {
+				"monocular_horizontal": 90,
+				"monocular_vertical": 96.73,
+				"overlap_percent": 100,
+				"pitch_tilt": 0
+			},
+			"resolutions": [
+				{
+				"width": 2160,
+				"height": 1200,
+				"video_inputs": 1,
+				"display_mode": "horz_side_by_side",
+				"swap_eyes": 0
+				}
+			],
+			"distortion": {
+				"distance_scale_x": 1,
+				"distance_scale_y": 1,
+				"polynomial_coeffs_red": [ 0, 1, -1.74, 5.15, -1.27, -2.23 ],
+				"polynomial_coeffs_green": [ 0, 1, -1.74, 5.15, -1.27, -2.23 ],
+				"polynomial_coeffs_blue": [ 0, 1, -1.74, 5.15, -1.27, -2.23 ]
+			},
+			"rendering": {
+				"right_roll": 0,
+				"left_roll": 0
+			},
+			"eyes": [
+				{
+				"center_proj_x": 0.471,
+				"center_proj_y": 0.5,
+				"rotate_180": 1
+				},
+				{
+				"center_proj_x": 0.529,
+				"center_proj_y": 0.5,
+				"rotate_180": 1
+				}
+			]
+			}
+		}
+}
