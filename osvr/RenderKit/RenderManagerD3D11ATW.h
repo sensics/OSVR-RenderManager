@@ -530,7 +530,7 @@ namespace osvr {
                 // can't with the given parameters without just making assumptions
                 // for now, just use the first eye's device, but this may not work with
                 // multi-display HMDs
-                auto atwDevice = renderInfo[0].library.D3D11->device;;
+                auto atwDevice = renderInfo[0].library.D3D11->device;
                 
                 for (size_t i = 0; i < buffers.size(); i++) {
                   RenderBufferATWInfo newInfo;
