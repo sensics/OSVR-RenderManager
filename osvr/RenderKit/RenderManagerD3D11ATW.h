@@ -517,20 +517,12 @@ namespace osvr {
                 std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
                 size_t numRenderInfos = renderInfo.size();
 
-                if (renderInfo.size() == 0) {
+                if (renderInfo.size() != 2) {
                     m_log->error()
                         << "RenderManagerD3D11ATW::"
-                        << "RegisterRenderBuffersInternal: renderInfo was zero length.";
+                        << "RegisterRenderBuffersInternal: expect numRenderInfo to be 2.";
                     return false;
                 }
-
-                // @todo: we need to get the actual device for the given render info associated
-                // with the given buffer being registered. Since we support re-using the buffers
-                // for more than one eye, then we need to actually track this somehow, but we
-                // can't with the given parameters without just making assumptions
-                // for now, just use the first eye's device, but this may not work with
-                // multi-display HMDs
-                auto atwDevice = renderInfo[0].library.D3D11->device;
                 
                 for (size_t i = 0; i < buffers.size(); i++) {
                   RenderBufferATWInfo newInfo;
@@ -544,6 +536,43 @@ namespace osvr {
                     ID3D11Texture2D *texture2D = nullptr;
 
                     if (appWillNotOverwriteBeforeNewPresent) {
+                      // appWillNotOverwriteBeforeNewPresent implies client is double buffering render targets
+                      // and alternating each frame.
+                      bool isCombiningTextures = buffers.size() == 2;
+                      if (!isCombiningTextures && buffers.size() != 4) {
+                          m_log->error()
+                              << "RenderManagerD3D11ATW::"
+                              << "RegisterRenderBuffersInternal: Expecting either 2 or 4 registered render buffers.";
+                          m_doingOkay = false;
+                          return false;
+                      }
+
+                      // @todo We need to refactor our storage of the ATW thread's ID3D11Texture2D handle
+                      // to support multiple ATW thread ID3D11Texture2D handles per registered buffer,
+                      // because if they combine textures and the HMD requires two devices to render (two display inputs?)
+                      // then this will attempt to use the left eye's ID3D11Device to render the right eye's
+                      // render target, and will fail. We detect this here, and fail fast.
+                      if (isCombiningTextures &&
+                          renderInfo[0].library.D3D11->device != renderInfo[1].library.D3D11->device) {
+                          m_log->error()
+                              << "RenderManagerD3D11ATW::"
+                              << "RegisterRenderBuffersInternal: Client is rendering both eyes to one texture, but "
+                              << "the HMD uses multiple ID3D11Devices for output. This isn't yet supported. Try using one texture "
+                              << "per render info as a temporary workaround.";
+                          m_doingOkay = false;
+                          return false;
+                      }
+
+                      // if combining textures, just use the left eye's ID3DDevice for now
+                      // we check above if this will work and error out if it won't.
+                      // If this were implemented, there would be two buffers, corresponding
+                      // to both render infos 0, 1 each.
+                      // if not combining textures, and assuming double buffering,
+                      // then they'll have 4 buffers corresponding to render infos 0, 1, 0, 1
+                      // in that order.
+                      size_t renderInfoIndex = isCombiningTextures ? 0 : i % 2;
+                      auto atwDevice = renderInfo[renderInfoIndex].library.D3D11->device;
+
                       // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
                       // get that, we need to get the IDXGIResource* first
                       IDXGIResource* dxgiResource = NULL;
@@ -603,6 +632,43 @@ namespace osvr {
                       // twice or more, with multiple eyes packed into the same one.  We
                       // don't want to duplicate that buffer more than once.
 
+                      // appWillNotOverwriteBeforeNewPresent = false implies client is double buffering render targets
+                      // and alternating each frame.
+                      bool isCombiningTextures = buffers.size() == 1;
+                      if (!isCombiningTextures && buffers.size() != 2) {
+                          m_log->error()
+                              << "RenderManagerD3D11ATW::"
+                              << "RegisterRenderBuffersInternal: Expecting either 1 or 2 registered render buffers.";
+                          m_doingOkay = false;
+                          return false;
+                      }
+
+                      // @todo We need to refactor our storage of the ATW thread's ID3D11Texture2D handle
+                      // to support multiple ATW thread ID3D11Texture2D handles per registered buffer,
+                      // because if they combine textures and the HMD requires two devices to render (two display inputs?)
+                      // then this will attempt to use the left eye's ID3D11Device to render the right eye's
+                      // render target, and will fail. We detect this here, and fail fast.
+                      if (isCombiningTextures &&
+                          renderInfo[0].library.D3D11->device != renderInfo[1].library.D3D11->device) {
+                          m_log->error()
+                              << "RenderManagerD3D11ATW::"
+                              << "RegisterRenderBuffersInternal: Client is rendering both eyes to one texture, but "
+                              << "the HMD uses multiple ID3D11Devices for output. This isn't yet supported. Try using one texture "
+                              << "per render info as a temporary workaround.";
+                          m_doingOkay = false;
+                          return false;
+                      }
+
+                      // if combining textures, just use the left eye's ID3DDevice for now
+                      // we check above if this will work and error out if it won't.
+                      // If this were implemented, there would be one buffer, corresponding
+                      // to both render infos 0, 1.
+                      // if not combining textures, and assuming single buffering,
+                      // then they'll have 2 buffers corresponding to render infos 0, 1
+                      // in that order.
+                      size_t renderInfoIndex = isCombiningTextures ? 0 : i;
+                      auto atwDevice = renderInfo[renderInfoIndex].library.D3D11->device;
+
                       D3D11_TEXTURE2D_DESC info;
                       buffers[i].D3D11->colorBuffer->GetDesc(&info);
 
@@ -620,7 +686,7 @@ namespace osvr {
                         D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
                       textureDesc.CPUAccessFlags = 0;
                       textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
-                      hr = m_D3D11device->CreateTexture2D(&textureDesc, NULL, &texture2D);
+                      hr = atwDevice->CreateTexture2D(&textureDesc, NULL, &texture2D);
                       if (FAILED(hr)) {
                           m_log->error() << "RenderManagerD3D11ATW::"
                                          << "RegisterRenderBuffersInternal: - Can't create copy texture for buffer "
