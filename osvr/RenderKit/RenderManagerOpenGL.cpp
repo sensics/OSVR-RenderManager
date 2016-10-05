@@ -769,17 +769,18 @@ namespace renderkit {
               return false;
         }
         checkForGLError("RenderManagerOpenGL::RenderDisplayInitialize end");
-        return true;
+
+		// Store the frame buffer that was active before we started rendering,
+		// so we can put it back when we finalize.
+		GLint fb;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
+		m_initialFrameBuffer = static_cast<GLuint>(fb);
+
+		return true;
     }
 
     bool RenderManagerOpenGL::RenderEyeInitialize(size_t eye) {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
-
-        // Store the frame buffer that was active before we started rendering,
-        // so we can put it back when we finalize.
-        GLint fb;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
-        m_initialFrameBuffer = static_cast<GLuint>(fb);
 
         // Render to our framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(GetDisplayUsedByEye(eye)));
@@ -820,7 +821,7 @@ namespace renderkit {
         return true;
     }
 
-    bool RenderManagerOpenGL::RenderEyeFinalize(size_t eye) {
+    bool RenderManagerOpenGL::RenderDisplayFinalize(size_t eye) {
         checkForGLError("RenderManagerOpenGL::RenderEyeFinalize starting");
 
         // Put the frame buffer back to the default one.
