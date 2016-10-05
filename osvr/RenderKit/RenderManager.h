@@ -37,7 +37,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/Util/TimeValueC.h>
-#include <osvr/Util/Log.h>
+#include <osvr/Util/Logger.h>
 
 // Standard includes
 #include <vector>
