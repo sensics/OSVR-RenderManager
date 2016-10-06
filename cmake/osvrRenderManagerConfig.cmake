@@ -2,6 +2,7 @@
 # Hook for a super-build to optionally inject hints before target import.
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigSuperBuildPrefix.cmake" OPTIONAL)
 
+set(OSVRRM_IN_BUILD_TREE @OSVRRM_IN_BUILD_TREE@)
 
 if(NOT OSVRRM_IN_BUILD_TREE)
 	# Compute the installation prefix relative to this file.
