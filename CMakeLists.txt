@@ -647,5 +647,9 @@ install(FILES
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
 	set(HEADER_BASE "${CMAKE_CURRENT_SOURCE_DIR}/osvr")
-	add_subdirectory(tests)
 endif()
+
+include(CTest)
+enable_testing()
+
+add_subdirectory(tests)
