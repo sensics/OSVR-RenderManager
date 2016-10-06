@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
     // Get an OSVR client context to use to access the devices
     // that we need.
-    osvr::clientkit::ClientContext context("org.RenderManager.SolidColor");
+    osvr::clientkit::ClientContext context("org.osvr.RenderManager.SolidColor");
 
     // Construct button devices and connect them to a callback
     // that will set the "quit" variable to true when it is
@@ -113,9 +113,8 @@ int main(int argc, char* argv[]) {
     // an HMD.  Do this using the OSVR RenderManager interface,
     // which maps to the nVidia or other vendor direct mode
     // to reduce the latency.
-    osvr::renderkit::RenderManager* render =
-        osvr::renderkit::createRenderManager(context.get(),
-        graphicsLibrary.c_str());
+    std::unique_ptr<osvr::renderkit::RenderManager> render(
+        osvr::renderkit::createRenderManager(context.get(), graphicsLibrary.c_str()));
     if ((render == nullptr) || (!render->doingOkay())) {
         std::cerr << "Could not create RenderManager" << std::endl;
         return 1;
@@ -164,9 +163,6 @@ int main(int argc, char* argv[]) {
             quit.store(true);
         }
     }
-
-    // Close the Renderer interface cleanly.
-    delete render;
 
     return 0;
 }
