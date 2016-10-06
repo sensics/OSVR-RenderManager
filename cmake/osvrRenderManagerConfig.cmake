@@ -50,7 +50,7 @@ set(OSVRRM_HAVE_OPENGL_SUPPORT @OSVRRM_HAVE_OPENGL_SUPPORT@)
 set(OSVRRM_USE_OPENGLES20 @OSVRRM_USE_OPENGLES20@)
 
 # Helper function to copy required libraries to an install directory
-set(OSVRRM_CONFIG_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(OSVRRM_CONFIG_DIR "${CMAKE_CURRENT_LIST_DIR}" CACHE INTERNAL "" FORCE)
 function(osvrrm_install_dependencies _destination)
 	foreach(_config Debug Release RelWithDebInfo MinSizeRel)
 		string(TOUPPER "${_config}" _CONFIG)
@@ -68,6 +68,22 @@ function(osvrrm_install_dependencies _destination)
 			OPTIONAL)
 	endforeach()
 endfunction()
+
+# Find SDL2 using the script bundled with RenderManager.
+macro(osvrrm_find_SDL2)
+    set(OSVRRM_PREV_CMAKE_MODULES  ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH "${OSVRRM_CONFIG_DIR}" ${CMAKE_MODULE_PATH})
+    find_package(SDL2 ${ARGN})
+    set(CMAKE_MODULE_PATH ${OSVRRM_PREV_CMAKE_MODULES})
+endmacro()
+
+# Find GLEW using the script bundled with RenderManager.
+macro(osvrrm_find_GLEW)
+    set(OSVRRM_PREV_CMAKE_MODULES  ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH "${OSVRRM_CONFIG_DIR}" ${CMAKE_MODULE_PATH})
+    find_package(GLEW ${ARGN})
+    set(CMAKE_MODULE_PATH ${OSVRRM_PREV_CMAKE_MODULES})
+endmacro()
 
 # Hook for a super-build to optionally inject configuration after target import.
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigSuperBuildSuffix.cmake" OPTIONAL)
