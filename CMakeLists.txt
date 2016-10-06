@@ -460,8 +460,8 @@ add_library(osvrRenderManagerCpp INTERFACE)
 target_link_libraries(osvrRenderManagerCpp INTERFACE osvrRenderManager osvr::osvrClientKitCpp)
 
 # Alias targets, so the examples can be used as-is.
-add_library(osvrRM::osvrRenderManager ALIAS osvrRenderManager)
-add_library(osvrRM::osvrRenderManagerCpp ALIAS osvrRenderManagerCpp)
+add_library(osvrRenderManager::osvrRenderManager ALIAS osvrRenderManager)
+add_library(osvrRenderManager::osvrRenderManagerCpp ALIAS osvrRenderManagerCpp)
 
 if(WIN32)
 	# Install d3dcompiler_47
