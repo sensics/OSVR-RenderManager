@@ -42,6 +42,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerTargets.cmake")
 # Undo our changes for later consumers
 osvr_unstash_common_map_config()
 
+if(NOT TARGET osvrRenderManager::osvrRenderManagerCpp)
+    add_library(osvrRenderManager::osvrRenderManagerCpp INTERFACE IMPORTED)
+    set_target_properties(osvrRenderManager::osvrRenderManagerCpp PROPERTIES
+        INTERFACE_LINK_LIBRARIES "osvrRenderManager::osvrRenderManager;osvr::osvrClientKitCpp")
+endif()
+
 # Fix up imported targets to add deps: these files will only exist in install trees.
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigInstalledBoost.cmake" OPTIONAL)
 
