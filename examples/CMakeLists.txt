@@ -356,6 +356,9 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SolidColor.cpp")
 	target_compile_features(SolidColor PRIVATE cxx_range_for)
 endif()
 
+list(LENGTH BUILT_EXAMPLES NUM_BUILT_EXAMPLES)
+message(STATUS "Building ${NUM_BUILT_EXAMPLES} RenderManager examples.")
+
 if(OSVRRM_INSTALL_EXAMPLES AND CMAKE_INSTALL_BINDIR)
 	install(TARGETS
 		${BUILT_EXAMPLES}
