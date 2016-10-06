@@ -17,6 +17,7 @@ include(Version)
 include (GenerateExportHeader)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+option(INSTALL_EXAMPLES "Install source code and build system for examples" ON)
 
 include(osvrStashMapConfig)
 
@@ -642,6 +643,18 @@ install(FILES
 	RENAME osvrRenderManagerConfig.cmake
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
+
+# Install examples
+if(INSTALL_EXAMPLES)
+    install(DIRECTORY examples
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}
+        FILES_MATCHING
+        PATTERN "*.cpp"
+        PATTERN "*.h"
+        PATTERN "*.c"
+        PATTERN "*.hlsl"
+        PATTERN "*/CMakeLists.txt")
+endif()
 
 # Tests
 option(BUILD_TESTS "Build tests" ON)
