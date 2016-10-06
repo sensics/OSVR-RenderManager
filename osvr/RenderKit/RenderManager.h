@@ -234,6 +234,11 @@ namespace renderkit {
     } RenderInfo;
 
     class RenderManager {
+      private: 
+        /// Bool telling whether we're doing okay.  When we get a failure
+        /// that will prevent rendering, this will be set to false.
+        bool m_doingOkay;
+
       public:
         ///-------------------------------------------------------------
         /// Create a RenderManager using the createRenderManager() function.
@@ -699,13 +704,14 @@ namespace renderkit {
         virtual OSVR_RENDERMANAGER_EXPORT void ClearRoomToWorldTransform();
 
       protected:
+
+        virtual void setDoingOkay(bool value) {
+            m_doingOkay = value;
+        }
+
         /// @brief Constructor given OSVR context and parameters
         RenderManager(OSVR_ClientContext context,
                       const ConstructorParameters& p);
-
-        /// Bool telling whether we're doing okay.  When we get a failure
-        /// that will prevent rendering, this will be set to false.
-        bool m_doingOkay;
 
         /// Mutex to provide thread safety to this class and its
         /// subclasses.  NOTE: All subclasses must lock this mutex

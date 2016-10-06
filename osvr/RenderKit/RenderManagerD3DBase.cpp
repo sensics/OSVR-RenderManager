@@ -204,7 +204,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::SetDeviceAndContext: Could not "
                               "create D3D11 device";
-            m_doingOkay = false;
+            setDoingOkay(false);
             return false;
         }
     	m_log->info("RenderManagerD3D11Base::SetDeviceAndContext: Created D3D11 device");
@@ -458,7 +458,7 @@ namespace renderkit {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Vertex shader "
                               "compilation failed: "
                            << static_cast<char*>(compilerMsgs->GetBufferPointer());
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -469,7 +469,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                               "create vertex shader";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -492,7 +492,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                               "create input layout";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -507,7 +507,7 @@ namespace renderkit {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Pixel shader "
                               "compilation failed: "
                            << static_cast<char*>(compilerMsgs->GetBufferPointer());
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -518,7 +518,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                               "create pixel shader";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -543,7 +543,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                               "create sampler state";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -558,7 +558,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                               "create rasterizer state";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -578,7 +578,7 @@ namespace renderkit {
                 m_cbPerObjectBuffer.GetAddressOf()))) {
             m_log->error() << "RenderManagerD3D11Base::OpenDisplay: Could not "
                               "create uniform buffer";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
@@ -619,7 +619,7 @@ namespace renderkit {
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerNVidiaD3D11::OpenDisplay: Could not "
                               "create depth/stencil state";
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         }
