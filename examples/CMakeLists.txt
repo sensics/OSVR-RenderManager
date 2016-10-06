@@ -346,13 +346,11 @@ endif()
 
 #-----------------------------------------------------------------------------
 # Program that changes the solid color sent to a display.
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SolidColor.cpp"
-	AND TARGET vendored-vrpn
-	AND TARGET vendored-quat)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SolidColor.cpp")
 
 	list(APPEND BUILT_EXAMPLES SolidColor)
 	add_executable(SolidColor SolidColor.cpp)
-	target_link_libraries(SolidColor PRIVATE osvrRM::osvrRenderManagerCpp vendored-vrpn vendored-quat)
+	target_link_libraries(SolidColor PRIVATE osvrRM::osvrRenderManagerCpp)
 	target_compile_features(SolidColor PRIVATE cxx_range_for)
 endif()
 
