@@ -163,6 +163,7 @@ endif()
 
 set(OSVRRM_HAVE_OPENGL_SUPPORT OFF)
 set(OSVRRM_HAVE_D3D11_SUPPORT OFF)
+set(OSVRRM_USE_OPENGLES20 OFF)
 if (WIN32)
 	set(OSVRRM_HAVE_D3D11_SUPPORT ON)
 	set(RM_USE_D3D11 TRUE)
@@ -179,6 +180,7 @@ if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND (SDL2_FOUND OR AND
 	if (OPENGLES2_FOUND AND ANDROID)
 		message(STATUS " - OpenGLES2 support: enabled")
 		set(RM_USE_OPENGLES20 TRUE)
+		set(OSVRRM_USE_OPENGLES20 ON)
 	endif()
 else()
 	message(STATUS " - OpenGL support: disabled)")
@@ -476,7 +478,7 @@ endif()
 set(OSVRRM_INSTALL_EXAMPLES ON)
 
 if(NOT ANDROID)
-    add_subdirectory(examples)
+	add_subdirectory(examples)
 endif()
 
 install(TARGETS
