@@ -14,12 +14,14 @@ endif()
 message(STATUS "Searching for optional dependencies")
 if(OSVRRM_HAVE_OPENGL_SUPPORT AND OSVRRM_EXAMPLES_STANDALONE)
 	find_package(OpenGL)
-	find_package(SDL2)
-	find_package(GLEW)
+	#find_package(SDL2)
+	osvrrm_find_SDL2()
+	#find_package(GLEW)
+	osvrrm_find_GLEW()
 	# TODO search for GLES if applicable
 endif()
-find_package(Qt5Widgets)
-find_package(Qt5OpenGL)
+find_package(Qt5Widgets QUIET)
+find_package(Qt5OpenGL QUIET)
 
 set(COMMON_D3D_SOURCES
 	D3DCube.h
