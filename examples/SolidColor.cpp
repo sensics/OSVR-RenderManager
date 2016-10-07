@@ -31,52 +31,38 @@
 #include <osvr/ClientKit/Interface.h>
 #include <osvr/RenderKit/RenderManager.h>
 
+// just where this header happens to be.
+#include <osvr/Server/RegisterShutdownHandler.h>
+
 // Library/third-party includes
 #ifdef _WIN32
 #include <windows.h>
 #include <initguid.h>
 #endif
-#include <vrpn_Shared.h>
-#include <quat.h>
 
 // Standard includes
 #include <iostream>
 #include <string>
+#include <chrono>
 #include <stdlib.h> // For exit()
 
 // Set to true when it is time for the application to quit.
-// Handlers below that set it to true when the user causes
-// any of a variety of events so that we shut down the system
-// cleanly.  This only works on Windows, but so does D3D...
-static bool quit = false;
+typedef struct {
+  volatile bool quit = false;
+} QuitStruct;
+QuitStruct quit;
 
-#ifdef _WIN32
 // Note: On Windows, this runs in a different thread from
 // the main application.
-static BOOL CtrlHandler(DWORD fdwCtrlType) {
-    switch (fdwCtrlType) {
-    // Handle the CTRL-C signal.
-    case CTRL_C_EVENT:
-    // CTRL-CLOSE: confirm that the user wants to exit.
-    case CTRL_CLOSE_EVENT:
-    case CTRL_BREAK_EVENT:
-    case CTRL_LOGOFF_EVENT:
-    case CTRL_SHUTDOWN_EVENT:
-        quit = true;
-        return TRUE;
-    default:
-        return FALSE;
-    }
-}
-#endif
+static void CtrlHandler() { quit.quit = true; }
 
 // This callback sets a boolean value whose pointer is passed in to
 // the state of the button that was pressed.  This lets the callback
 // be used to handle any button press that just needs to update state.
 void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
                       const OSVR_ButtonReport* report) {
-    bool* result = static_cast<bool*>(userdata);
-    *result = (report->state != 0);
+    QuitStruct* result = static_cast<QuitStruct*>(userdata);
+    result->quit = (report->state != 0);
 }
 
 void Usage(std::string name) {
@@ -111,7 +97,7 @@ int main(int argc, char* argv[]) {
 
     // Get an OSVR client context to use to access the devices
     // that we need.
-    osvr::clientkit::ClientContext context("org.RenderManager.SolidColor");
+    osvr::clientkit::ClientContext context("org.osvr.RenderManager.SolidColor");
 
     // Construct button devices and connect them to a callback
     // that will set the "quit" variable to true when it is
@@ -129,18 +115,15 @@ int main(int argc, char* argv[]) {
     // an HMD.  Do this using the OSVR RenderManager interface,
     // which maps to the nVidia or other vendor direct mode
     // to reduce the latency.
-    osvr::renderkit::RenderManager* render =
-        osvr::renderkit::createRenderManager(context.get(),
-        graphicsLibrary.c_str());
+    std::unique_ptr<osvr::renderkit::RenderManager> render(
+        osvr::renderkit::createRenderManager(context.get(), graphicsLibrary.c_str()));
     if ((render == nullptr) || (!render->doingOkay())) {
         std::cerr << "Could not create RenderManager" << std::endl;
         return 1;
     }
 
-// Set up a handler to cause us to exit cleanly.
-#ifdef _WIN32
-    SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
-#endif
+    // Set up a handler to cause us to exit cleanly.
+    osvr::server::registerShutdownHandler<&CtrlHandler>();
 
     // Open the display and make sure this worked.
     osvr::renderkit::RenderManager::OpenResults ret = render->OpenDisplay();
@@ -156,19 +139,19 @@ int main(int argc, char* argv[]) {
     renderInfo = render->GetRenderInfo();
 
     // Continue rendering until it is time to quit.
-    struct timeval start;
-    vrpn_gettimeofday(&start, nullptr);
-    while (!quit) {
+    using ourClock = std::chrono::high_resolution_clock;
+    auto start = ourClock::now();
+    while (!quit.quit) {
         // Update the context so we get our callbacks called and
         // update tracker state.
         context.update();
 
         // Figure out the color to use, which cycles from black up
         // through white
-        struct timeval now;
-        vrpn_gettimeofday(&now, nullptr);
-        double loops =
-            colorRateCyclesPerSecond * vrpn_TimevalDurationSeconds(now, start);
+
+        auto now = ourClock::now();
+        auto timeSinceStart = std::chrono::duration_cast<std::chrono::duration<double>>(now - start).count();
+        double loops = colorRateCyclesPerSecond * timeSinceStart;
         float c = static_cast<float>(loops - floor(loops));
 
         // Set up the vector of colors to render
@@ -179,12 +162,9 @@ int main(int argc, char* argv[]) {
             std::cerr << "PresentSolidColors() returned false, maybe because "
                          "it was asked to quit"
                       << std::endl;
-            quit = true;
+            quit.quit = true;
         }
     }
-
-    // Close the Renderer interface cleanly.
-    delete render;
 
     return 0;
 }

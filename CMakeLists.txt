@@ -17,6 +17,7 @@ include(Version)
 include (GenerateExportHeader)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+option(INSTALL_EXAMPLES "Install source code and build system for examples" ON)
 
 include(osvrStashMapConfig)
 
@@ -163,6 +164,7 @@ endif()
 
 set(OSVRRM_HAVE_OPENGL_SUPPORT OFF)
 set(OSVRRM_HAVE_D3D11_SUPPORT OFF)
+set(OSVRRM_USE_OPENGLES20 OFF)
 if (WIN32)
 	set(OSVRRM_HAVE_D3D11_SUPPORT ON)
 	set(RM_USE_D3D11 TRUE)
@@ -179,6 +181,7 @@ if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND (SDL2_FOUND OR AND
 	if (OPENGLES2_FOUND AND ANDROID)
 		message(STATUS " - OpenGLES2 support: enabled")
 		set(RM_USE_OPENGLES20 TRUE)
+		set(OSVRRM_USE_OPENGLES20 ON)
 	endif()
 else()
 	message(STATUS " - OpenGL support: disabled)")
@@ -425,13 +428,21 @@ endif()
 
 if (GLEW_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE GLEW::GLEW)
+	set(OSVRRM_NEED_GLEW TRUE)
+else()
+	set(OSVRRM_NEED_GLEW FALSE)
 endif()
 
 if (SDL2_FOUND)
 	target_link_libraries(osvrRenderManager PRIVATE SDL2::SDL2)
 	set(OSVRRM_NEED_SDL2 TRUE)
+	set(OSVRRM_SDL2MAIN FALSE)
+	if(SDL2_SDLMAIN_LIBRARY)
+		set(OSVRRM_SDL2MAIN TRUE)
+	endif()
 else()
 	set(OSVRRM_NEED_SDL2 FALSE)
+	set(OSVRRM_SDL2MAIN FALSE)
 endif()
 
 if(SDL2_DYNAMIC AND WIN32)
@@ -458,8 +469,8 @@ add_library(osvrRenderManagerCpp INTERFACE)
 target_link_libraries(osvrRenderManagerCpp INTERFACE osvrRenderManager osvr::osvrClientKitCpp)
 
 # Alias targets, so the examples can be used as-is.
-add_library(osvrRM::osvrRenderManager ALIAS osvrRenderManager)
-add_library(osvrRM::osvrRenderManagerCpp ALIAS osvrRenderManagerCpp)
+add_library(osvrRenderManager::osvrRenderManager ALIAS osvrRenderManager)
+add_library(osvrRenderManager::osvrRenderManagerCpp ALIAS osvrRenderManagerCpp)
 
 if(WIN32)
 	# Install d3dcompiler_47
@@ -476,7 +487,7 @@ endif()
 set(OSVRRM_INSTALL_EXAMPLES ON)
 
 if(NOT ANDROID)
-    add_subdirectory(examples)
+	add_subdirectory(examples)
 endif()
 
 install(TARGETS
@@ -574,10 +585,25 @@ export(TARGETS
 # Register the current build dir as a package search location
 export(PACKAGE osvrRenderManager)
 
+# Generate the config file for build-tree usage.
+set(OSVRRM_IN_BUILD_TREE TRUE)
+set(OSVRRM_D3DCOMPILER_FILE "${DIRECT3D_COMPILER_REDISTRIBUTABLE}")
 configure_file("cmake/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	@ONLY)
 
+# Path hints for build-tree usage only.
+configure_file("cmake/osvrRenderManagerConfigBuildTreeHints.cmake.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigBuildTreeHints.cmake"
+	@ONLY)
+
+
+# Generate the config file for installed usage.
+set(OSVRRM_IN_BUILD_TREE FALSE)
+set(OSVRRM_D3DCOMPILER_FILE "\${OSVRRM_ROOT}/${CMAKE_INSTALL_BINDIR}/${OSVRRM_D3DCOMPILER_FILENAME}")
+configure_file("cmake/osvrRenderManagerConfig.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigInstallTree.cmake"
+	@ONLY)
 
 # Copy over the shared CMake modules for use in a build tree,
 # and install for an install tree.
@@ -606,16 +632,37 @@ install(EXPORT osvrRenderManagerTargets
 
 # Install an install-tree only helper and a generated file
 install(FILES
-	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfig.cmake"
 	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigVersion.cmake"
 	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/osvrRenderManagerConfigInstalledBoost.cmake"
 	DESTINATION ${CONFIG_INSTALL_DIR}
 	COMPONENT Devel)
 
+# Install the install-tree version of the CMake config file.
+install(FILES
+	"${CMAKE_CURRENT_BINARY_DIR}/osvrRenderManagerConfigInstallTree.cmake"
+	RENAME osvrRenderManagerConfig.cmake
+	DESTINATION ${CONFIG_INSTALL_DIR}
+	COMPONENT Devel)
+
+# Install examples
+if(INSTALL_EXAMPLES)
+    install(DIRECTORY examples
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}
+        FILES_MATCHING
+        PATTERN "*.cpp"
+        PATTERN "*.h"
+        PATTERN "*.c"
+        PATTERN "*.hlsl"
+        PATTERN "*/CMakeLists.txt")
+endif()
 
 # Tests
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
 	set(HEADER_BASE "${CMAKE_CURRENT_SOURCE_DIR}/osvr")
-	add_subdirectory(tests)
 endif()
+
+include(CTest)
+enable_testing()
+
+add_subdirectory(tests)
