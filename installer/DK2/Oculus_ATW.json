@@ -36,7 +36,7 @@
 			"numBuffers": 2,
 			"verticalSyncEnabled": true,
 			"verticalSyncBlockRenderingEnabled": true,
-			"renderOverfillFactor": 1.5,
+			"renderOverfillFactor": 1.2,
 			
 			"window": {
 				"title": "OSVR",
@@ -61,7 +61,7 @@
 			"timeWarp": {
 				"enabled": true,
 				"asynchronous": true,
-				"maxMsBeforeVSync": 0
+				"maxMsBeforeVSync": 5
 			}
 		}
 	},
