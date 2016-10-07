@@ -135,7 +135,7 @@ namespace renderkit {
         if (ret.status == FAILURE) {
             m_log->error() << "RenderManagerD3D11OpenGL::OpenDisplay: Can't open "
                               "D3D11 display";
-            m_doingOkay = false;
+            setDoingOkay(false);
             return ret;
         }
         m_glD3DHandle = wglDXOpenDeviceNV(ret.library.D3D11->device);

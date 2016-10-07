@@ -274,7 +274,7 @@ namespace renderkit {
         const ConstructorParameters& p) {
 
         /// So far, so good...
-        m_doingOkay = true;
+        setDoingOkay(true);
 
         /// Construct my logger
         m_log = osvr::util::log::make_logger("RenderManager");
@@ -315,7 +315,7 @@ namespace renderkit {
                                    &m_roomFromHeadInterface) ==
               OSVR_RETURN_FAILURE) {
             m_log->error() << "RenderManager::RenderManager(): Can't get interface " << headSpaceName;
-            m_doingOkay = false;
+            setDoingOkay(false);
         }
         osvrPose3SetIdentity(&m_roomFromHead);
 

@@ -66,7 +66,7 @@ namespace renderkit {
         }
 
         auto withFailure = [&] {
-            m_doingOkay = false;
+            setDoingOkay(false);
             ret.status = FAILURE;
             return ret;
         };
@@ -196,7 +196,7 @@ namespace renderkit {
             if (FAILED(hr)) {
                 m_log->error() << "RenderManagerD3D11::OpenDisplay: Could not get "
                                   "color buffer for display ";
-                /// @todo this was missing a m_doingOkay = false line - bug or
+                /// @todo this was missing a setDoingOkay(false) line - bug or
                 /// intentional?
                 return withFailure();
             }
@@ -209,7 +209,7 @@ namespace renderkit {
             if (FAILED(hr)) {
                 m_log->error() << "RenderManagerD3D11::OpenDisplay: Could not get "
                                   "render target view for display ";
-                /// @todo this was missing a m_doingOkay = false line - bug or
+                /// @todo this was missing a setDoingOkay(false) line - bug or
                 /// intentional?
                 return withFailure();
             }
