@@ -30,7 +30,7 @@
 			"schemaVersion": 1
 		},
 		"renderManagerConfig": {
-			"directModeEnabled": true,
+			"directModeEnabled": false,
 			"directDisplayIndex": 0,
 			"directHighPriorityEnabled": true,
 			"numBuffers": 2,

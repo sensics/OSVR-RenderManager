@@ -43,24 +43,26 @@
 // Standard includes
 #include <iostream>
 #include <string>
-#include <atomic>
 #include <chrono>
 #include <stdlib.h> // For exit()
 
 // Set to true when it is time for the application to quit.
-std::atomic<bool> quit = false;
+typedef struct {
+  volatile bool quit = false;
+} QuitStruct;
+QuitStruct quit;
 
 // Note: On Windows, this runs in a different thread from
 // the main application.
-static void CtrlHandler() { quit.store(true); }
+static void CtrlHandler() { quit.quit = true; }
 
 // This callback sets a boolean value whose pointer is passed in to
 // the state of the button that was pressed.  This lets the callback
 // be used to handle any button press that just needs to update state.
 void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
                       const OSVR_ButtonReport* report) {
-    bool* result = static_cast<bool*>(userdata);
-    *result = (report->state != 0);
+    QuitStruct* result = static_cast<QuitStruct*>(userdata);
+    result->quit = (report->state != 0);
 }
 
 void Usage(std::string name) {
@@ -139,7 +141,7 @@ int main(int argc, char* argv[]) {
     // Continue rendering until it is time to quit.
     using ourClock = std::chrono::high_resolution_clock;
     auto start = ourClock::now();
-    while (!quit.load()) {
+    while (!quit.quit) {
         // Update the context so we get our callbacks called and
         // update tracker state.
         context.update();
@@ -160,7 +162,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "PresentSolidColors() returned false, maybe because "
                          "it was asked to quit"
                       << std::endl;
-            quit.store(true);
+            quit.quit = true;
         }
     }
 
