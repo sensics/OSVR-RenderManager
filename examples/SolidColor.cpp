@@ -47,7 +47,7 @@
 #include <stdlib.h> // For exit()
 
 // Set to true when it is time for the application to quit.
-typedef struct {
+typedef struct  QuitStruct {
   volatile bool quit = false;
 } QuitStruct;
 QuitStruct quit;
