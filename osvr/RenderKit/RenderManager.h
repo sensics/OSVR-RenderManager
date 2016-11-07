@@ -703,6 +703,11 @@ namespace renderkit {
         // manipulation of the room to world transform.
         virtual OSVR_RENDERMANAGER_EXPORT void ClearRoomToWorldTransform();
 
+        //=============================================================
+        /// @brief Tell how many eyes are associated with this RenderManager
+        /// @return 0 on failure/not open, number of eyes on success
+        size_t OSVR_RENDERMANAGER_EXPORT GetNumEyes();
+
       protected:
 
         virtual void setDoingOkay(bool value) {
@@ -800,10 +805,6 @@ namespace renderkit {
             OSVR_PoseState m_state;
         };
         std::vector<RenderCallbackInfo> m_callbacks;
-
-        /// @brief Tell how many eyes are associated with this RenderManager
-        /// @return 0 on failure/not open, number of eyes on success
-        size_t GetNumEyes();
 
         /// @brief Tell how many displays are associated with this RenderManager
         /// @return 0 on failure/not open, number of displays on success
