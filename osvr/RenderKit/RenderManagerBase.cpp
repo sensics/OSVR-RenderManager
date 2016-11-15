@@ -825,9 +825,19 @@ namespace renderkit {
         // finalizing it after.
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
+            // If we've been asked to swap the eyes, and we have only one
+            // eye per display, we adjust the asked-for display to have the
+            // opposite polarity.
+            size_t swappedDisplay = display;
+            if (m_params.m_displayConfiguration->getSwapEyes()) {
+              if (GetNumEyesPerDisplay() == 1) {
+                swappedDisplay = 2 * (display / 2) + (1 - (display % 2));
+              }
+            }
+
             // Set up the appropriate display before setting up its eye(s).
             vrpn_gettimeofday(&start, nullptr);
-            if (!PresentDisplayInitialize(display)) {
+            if (!PresentDisplayInitialize(swappedDisplay)) {
                 m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                   "PresentDisplayInitialize() failed.";
                 return false;
@@ -930,7 +940,7 @@ namespace renderkit {
 
             // We're done with this display.
             vrpn_gettimeofday(&start, nullptr);
-            if (!PresentDisplayFinalize(display)) {
+            if (!PresentDisplayFinalize(swappedDisplay)) {
                 m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                   "PresentDisplayFinalize failed.";
                 return false;
