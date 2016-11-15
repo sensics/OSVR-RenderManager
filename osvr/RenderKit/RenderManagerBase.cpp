@@ -848,14 +848,11 @@ namespace renderkit {
                 /// the RenderParams structure passed in.
 
                 // See if we need to rotate by 90 or 180 degrees about Z.  If
-                // so, do so
+                // so, do so.
                 // NOTE: This would adjust the distortion center of projection,
-                // but it is
-                // assumed that we're doing this to make scan-out circuitry
-                // behave
-                // rather than to change where the actual pixel location of the
-                // center
-                // of projection is.
+                // but it is assumed that we're doing this to make scan-out
+                // circuitry behave rather than to change where the actual
+                // pixel location of the center of projection is.
                 float rotate_pixels_degrees = 0;
                 if (m_params.m_displayConfiguration->getEyes()[eye]
                         .m_rotate180 != 0) {
@@ -863,8 +860,7 @@ namespace renderkit {
                 }
 
                 // If we have display scan-out rotation, we add it to the amount
-                // of
-                // rotation we've already been asked to do.
+                // of rotation we've already been asked to do.
                 switch (m_params.m_displayRotation) {
                 case ConstructorParameters::Display_Rotation::Ninety:
                     rotate_pixels_degrees += 90.0;
