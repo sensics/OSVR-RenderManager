@@ -825,9 +825,19 @@ namespace renderkit {
         // finalizing it after.
         for (size_t display = 0; display < GetNumDisplays(); display++) {
 
+            // If we've been asked to swap the eyes, and we have only one
+            // eye per display, we adjust the asked-for display to have the
+            // opposite polarity.
+            size_t swappedDisplay = display;
+            if (m_params.m_displayConfiguration->getSwapEyes()) {
+              if (GetNumEyesPerDisplay() == 1) {
+                swappedDisplay = 2 * (display / 2) + (1 - (display % 2));
+              }
+            }
+
             // Set up the appropriate display before setting up its eye(s).
             vrpn_gettimeofday(&start, nullptr);
-            if (!PresentDisplayInitialize(display)) {
+            if (!PresentDisplayInitialize(swappedDisplay)) {
                 m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                   "PresentDisplayInitialize() failed.";
                 return false;
@@ -848,14 +858,11 @@ namespace renderkit {
                 /// the RenderParams structure passed in.
 
                 // See if we need to rotate by 90 or 180 degrees about Z.  If
-                // so, do so
+                // so, do so.
                 // NOTE: This would adjust the distortion center of projection,
-                // but it is
-                // assumed that we're doing this to make scan-out circuitry
-                // behave
-                // rather than to change where the actual pixel location of the
-                // center
-                // of projection is.
+                // but it is assumed that we're doing this to make scan-out
+                // circuitry behave rather than to change where the actual
+                // pixel location of the center of projection is.
                 float rotate_pixels_degrees = 0;
                 if (m_params.m_displayConfiguration->getEyes()[eye]
                         .m_rotate180 != 0) {
@@ -863,8 +870,7 @@ namespace renderkit {
                 }
 
                 // If we have display scan-out rotation, we add it to the amount
-                // of
-                // rotation we've already been asked to do.
+                // of rotation we've already been asked to do.
                 switch (m_params.m_displayRotation) {
                 case ConstructorParameters::Display_Rotation::Ninety:
                     rotate_pixels_degrees += 90.0;
@@ -934,7 +940,7 @@ namespace renderkit {
 
             // We're done with this display.
             vrpn_gettimeofday(&start, nullptr);
-            if (!PresentDisplayFinalize(display)) {
+            if (!PresentDisplayFinalize(swappedDisplay)) {
                 m_log->error() << "RenderManager::PresentRenderBuffers(): "
                                   "PresentDisplayFinalize failed.";
                 return false;
