@@ -16,7 +16,7 @@
 			"window": {
 				"title": "OSVR",
 				"fullScreenEnabled": false,
-				"xPosition": 40,
+				"xPosition": 140,
 				"yPosition": 40
 			},
 
@@ -49,7 +49,7 @@
 			},
 			"field_of_view": {
 				"monocular_horizontal": 90,
-				"monocular_vertical": 96.73,
+				"monocular_vertical": 75,
 				"overlap_percent": 100,
 				"pitch_tilt": 0
 			},
