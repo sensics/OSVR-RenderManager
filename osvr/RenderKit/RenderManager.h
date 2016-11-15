@@ -137,10 +137,8 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef void (*DisplayCallback)(
-        void* userData //< Passed into SetDisplayCallback
-        ,
-        GraphicsLibrary library //< Graphics library context to use
-        ,
+        void* userData, //< Passed into SetDisplayCallback
+        GraphicsLibrary library, //< Graphics library context to use
         RenderBuffer buffers //< Information on buffers to render to
         );
 
@@ -159,17 +157,12 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef void (*ViewProjectionCallback)(
-        void* userData //< Passed into SetViewProjectionCallback
-        ,
-        GraphicsLibrary library //< Graphics library context to use
-        ,
-        RenderBuffer buffers //< Information on buffers to render to
-        ,
-        OSVR_ViewportDescription viewport //< Viewport set by RenderManager
-        ,
+        void* userData, //< Passed into SetViewProjectionCallback
+        GraphicsLibrary library, //< Graphics library context to use
+        RenderBuffer buffers, //< Information on buffers to render to
+        OSVR_ViewportDescription viewport, //< Viewport set by RenderManager
         OSVR_ProjectionMatrix
-            projection //< Projection matrix set by RenderManager
-        ,
+            projection, //< Projection matrix set by RenderManager
         size_t whichEye //< Which eye are we setting up for?
         );
 
@@ -190,19 +183,13 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef void (*RenderCallback)(
-        void* userData //< Passed into AddRenderCallback
-        ,
-        GraphicsLibrary library //< Graphics library context to use
-        ,
-        RenderBuffer buffers //< Information on buffers to render to
-        ,
-        OSVR_ViewportDescription viewport //< Viewport we're rendering into
-        ,
-        OSVR_PoseState pose //< OSVR ModelView matrix set by RenderManager
-        ,
+        void* userData, //< Passed into AddRenderCallback
+        GraphicsLibrary library, //< Graphics library context to use
+        RenderBuffer buffers, //< Information on buffers to render to
+        OSVR_ViewportDescription viewport, //< Viewport we're rendering into
+        OSVR_PoseState pose, //< OSVR ModelView matrix set by RenderManager
         OSVR_ProjectionMatrix
-            projection //< Projection matrix set by RenderManager
-        ,
+            projection, //< Projection matrix set by RenderManager
         OSVR_TimeValue deadline //< When the frame should be sent to the screen
         );
 
@@ -278,8 +265,7 @@ namespace renderkit {
         /// (mainly, clearing it).  The userdata pointer
         /// will be handed to the callback function.
         bool OSVR_RENDERMANAGER_EXPORT SetDisplayCallback(
-            DisplayCallback callback //< Function to call to set this viewport
-            ,
+            DisplayCallback callback, //< Function to call to set this viewport
             void* userData = nullptr //< Passed to callback function
             );
 
@@ -294,8 +280,7 @@ namespace renderkit {
         /// where this is available.
         bool OSVR_RENDERMANAGER_EXPORT SetViewProjectionCallback(
             ViewProjectionCallback
-                callback //< Function to call to set this viewport
-            ,
+                callback, //< Function to call to set this viewport
             void* userData = nullptr //< Passed to callback function
             );
 
@@ -313,19 +298,15 @@ namespace renderkit {
         /// have the correct space configured in the rendering engine.
         bool OSVR_RENDERMANAGER_EXPORT AddRenderCallback(
             const std::string&
-                interfaceName //< Name of the space, or "/" for world
-            ,
-            RenderCallback callback //< Function to call to render this space
-            ,
+                interfaceName, //< Name of the space, or "/" for world
+            RenderCallback callback, //< Function to call to render this space
             void* userData = nullptr //< Passed to callback function
             );
         /// @brief Remove a previously-added callback handler for a given space.
         bool OSVR_RENDERMANAGER_EXPORT RemoveRenderCallback(
-            const std::string& interfaceName //< Name given to AddRenderCallback
-            ,
+            const std::string& interfaceName, //< Name given to AddRenderCallback
             RenderCallback
-                callback //< Function pointer given to AddRenderCallback
-            ,
+                callback, //< Function pointer given to AddRenderCallback
             void* userData = nullptr //< Pointer given to AddRenderCallback
             );
 
@@ -678,8 +659,7 @@ namespace renderkit {
         // them.
         // There is a different function for each style of distortion mesh.
         virtual OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshes(
-            DistortionMeshType type //< Type of mesh to produce
-            ,
+            DistortionMeshType type, //< Type of mesh to produce
             std::vector<DistortionParameters> const&
                 distort //< Distortion parameters
             );
