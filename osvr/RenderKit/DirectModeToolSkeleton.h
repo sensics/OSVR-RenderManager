@@ -27,8 +27,8 @@
 
 // Internal Includes
 #include "osvr/RenderKit/VendorIdTools.h" // pnpidToHex
-#include "osvr/RenderKit/CleanPNPIDString.h"
 #include "osvr/RenderKit/DirectModeVendors.h"
+#include "osvr/RenderKit/ToolingArguments.h"
 
 // Library/third-party includes
 #include <iostream>
@@ -38,37 +38,21 @@
 
 bool VendorAction(std::uint16_t flippedHexPNPID);
 
-static int Usage(const char* name) {
-    std::cerr << "Usage: " << name << " [PNPID]" << std::endl;
-    std::cerr << "If given, the custom PNPID must be exactly 3 letters A-Z long." << std::endl;
-    return -1;
-}
-
 int main(int argc, char* argv[]) {
-    if (argc > 2) {
-        return Usage(argv[0]);
+    auto argParseRet = toolingParseArgs(argc, argv);
+    if (argParseRet != 0) {
+        /// failure during argument parsing.
+        return argParseRet;
     }
 
     using namespace osvr::renderkit;
     using namespace osvr;
 
-    std::string customPNPID;
-    if (argc > 1) {
-        customPNPID = vendorid::cleanPotentialPNPID(argv[1]);
-        if (customPNPID.empty()) {
-
-            std::cerr << "custom pnpid wrong size or character in custom pnpid "
-                         "not in [A-Z]\n"
-                      << std::endl;
-            return Usage(argv[0]);
-        }
-    }
-
     bool gotOne = false;
 
-    if (!customPNPID.empty()) {
-        auto hexPNPID = pnpidToFlippedHex(customPNPID);
-        std::cout << "Trying custom PNPID from command line '" << customPNPID << "' [hex "
+    if (!g_customPNPID.empty()) {
+        auto hexPNPID = pnpidToFlippedHex(g_customPNPID);
+        std::cout << "Trying custom PNPID from command line '" << g_customPNPID << "' [hex "
                   << vendorid::formatAsHexString(hexPNPID) << "]" << std::endl;
         if (VendorAction(hexPNPID)) {
             std::cout << "  Success!" << std::endl;
@@ -91,11 +75,9 @@ int main(int argc, char* argv[]) {
         std::cout << std::endl;
     }
 
-    // Unsure if this is a feature or annoying. If no calls result in success,
-    // it waits for an enter hit.
+    // If no calls result in success and --no-wait wasn't specified, it waits for an enter hit before exiting.
     if (!gotOne) {
-        std::cout << "Press enter to exit..." << std::endl;
-        std::cin.ignore();
+        waitAtExit();
     }
 
     return 0;

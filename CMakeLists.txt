@@ -501,6 +501,8 @@ install(TARGETS
 	PUBLIC_HEADER DESTINATION include/osvr/RenderKit
 )
 
+set(ENABLEDISABLE_COMMON_SOURCES osvr/RenderKit/DirectModeToolSkeleton.h osvr/RenderKit/ToolingArguments.h)
+
 if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	set(NVAPI_EXTRA_HEADERS "${NVIDIA_SRC_DIR}/CheckSuccess.h" "${NVIDIA_SRC_DIR}/Util.h" "${NVIDIA_SRC_DIR}/NVAPIWrappers.h")
 
@@ -508,13 +510,13 @@ if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	#-----------------------------------------------------------------------------
 	# Enable DirectMode on attached OSVR HDKs
 	# TODO rename to EnableOSVRDirectModeNVIDIA
-	add_executable(EnableOSVRDirectMode osvr/RenderKit/DirectModeToolSkeleton.h "${NVIDIA_SRC_DIR}/EnableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
+	add_executable(EnableOSVRDirectMode ${ENABLEDISABLE_COMMON_SOURCES} "${NVIDIA_SRC_DIR}/EnableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
 	target_link_libraries(EnableOSVRDirectMode PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
 
 	#-----------------------------------------------------------------------------
 	# Disable DirectMode on attached OSVR HDKs
 	# TODO rename to DisableOSVRDirectModeNVIDIA
-	add_executable(DisableOSVRDirectMode osvr/RenderKit/DirectModeToolSkeleton.h "${NVIDIA_SRC_DIR}/DisableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
+	add_executable(DisableOSVRDirectMode ${ENABLEDISABLE_COMMON_SOURCES} "${NVIDIA_SRC_DIR}/DisableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
 	target_link_libraries(DisableOSVRDirectMode PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
 
 	#-----------------------------------------------------------------------------
@@ -538,12 +540,12 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	osvrrm_no_symbols_in_debug()
 	#-----------------------------------------------------------------------------
 	# Enable DirectMode on attached OSVR HDKs
-	add_executable(EnableOSVRDirectModeAMD osvr/RenderKit/DirectModeToolSkeleton.h "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
+	add_executable(EnableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
 	target_link_libraries(EnableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
 
 	#-----------------------------------------------------------------------------
 	# Disable DirectMode on attached OSVR HDKs
-	add_executable(DisableOSVRDirectModeAMD osvr/RenderKit/DirectModeToolSkeleton.h "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
+	add_executable(DisableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
 	target_link_libraries(DisableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
 	osvrrm_restore_symbols_in_debug()
 
