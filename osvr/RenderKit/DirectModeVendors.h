@@ -38,7 +38,10 @@
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
+#include <sstream>
+#include <iomanip>
 #include <utility>
+#include <assert.h>
 
 namespace osvr {
 namespace renderkit {
@@ -49,6 +52,14 @@ namespace renderkit {
         template <typename T> inline std::uint16_t pnpidToFlippedHex(T&& pnpid) {
             return common::integerByteSwap(pnpidToHex(std::forward<T>(pnpid)));
         }
+
+        /// formats a 16-bit uint (like a hex PNPID) like 0x0000
+        inline std::string formatAsHexString(std::uint16_t v) {
+            std::ostringstream os;
+            os << "0x" << std::hex << std::setw(4) << std::setfill('0') << v;
+            return os.str();
+        }
+
         /// @brief A class storing an association between a PNPID vendor ID as found in EDID data, a "Vendor" name as
         /// found in OSVR display descriptor files (schema v1), and an optional user-friendly description.
         ///
@@ -98,6 +109,9 @@ namespace renderkit {
                 return pnpidToFlippedHex(getPNPIDCharArray());
             }
 
+            /// @brief Gets the byte-flipped hex PNPID in display-ready 0x0000 string format.
+            std::string getFlippedHexPNPIDAsHexString() const { return formatAsHexString(getFlippedHexPNPID()); }
+
             /// @brief Returns the string as provided in the constructor.
             std::string const& getDisplayDescriptorVendor() const { return displayDescriptorVendor; }
 
@@ -118,20 +132,86 @@ namespace renderkit {
             std::string description;
         };
 
+        class PNPIDWithDescriptions {
+          public:
+            /// Construct from a single vendor entry.
+            explicit PNPIDWithDescriptions(DirectModeVendorEntry const& vendorEntry)
+                : pnpid_(vendorEntry.getPNPIDCharArray()) {
+                descs_.push_back(vendorEntry.getDescription());
+            }
+
+            /// Compares PNPID in the given vendor entry to our own.
+            bool isPNPIDMatch(DirectModeVendorEntry const& vendorEntry) const {
+                return vendorEntry.getPNPIDCharArray() == pnpid_;
+            }
+
+            /// Compares PNPID in the given vendor entry to our own, and if it is a match, adds the vendor entry's
+            /// description to our own list of descriptions.
+            bool addIfMatch(DirectModeVendorEntry const& vendorEntry) {
+                if (!isPNPIDMatch(vendorEntry)) {
+                    return false;
+                }
+                descs_.push_back(vendorEntry.getDescription());
+                return true;
+            }
+
+            /// @brief Returns the PNPID as a std::array of chars including the null terminator:
+            ///
+            /// 3 character, all-caps, in A-Z, PNPID, preferably registered through the UEFI registry. These should
+            /// technically be registered through http://www.uefi.org/PNP_ACPI_Registry (at least respecting assignments
+            /// made there) and must match the vendor ID reported in your EDID data (see Windows "Hardware IDs")
+            PNPIDNullTerminatedStdArray const& getPNPIDCharArray() const { return pnpid_; }
+
+            /// @brief Convenience method to access the data of getPNPIDCharArray() as a null-terminated C string.
+            const char* getPNPIDCString() const { return pnpid_.data(); }
+
+            /// @brief Converts the PNPID to two hex bytes for use in an EDID, per the formula established by Microsoft,
+            /// then swaps the bytes as seems to be required by most consumers of this data.
+            std::uint16_t getFlippedHexPNPID() const {
+                /// @todo will this only work on little-endian systems? Need to figure out why the byte swap is needed.
+                return pnpidToFlippedHex(getPNPIDCharArray());
+            }
+
+            /// @brief Gets the byte-flipped hex PNPID in display-ready 0x0000 string format.
+            std::string getFlippedHexPNPIDAsHexString() const { return formatAsHexString(getFlippedHexPNPID()); }
+
+            using DescriptionList = std::vector<std::string>;
+
+            DescriptionList const& getDescriptionList() const { return descs_; }
+
+            /// Return a string with all the descriptions joined with the given separator between them.
+            std::string getDescriptionsJoined(const char* separator) const {
+                std::ostringstream os;
+                auto it = getDescriptionList().begin();
+                auto e = getDescriptionList().end();
+                os << *it;
+                for (++it; it != e; ++it) {
+                    os << separator << *it;
+                }
+                return os.str();
+            }
+
+          private:
+            PNPIDNullTerminatedStdArray pnpid_;
+
+            DescriptionList descs_;
+        };
+
         using DirectModeVendors = std::vector<DirectModeVendorEntry>;
-        static inline std::vector<DirectModeVendors> combineSharedPNPIDs(DirectModeVendors const& vendors) {
-            std::vector<DirectModeVendors> ret;
+        using PNPIDsWithDescriptions = std::vector<PNPIDWithDescriptions>;
+
+        static inline PNPIDsWithDescriptions generatePNPIDsWithDescriptions(DirectModeVendors const& vendors) {
+            PNPIDsWithDescriptions ret;
             for (auto& entry : vendors) {
-                const auto e = ret.end();
-                auto existingEntryIt = std::find_if(ret.begin(), e, [&](DirectModeVendors const& vendorList) {
-                    return vendorList.front().getPNPIDCharArray() == entry.getPNPIDCharArray();
+                auto matchCount = std::count_if(ret.begin(), ret.end(), [&](PNPIDWithDescriptions& existing) {
+                    return existing.addIfMatch(entry);
                 });
-                if (e == existingEntryIt) {
-                    // no existing entry
-                    ret.emplace_back(DirectModeVendors{entry});
-                } else {
-                    // add to existing entry.
-                    existingEntryIt->push_back(entry);
+                if (matchCount > 1) {
+                    assert(0 && "Should not happen!");
+                }
+                if (0 == matchCount) {
+                    // didn't match any existing ones, must add a new one.
+                    ret.emplace_back(entry);
                 }
             }
             return ret;
@@ -141,6 +221,7 @@ namespace renderkit {
     using vendorid::pnpidToFlippedHex;
     using vendorid::DirectModeVendors;
 
+    /// Returns the list of vendors that it's always safe to command to enter/exit direct mode.
     static DirectModeVendors const& getDefaultVendors() {
         using Vendor = vendorid::DirectModeVendorEntry;
         static DirectModeVendors vendors = DirectModeVendors{
@@ -157,15 +238,26 @@ namespace renderkit {
             Vendor{"VRG", "VRGate"},
             Vendor{"TSB", "VRGate"},
             Vendor{"VRV", "Vrvana"},
-            Vendor{"SAM", "Samsung"},
             Vendor{"TVR", "TotalVision"},
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
         return vendors;
     }
 
-    static std::vector<DirectModeVendors> const& getDefaultVendorsByPNPID() {
-        static std::vector<DirectModeVendors> vendorsByPNPID = vendorid::combineSharedPNPIDs(getDefaultVendors());
+    /// Returns the list of vendors that can be checked for direct mode, but that shouldn't be put into/out of direct
+    /// mode automatically.
+    static DirectModeVendors const& getNonDefaultVendors() {
+        using Vendor = vendorid::DirectModeVendorEntry;
+        static DirectModeVendors vendors = DirectModeVendors{
+            Vendor{"SAM", "Samsung"},
+            /* add new vendors here - keep grouped by display descriptor vendor */
+        };
+        return vendors;
+    }
+
+    using vendorid::PNPIDsWithDescriptions;
+    static PNPIDsWithDescriptions const& getDefaultPNPIDsWithDescriptions() {
+        static PNPIDsWithDescriptions vendorsByPNPID = vendorid::generatePNPIDsWithDescriptions(getDefaultVendors());
         return vendorsByPNPID;
     }
 } // namespace renderkit

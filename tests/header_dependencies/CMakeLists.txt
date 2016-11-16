@@ -3,6 +3,7 @@
 #
 
 set(IGNORED_HEADERS
+        RenderKit/DirectModeToolSkeleton.h
         RenderKit/DistortionCorrectTextureCoordinate.h
         RenderKit/GraphicsLibraryD3D11.h
         RenderKit/RenderManagerOpenGL.h

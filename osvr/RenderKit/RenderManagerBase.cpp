@@ -1956,6 +1956,21 @@ namespace renderkit {
     }
 #endif
 
+    static bool searchForDirectModeVendor(osvr::util::log::Logger& log, vendorid::DirectModeVendors const& vendors,
+                                          std::string const& vendorFromDescriptor,
+                                          RenderManager::ConstructorParameters& p) {
+        bool found = false;
+        for (auto& vendor : vendors) {
+            if (vendor.getDisplayDescriptorVendor() == vendorFromDescriptor) {
+                log.info() << "Adding direct mode candidate PNPID " << vendor.getPNPIDCString() << " described as "
+                           << vendor.getDescription();
+                p.addCandidatePNPID(vendor.getPNPIDCString());
+                found = true;
+            }
+        }
+        return found;
+    }
+
     //=======================================================================
     // Factory to create a specific instance of a RenderManager is below.
     // It determines which type to construct based on the configuration
@@ -2104,16 +2119,11 @@ namespace renderkit {
         {
             auto& vendors = getDefaultVendors();
             const auto vendorFromDescriptor = p.m_displayConfiguration->getVendor();
-            bool found = false;
             m_log->info() << "Display descriptor reports vendor as " << vendorFromDescriptor;
-            for (auto& vendor : vendors) {
-                if (vendor.getDisplayDescriptorVendor() == vendorFromDescriptor) {
-                    m_log->info() << "Adding direct mode candidate PNPID " << vendor.getPNPIDCString()
-                                  << " described as " << vendor.getDescription();
-                    p.addCandidatePNPID(vendor.getPNPIDCString());
-                    found = true;
-                }
-            }
+            auto foundInDefault = searchForDirectModeVendor(*m_log, getDefaultVendors(), vendorFromDescriptor, p);
+            auto foundInNonDefault = searchForDirectModeVendor(*m_log, getNonDefaultVendors(), vendorFromDescriptor, p);
+            auto found = foundInDefault || foundInNonDefault;
+
 #ifndef RM_NO_CUSTOM_VENDORS
             if (!found && vendorFromDescriptor.size() == 3) {
                 // this may be a PNPID itself...
