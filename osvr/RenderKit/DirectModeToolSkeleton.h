@@ -34,7 +34,7 @@
 #include <iostream>
 
 // Standard includes
-#include <stdint.h>
+#include <cstdint>
 
 bool VendorAction(std::uint16_t flippedHexPNPID);
 
