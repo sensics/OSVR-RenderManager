@@ -23,15 +23,15 @@ This entry is actually itself nested, there is an external one with a **meta** t
 
 * directHighPriorityEneabled: [Ignored if not in DirectMode] For video drivers that support high-priority rendering threads (only nVidia Pascal series are supported as of 11/16/2016), makes a high-priority thread for the DirectMode rendering thread.  If using ATW, this is the separate ATW thread.
 
-numBuffers: The number of buffers per swap chain, 1 = front-buffer rendering (not recommended), 2 = double buffered (which does not increase latency in DirectMode if waiting for vsync), 3+ = superfluous.
+* numBuffers: The number of buffers per swap chain, 1 = front-buffer rendering (not recommended), 2 = double buffered (which does not increase latency in DirectMode if waiting for vsync), 3+ = superfluous.
 
-verticalSyncEnabled: The presentation of the surfaces will wait for vertical sync, preventing image "earing".
+* verticalSyncEnabled: The presentation of the surfaces will wait for vertical sync, preventing image "earing".
 
-verticalSyncBlockRenderingEnabled: [Ignored if not in DirectMode] When the application presents a set of render buffers, this will be a blocking call that will not return until after the surfaces have been presented to the eye.  Useful to throttle applications with rapid rendering times.  It avoids overtaxing the GPU but busy-waits, so still uses an entire CPU core.
+* verticalSyncBlockRenderingEnabled: [Ignored if not in DirectMode] When the application presents a set of render buffers, this will be a blocking call that will not return until after the surfaces have been presented to the eye.  Useful to throttle applications with rapid rendering times.  It avoids overtaxing the GPU but busy-waits, so still uses an entire CPU core.
 
-renderOverfillFactor: Described in the *Overfill* section of the document at https://github.com/OSVR/OSVR-Docs/blob/master/Configuring/distortion.md  This parameter affects both the viewport size and the projection matrix, requesting a larger field of view than is requires for final rendering when >1.
+* renderOverfillFactor: Described in the *Overfill* section of the document at https://github.com/OSVR/OSVR-Docs/blob/master/Configuring/distortion.md  This parameter affects both the viewport size and the projection matrix, requesting a larger field of view than is requires for final rendering when >1.
 
-renderOversampleFactor: This parameter controls the ratio of texture pixels to display pixels.  Setting it larger than 1 results in finer-scaled rendering that will still provide full detail in regions of the display that the lenses magnify.  Setting it lower than 1 results in potentially faster rendering rates at the expense of visual detail in the rendered images.  This affects the viewport but not the projection matrix, since it is rendering the same region but doing so at a different resolution.
+* renderOversampleFactor: This parameter controls the ratio of texture pixels to display pixels.  Setting it larger than 1 results in finer-scaled rendering that will still provide full detail in regions of the display that the lenses magnify.  Setting it lower than 1 results in potentially faster rendering rates at the expense of visual detail in the rendered images.  This affects the viewport but not the projection matrix, since it is rendering the same region but doing so at a different resolution.
 
 ### window
 
