@@ -147,6 +147,12 @@ application have complete control over render-buffer construction.
 There are a number of example programs that highlight the different RenderManager
 interfaces and features.
 
+## Configuration
+
+See the [RenderManager Configuration](./doc/renderManagerConfig.md) document for more information on how to configure RenderManager.
+
 ## Optimizing timing
 
-See the [Rendering Optimization](./doc/renderingOptimization.md) document for more information on how to optimize rendering performance using RenderManager.
+See the [Rendering Optimization](./doc/renderingOptimization.md) document for more information on how to optimize rendering performance using RenderManager.  (Warning: Some of this information is out of date as of 11/16/2016.)
+
+
