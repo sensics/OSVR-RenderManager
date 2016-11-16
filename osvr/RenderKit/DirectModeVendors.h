@@ -221,6 +221,7 @@ namespace renderkit {
     using vendorid::pnpidToFlippedHex;
     using vendorid::DirectModeVendors;
 
+    /// Returns the list of vendors that it's always safe to command to enter/exit direct mode.
     static DirectModeVendors const& getDefaultVendors() {
         using Vendor = vendorid::DirectModeVendorEntry;
         static DirectModeVendors vendors = DirectModeVendors{
@@ -237,8 +238,18 @@ namespace renderkit {
             Vendor{"VRG", "VRGate"},
             Vendor{"TSB", "VRGate"},
             Vendor{"VRV", "Vrvana"},
-            Vendor{"SAM", "Samsung"},
             Vendor{"TVR", "TotalVision"},
+            /* add new vendors here - keep grouped by display descriptor vendor */
+        };
+        return vendors;
+    }
+
+    /// Returns the list of vendors that can be checked for direct mode, but that shouldn't be put into/out of direct
+    /// mode automatically.
+    static DirectModeVendors const& getNonDefaultVendors() {
+        using Vendor = vendorid::DirectModeVendorEntry;
+        static DirectModeVendors vendors = DirectModeVendors{
+            Vendor{"SAM", "Samsung"},
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
         return vendors;
