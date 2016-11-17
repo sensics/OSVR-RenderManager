@@ -49,7 +49,7 @@ This section describes the window created by RenderManager when it is in extende
 
 This section describes more features of the display.
 
-* rotation: This describes how both the texture presented by the application and the physical display surface should be rotated.  It should be 0, 90, 180, or 270.  For 90 and 270, the **display/hmd/resolutions/width** and **../height** will be swapped to determine the aspect ration of the window to open or the DirectMode display to open.
+* rotation: This describes how both the texture presented by the application and the physical display surface should be rotated.  It should be 0, 90, 180, or 270.  For 90 and 270, the **display/hmd/resolutions/width** and **../height** will be swapped to determine the aspect ration of the window to open or the DirectMode display to open.  For example: The portait configuration file for the OSVR HDK 1.3 has **display/hmd/resolutions/width**=1920 and height=1080 with a rotation of 90.  Assuming overfill=1 and oversample=1 and horizontal side-by-side presentation, this results in a render target that is 1920x1080 but a window (or DirectMode display) of 1080x1920.  The landscape configuration, which has rotation=0 has both a render target and a window/display resolution of 1920x1080.
 
 * bitsPerColor: Should always be 8.
 
