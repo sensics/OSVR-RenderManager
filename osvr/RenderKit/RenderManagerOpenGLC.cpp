@@ -90,6 +90,7 @@ ConvertRenderBuffer(const osvr::renderkit::RenderBuffer& renderBuffer,
 inline void ConvertRenderInfo(const OSVR_RenderInfoOpenGL& renderInfo,
                               osvr::renderkit::RenderInfo& renderInfoOut) {
     renderInfoOut.pose = renderInfo.pose;
+    renderInfoOut.headPose = renderInfo.headPose;
     ConvertProjection(renderInfo.projection, renderInfoOut.projection);
     ConvertViewport(renderInfo.viewport, renderInfoOut.viewport);
     ConvertGraphicsLibrary(renderInfo.library, renderInfoOut.library);
@@ -98,6 +99,7 @@ inline void ConvertRenderInfo(const OSVR_RenderInfoOpenGL& renderInfo,
 inline void ConvertRenderInfo(const osvr::renderkit::RenderInfo& renderInfo,
                               OSVR_RenderInfoOpenGL& renderInfoOut) {
     renderInfoOut.pose = renderInfo.pose;
+    renderInfoOut.headPose = renderInfo.headPose;
     ConvertProjection(renderInfo.projection, renderInfoOut.projection);
     ConvertViewport(renderInfo.viewport, renderInfoOut.viewport);
     ConvertGraphicsLibrary(renderInfo.library, renderInfoOut.library);

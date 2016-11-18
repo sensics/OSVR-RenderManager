@@ -49,6 +49,7 @@ typedef struct OSVR_RenderInfoD3D11 {
     OSVR_ViewportDescription viewport;
     OSVR_PoseState pose;
     OSVR_ProjectionMatrix projection;
+    OSVR_PoseState headPose;
 } OSVR_RenderInfoD3D11;
 
 typedef struct OSVR_RenderBufferD3D11 {

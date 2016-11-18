@@ -218,6 +218,7 @@ namespace renderkit {
         OSVR_PoseState pose; //< OSVR ModelView matrix set by RenderManager
         OSVR_ProjectionMatrix
             projection; //< Projection matrix set by RenderManager
+        OSVR_PoseState headPose; //< Pose for "head"
     } RenderInfo;
 
     class RenderManager {
@@ -973,8 +974,8 @@ namespace renderkit {
             size_t whichSpace //< Input; index of the space to use
             , size_t whichEye //< Input; index of the eye to use
             , RenderParams params //< Input; render parameters
-            , OSVR_PoseState&
-                eyeFromSpace //< Output info needed to make ModelView
+            , OSVR_PoseState& eyeFromSpace //< Output info needed to make ModelView
+            , OSVR_PoseState& headPose //< Output info needed to set head pose
             );
 
         /// @brief Compute in-display rotations/flip matrix.

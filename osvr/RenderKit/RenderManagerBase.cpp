@@ -548,8 +548,8 @@ namespace renderkit {
                     /// the example demos look for left and right hands and they
                     /// might
                     /// not be defined.
-                    OSVR_PoseState pose;
-                    if (!ConstructModelView(i, eye, params, pose)) {
+                    OSVR_PoseState pose, head;
+                    if (!ConstructModelView(i, eye, params, pose, head)) {
                         continue;
                     }
                     if (!RenderSpace(i, eye, pose,
@@ -660,7 +660,7 @@ namespace renderkit {
             // Construct a ModelView transform for world space.
             // By passing m_callbacks.size(), we guarantee world space.
             if (!ConstructModelView(m_callbacks.size(), eye, params,
-                                    info.pose)) {
+                                    info.pose, info.headPose)) {
                 m_log->error() << "RenderManagerBase::GetRenderInfo(): Could not "
                                   "ConstructModelView";
                 ret.clear();
@@ -1421,10 +1421,11 @@ namespace renderkit {
 
     bool RenderManager::ConstructModelView(size_t whichSpace, size_t whichEye,
                                            RenderParams params,
-                                           OSVR_PoseState& eyeFromSpace) {
+                                           OSVR_PoseState& eyeFromSpace, OSVR_PoseState& head) {
         /// Set the identity transformation to start with, in case
         /// we have to bail out with an error condition below.
         osvrPose3SetIdentity(&eyeFromSpace);
+        osvrPose3SetIdentity(&head);
 
         // Make sure that we have as many eyes as were asked for.
         if (whichEye >= GetNumEyes()) {
@@ -1502,8 +1503,8 @@ namespace renderkit {
             /// DO NOT update the client here, so that we're using the
             /// same state for all eyes.
             OSVR_TimeValue timestamp;
-            if (osvrGetPoseState(m_roomFromHeadInterface, &timestamp,
-                                 &m_roomFromHead) == OSVR_RETURN_FAILURE) {
+            if (osvrGetPoseState(m_roomFromHeadInterface, &timestamp, 
+                &m_roomFromHead) == OSVR_RETURN_FAILURE) {
                 // This it not an error -- they may have put in an invalid
                 // state name for the head; we just ignore that case.
             }
@@ -1563,6 +1564,8 @@ namespace renderkit {
               PredictFuturePose(m_roomFromHead, vel,
                 predictionIntervalSec, m_roomFromHead);
             }
+
+            head = m_roomFromHead;
 
             // Bring the pose into quatlib world.
             q_from_OSVR(q_roomFromHead, m_roomFromHead);

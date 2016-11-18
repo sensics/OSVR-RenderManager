@@ -117,6 +117,7 @@ typedef struct OSVR_RenderInfoOpenGL {
     OSVR_ViewportDescription viewport;
     OSVR_PoseState pose;
     OSVR_ProjectionMatrix projection;
+    OSVR_PoseState headPose;
 } OSVR_RenderInfoOpenGL;
 
 typedef struct OSVR_OpenResultsOpenGL {
