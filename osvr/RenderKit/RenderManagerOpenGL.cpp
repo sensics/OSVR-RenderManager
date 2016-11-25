@@ -1215,6 +1215,31 @@ namespace renderkit {
             glDisable(GL_CULL_FACE);
           }
         });
+        GLboolean blend;
+        glGetBooleanv(GL_BLEND, &blend);
+        auto resetBlend = util::finally([&]{
+          if (blend) {
+            glEnable(GL_BLEND);
+          }
+          else {
+            glDisable(GL_BLEND);
+          }
+        });
+        GLboolean stencilTest;
+        glGetBooleanv(GL_STENCIL_TEST, &stencilTest);
+        auto resetStencilTest = util::finally([&]{
+          if (blend) {
+            glEnable(GL_STENCIL_TEST);
+          }
+          else {
+            glDisable(GL_STENCIL_TEST);
+          }
+        });
+
+        // Turn off blending and stencil test, in case the application has
+        // turned them on.
+        glDisable(GL_BLEND);
+        glDisable(GL_STENCIL_TEST);
 
         /// Switch to our vertex/shader programs
         glUseProgram(m_programId);
