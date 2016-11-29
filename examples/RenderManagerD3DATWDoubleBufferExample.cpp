@@ -44,10 +44,6 @@ Russ Taylor <russ@sensics.com>
 // This must come after we include <d3d11.h> so its pointer types are defined.
 #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
 
-// Includes from our own directory
-#include "pixelshader3d.h"
-#include "vertexshader3d.h"
-
 using namespace DirectX;
 
 #include "D3DCube.h"

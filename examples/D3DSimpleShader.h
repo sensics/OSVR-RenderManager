@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <DirectXMath.h>
+#include <wrl\client.h>
+
 class SimpleShader {
   public:
     SimpleShader() {}
@@ -52,8 +55,8 @@ class SimpleShader {
     }
 
     void use(ID3D11Device* device, ID3D11DeviceContext* context,
-             const XMMATRIX& projection, const XMMATRIX& view,
-             const XMMATRIX& world) {
+             const DirectX::XMMATRIX& projection, const DirectX::XMMATRIX& view,
+             const DirectX::XMMATRIX& world) {
         cbPerObject wvp = {projection, view, world};
 
         init(device, context);
@@ -68,9 +71,9 @@ class SimpleShader {
     SimpleShader(const SimpleShader&) = delete;
     SimpleShader& operator=(const SimpleShader&) = delete;
     struct cbPerObject {
-        XMMATRIX projection;
-        XMMATRIX view;
-        XMMATRIX world;
+        DirectX::XMMATRIX projection;
+        DirectX::XMMATRIX view;
+        DirectX::XMMATRIX world;
     };
 
     bool initialized = false;
