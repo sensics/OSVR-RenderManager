@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <DirectXMath.h>
+#include <vector>
+#include <wrl\client.h>
+
+#include "pixelshader3d.h"
+#include "vertexshader3d.h"
+
 class Cube {
   public:
     Cube(float scale, bool reverse = false) {
@@ -156,8 +163,8 @@ class Cube {
     Cube& operator=(const Cube&) = delete;
 
     struct SimpleVertex {
-        XMFLOAT3 Position;
-        XMFLOAT4 Color;
+        DirectX::XMFLOAT3 Position;
+        DirectX::XMFLOAT4 Color;
     };
     bool initialized = false;
     std::vector<SimpleVertex> vertices;

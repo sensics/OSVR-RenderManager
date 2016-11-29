@@ -43,10 +43,6 @@
 #include <stdlib.h> // For exit()
 #include <chrono>
 
-// Includes from our own directory
-#include "pixelshader3d.h"
-#include "vertexshader3d.h"
-
 using namespace DirectX;
 
 #include "D3DCube.h"
