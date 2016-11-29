@@ -51,6 +51,9 @@ Russ Taylor <russ@sensics.com>
 class OSVRDisplayConfiguration;
 
 namespace osvr {
+namespace Compositor {
+  class DisplayServerInterfaceD3D11Singleton;
+}
 namespace renderkit {
 
     //=========================================================================
@@ -1144,6 +1147,7 @@ namespace renderkit {
         virtual bool PresentFrameFinalize() = 0;
 
         friend class RenderManagerNVidiaD3D11OpenGL;
+        friend class ::osvr::Compositor::DisplayServerInterfaceD3D11Singleton;
         friend RenderManager OSVR_RENDERMANAGER_EXPORT*
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
