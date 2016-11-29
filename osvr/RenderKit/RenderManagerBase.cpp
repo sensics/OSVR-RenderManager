@@ -720,7 +720,7 @@ namespace renderkit {
         struct timeval start, stop;
         struct timeval allStart, allStop;
         timePresentRenderBuffers = 0;
-        timePresentFrameInitilize = 0;
+        timePresentFrameInitialize = 0;
         timeWaitForSync = 0;
         timePresentDisplayInitialize = 0;
         timePresentEye = 0;
@@ -750,7 +750,7 @@ namespace renderkit {
             return false;
         }
         vrpn_gettimeofday(&stop, nullptr);
-        timePresentFrameInitilize += vrpn_TimevalDurationSeconds(stop, start);
+        timePresentFrameInitialize += vrpn_TimevalDurationSeconds(stop, start);
 
         // If we're doing Time Warp and we have a positive maximum
         // milliseconds until vsync, and we are able to read the timing

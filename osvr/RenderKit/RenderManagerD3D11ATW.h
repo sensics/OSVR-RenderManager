@@ -433,7 +433,7 @@ namespace osvr {
                                     << mRenderManager->timePresentRenderBuffers * 1e3
                                     << "ms)";
                                 m_log->info() << "  (FrameInit "
-                                    << mRenderManager->timePresentFrameInitilize * 1e3
+                                  << mRenderManager->timePresentFrameInitialize * 1e3
                                     << ", WaitForSync "
                                     << mRenderManager->timeWaitForSync * 1e3
                                     << ", DisplayInit "

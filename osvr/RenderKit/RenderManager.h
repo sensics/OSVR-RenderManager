@@ -842,7 +842,7 @@ namespace renderkit {
         /// Timing information on how long each portion of the previous
         /// frames' PresentRenderBuffersInternal() took.
         double timePresentRenderBuffers = 0;
-        double timePresentFrameInitilize = 0;
+        double timePresentFrameInitialize = 0;
         double timeWaitForSync = 0;
         double timePresentDisplayInitialize = 0;
         double timePresentEye = 0;
