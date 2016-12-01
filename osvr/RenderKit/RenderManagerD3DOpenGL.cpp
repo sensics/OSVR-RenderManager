@@ -118,6 +118,18 @@ namespace renderkit {
             return ret;
         }
         ReleaseContextParams(pC);
+
+        // Make our OpenGL context current
+        if (!m_toolkit.makeCurrent ||
+            !m_toolkit.makeCurrent(m_toolkit.data, 0)) {
+          m_log->error() << "RenderManagerD3D11OpenGL::OpenDisplay: Can't make GL "
+            "context current";
+          return ret;
+        }
+        checkForGLError(
+          "RenderManagerD3D11OpenGL::OpenDisplay: after making GL current");
+
+        // Initialize GLEW.
         glewExperimental = true; // Needed for core profile
         if (glewInit() != GLEW_OK) {
           if (m_toolkit.removeOpenGLContexts) {
