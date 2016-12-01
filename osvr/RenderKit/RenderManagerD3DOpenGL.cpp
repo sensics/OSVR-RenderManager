@@ -302,7 +302,7 @@ namespace renderkit {
             if (!m_toolkit.makeCurrent ||
               !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
               m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
-                "Coud not set context for buffer: "
+                "Could not set context for buffer: "
                 << i;
               return false;
             }
@@ -501,7 +501,7 @@ namespace renderkit {
         if (!m_toolkit.makeCurrent ||
           !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(b))) {
           m_log->error() << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal(): "
-            "Coud not set context for buffer: "
+            "Could not set context for buffer: "
             << b;
           return false;
         }
