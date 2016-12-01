@@ -276,6 +276,9 @@ namespace renderkit {
             return false;
         }
 
+        checkForGLError(
+          "RenderManagerD3D11OpenGL::RegisterRenderBuffers beginning");
+
         // Make sure we don't have more eyes than buffers.  We can have fewer
         // because the client may have consolidated a number of eyes onto
         // one buffer.
