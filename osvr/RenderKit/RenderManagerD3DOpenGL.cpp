@@ -313,15 +313,20 @@ namespace renderkit {
             // and querying the size of the 0th mipmap level.
             GLint width = 0, height = 0;
             glBindTexture(GL_TEXTURE_2D, buffers[i].OpenGL->colorBufferName);
+            checkForGLError(
+              "RenderManagerD3D11OpenGL::RegisterRenderBuffers after glBindTexure");
             const GLint mipLevel = 0;
             glGetTexLevelParameteriv(GL_TEXTURE_2D, mipLevel, GL_TEXTURE_WIDTH,
                                      &width);
             glGetTexLevelParameteriv(GL_TEXTURE_2D, mipLevel, GL_TEXTURE_HEIGHT,
                                      &height);
+            checkForGLError(
+              "RenderManagerD3D11OpenGL::RegisterRenderBuffers after glGetTexLevelParameteriv");
             if ((width == 0) || (height == 0)) {
                 m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
                                   "Zero-sized buffer for buffer: "
-                               << i;
+                               << i << " with colorBufferName "
+                               << buffers[i].OpenGL->colorBufferName;
                 return false;
             }
 
