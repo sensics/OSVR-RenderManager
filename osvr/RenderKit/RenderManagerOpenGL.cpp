@@ -350,7 +350,12 @@ namespace renderkit {
     bool RenderManagerOpenGL::checkForGLError(const std::string& message) {
         GLenum err;
         bool ret = false;
+        size_t count = 0;
         while((err = glGetError()) != GL_NO_ERROR) {
+            // Make sure to stop if we're not running out of errors, to avoid
+            // spamming the log file.
+            if (++count > 10) { return true; }
+
             std::string errorString;
             switch (err) {
                 case GL_NO_ERROR:
