@@ -303,12 +303,14 @@ namespace renderkit {
             // Make our context current.
             // @todo The i variable may not match the eye in all cases?
             if (!m_toolkit.makeCurrent ||
-              !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
+                !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
               m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
                 "Could not set context for buffer: "
                 << i;
               return false;
             }
+            checkForGLError(
+              "RenderManagerD3D11OpenGL::RegisterRenderBuffers after makeCurrent");
 
             // If we have already mapped this buffer, we go ahead and skip it,
             // so that we don't tie the same OpenGL buffer to multiple D3D
