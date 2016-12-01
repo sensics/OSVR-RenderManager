@@ -176,6 +176,11 @@ namespace renderkit {
         checkForGLError(
             "RenderManagerD3D11OpenGL::RenderEyeInitialize beginning");
 
+        if (!m_toolkit.makeCurrent ||
+          !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(eye))) {
+          return false;
+        }
+
         // Attach the Direct3D buffers to our framebuffer object
         glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers[GetDisplayUsedByEye(eye)]);
         checkForGLError(
@@ -280,6 +285,16 @@ namespace renderkit {
 
         // Allocate D3D buffers to be used and tie them to the OpenGL buffers.
         for (size_t i = 0; i < buffers.size(); i++) {
+            // Make our context current.
+            // @todo The i variable may not match the eye in all cases?
+            if (!m_toolkit.makeCurrent ||
+              !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
+              m_log->error() << "RenderManagerD3D11OpenGL::RegisterRenderBuffers: "
+                "Coud not set context for buffer: "
+                << i;
+              return false;
+            }
+
             // If we have already mapped this buffer, we go ahead and skip it,
             // so that we don't tie the same OpenGL buffer to multiple D3D
             // buffers.  It is not an error to map the same buffer twice.
@@ -466,6 +481,14 @@ namespace renderkit {
       // RenderManager.
       std::vector<RenderBuffer> myD3DBuffers;
       for (size_t b = 0; b < renderBuffers.size(); b++) {
+        if (!m_toolkit.makeCurrent ||
+          !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(b))) {
+          m_log->error() << "RenderManagerD3D11OpenGL::PresentRenderBuffersInternal(): "
+            "Coud not set context for buffer: "
+            << b;
+          return false;
+        }
+
         OglToD3DTexture* oglMap = nullptr;
         for (size_t i = 0; i < m_oglToD3D.size(); i++) {
           if (m_oglToD3D[i].OpenGLTexture ==
