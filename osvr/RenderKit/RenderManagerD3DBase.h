@@ -43,23 +43,23 @@ namespace renderkit {
 
     class RenderManagerD3D11Base : public RenderManager {
       public:
-        virtual ~RenderManagerD3D11Base();
+        virtual OSVR_RENDERMANAGER_EXPORT ~RenderManagerD3D11Base();
 
         // Creates the D3D11 device and context to be used
         // to draw things into our window unless they have
         // already been filled in.
-        virtual bool SetDeviceAndContext();
+        virtual bool OSVR_RENDERMANAGER_EXPORT SetDeviceAndContext();
 
         // Opens the D3D renderer we're going to use.
-        OpenResults OpenDisplay() override;
+        OpenResults OSVR_RENDERMANAGER_EXPORT OpenDisplay() override;
 
       protected:
         /// Construct a D3D RenderManager.
-        RenderManagerD3D11Base(
+        OSVR_RENDERMANAGER_EXPORT RenderManagerD3D11Base(
             OSVR_ClientContext context,
             ConstructorParameters p);
 
-        virtual bool UpdateDistortionMeshesInternal(
+        virtual bool OSVR_RENDERMANAGER_EXPORT UpdateDistortionMeshesInternal(
             DistortionMeshType type //< Type of mesh to produce
             ,
             std::vector<DistortionParameters> const&
@@ -68,17 +68,18 @@ namespace renderkit {
 
         /// Call before calling OpenDisplay() to set the DXGIAdapter if you
         /// don't want the default one.
-        void setAdapter(Microsoft::WRL::ComPtr<IDXGIAdapter> const& adapter);
+        void OSVR_RENDERMANAGER_EXPORT setAdapter(
+          Microsoft::WRL::ComPtr<IDXGIAdapter> const& adapter);
 
         /// Get the D3D11 Device as a IDXGIDevice
-        Microsoft::WRL::ComPtr<IDXGIDevice> getDXGIDevice();
+        Microsoft::WRL::ComPtr<IDXGIDevice> OSVR_RENDERMANAGER_EXPORT getDXGIDevice();
 
         /// Get the adapter, whether manually specified or automatically
         /// determined.
-        Microsoft::WRL::ComPtr<IDXGIAdapter> getDXGIAdapter();
+        Microsoft::WRL::ComPtr<IDXGIAdapter> OSVR_RENDERMANAGER_EXPORT getDXGIAdapter();
 
         /// Get the DXGIFactor1 corresponding to the adapter.
-        Microsoft::WRL::ComPtr<IDXGIFactory1> getDXGIFactory();
+        Microsoft::WRL::ComPtr<IDXGIFactory1> OSVR_RENDERMANAGER_EXPORT getDXGIFactory();
 
         bool m_displayOpen; //< Has our display been opened?
 
@@ -105,7 +106,7 @@ namespace renderkit {
         /// top of, and also lets us make the intermediate buffers the correct
         /// size we need for Asychronous Time Warp and distortion, and keeps
         /// them from being in the same window and so bleeding together.
-        bool constructRenderBuffers();
+        bool OSVR_RENDERMANAGER_EXPORT constructRenderBuffers();
 
         //============================================================================
         // Information needed to render to the final output buffer.  Render
@@ -163,21 +164,22 @@ namespace renderkit {
 
         /// We can't use an OpenGL-compliant texture warp matrix, so need to
         /// override it here.
-        bool
+        bool OSVR_RENDERMANAGER_EXPORT
         ComputeAsynchronousTimeWarps(std::vector<RenderInfo> usedRenderInfo,
                                      std::vector<RenderInfo> currentRenderInfo,
                                      float assumedDepth = 2.0f) override;
 
         /// Wait for rendering completion on our D3D11 context and device.
-        virtual bool WaitForRenderCompletion();
+        virtual bool OSVR_RENDERMANAGER_EXPORT WaitForRenderCompletion();
 
         //===================================================================
         // Overloaded render functions from the base class.  Not all of the
         // ones that need overloading are here; derived classes must decide
         // what to do for those.
-        bool RenderPathSetup() override;
-        bool RenderEyeInitialize(size_t eye) override;
-        bool RenderSpace(size_t whichSpace //< Index into m_callbacks vector
+        bool OSVR_RENDERMANAGER_EXPORT RenderPathSetup() override;
+        bool OSVR_RENDERMANAGER_EXPORT RenderEyeInitialize(size_t eye) override;
+        bool OSVR_RENDERMANAGER_EXPORT 
+        RenderSpace(size_t whichSpace //< Index into m_callbacks vector
                          ,
                          size_t whichEye //< Which eye are we rendering for?
                          ,
@@ -188,12 +190,12 @@ namespace renderkit {
                          OSVR_ProjectionMatrix projection //< Projection to use
                          ) override;
 
-        bool RenderFrameInitialize() override { return true; }
-        bool RenderDisplayFinalize(size_t display) override;
-        bool RenderFrameFinalize() override;
+        bool OSVR_RENDERMANAGER_EXPORT RenderFrameInitialize() override { return true; }
+        bool OSVR_RENDERMANAGER_EXPORT RenderDisplayFinalize(size_t display) override;
+        bool OSVR_RENDERMANAGER_EXPORT RenderFrameFinalize() override;
 
-        bool PresentFrameInitialize() override { return true; }
-        bool PresentEye(PresentEyeParameters params) override;
+        bool OSVR_RENDERMANAGER_EXPORT PresentFrameInitialize() override { return true; }
+        bool OSVR_RENDERMANAGER_EXPORT PresentEye(PresentEyeParameters params) override;
 
         /// Used to keep track of when rendering has completed so we can hand
         /// our buffers over to the ATW thread.

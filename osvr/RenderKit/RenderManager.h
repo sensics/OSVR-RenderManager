@@ -693,7 +693,7 @@ namespace renderkit {
 
       protected:
 
-        virtual void setDoingOkay(bool value) {
+        virtual void OSVR_RENDERMANAGER_EXPORT setDoingOkay(bool value) {
             m_doingOkay = value;
         }
 
@@ -709,14 +709,14 @@ namespace renderkit {
 
         /// Internal versions of functions that require a mutex, so that
         /// we can call them from functions with a mutex without blocking.
-        virtual std::vector<RenderInfo>
+        virtual std::vector<RenderInfo> OSVR_RENDERMANAGER_EXPORT
         GetRenderInfoInternal(const RenderParams& params = RenderParams());
 
-        virtual bool RegisterRenderBuffersInternal(
+        virtual bool OSVR_RENDERMANAGER_EXPORT RegisterRenderBuffersInternal(
             const std::vector<RenderBuffer>& buffers,
             bool appWillNotOverwriteBeforeNewPresent = false);
 
-        virtual bool PresentRenderBuffersInternal(
+        virtual bool OSVR_RENDERMANAGER_EXPORT PresentRenderBuffersInternal(
             const std::vector<RenderBuffer>& buffers,
             const std::vector<RenderInfo>& renderInfoUsed,
             const RenderParams& renderParams = RenderParams(),
@@ -725,10 +725,10 @@ namespace renderkit {
                     std::vector<OSVR_ViewportDescription>(),
             bool flipInY = false);
 
-        virtual bool PresentSolidColorInternal(
+        virtual bool OSVR_RENDERMANAGER_EXPORT PresentSolidColorInternal(
           const RGBColorf& color);
 
-        virtual bool UpdateDistortionMeshesInternal(
+        virtual bool OSVR_RENDERMANAGER_EXPORT UpdateDistortionMeshesInternal(
             DistortionMeshType type //< Type of mesh to produce
             ,
             std::vector<DistortionParameters> const&
@@ -737,7 +737,7 @@ namespace renderkit {
 
         std::vector<RenderInfo>
             m_latchedRenderInfo; //< Stores vector of latched RenderInfo
-        virtual size_t
+        virtual size_t OSVR_RENDERMANAGER_EXPORT
           LatchRenderInfoInternal(const RenderParams& params = RenderParams());
 
         /// OSVR context to use.
@@ -791,18 +791,18 @@ namespace renderkit {
 
         /// @brief Tell how many displays are associated with this RenderManager
         /// @return 0 on failure/not open, number of displays on success
-        size_t GetNumDisplays();
+        size_t OSVR_RENDERMANAGER_EXPORT GetNumDisplays();
 
         /// @brief Tell how many eyes are associated with each display in this
         /// RenderManager
         /// @return 0 on failure/not open, number of eyes per display on success
-        size_t GetNumEyesPerDisplay();
+        size_t OSVR_RENDERMANAGER_EXPORT GetNumEyesPerDisplay();
 
         /// @brief Tell which display is associated with this eye
         /// @return 0 on failure/not open, display index on success
         /// @todo Will need to be generalized when we have multiple displays per
         /// eye
-        size_t GetDisplayUsedByEye(size_t eye);
+        size_t OSVR_RENDERMANAGER_EXPORT GetDisplayUsedByEye(size_t eye);
 
         /// @brief Width of the virtual display in Present mode, actual in
         /// Render
@@ -890,7 +890,7 @@ namespace renderkit {
         /// translation impact.
         ///  @return True on success, false (with empty transforms vector) on
         /// failure.
-        virtual bool
+        virtual bool OSVR_RENDERMANAGER_EXPORT
         ComputeAsynchronousTimeWarps(std::vector<RenderInfo> usedRenderInfo,
                                      std::vector<RenderInfo> currentRenderInfo,
                                      float assumedDepth = 2.0f);
@@ -919,7 +919,7 @@ namespace renderkit {
         /// This routine computes the projection matrix needed for the
         /// oversized view required by the m_renderOverfillFactor.
         /// @return True on success, false on failure.
-        virtual bool ConstructProjection(
+        virtual bool OSVR_RENDERMANAGER_EXPORT ConstructProjection(
             size_t whichEye //< Input; index of the eye to use
             , double nearClipDistanceMeters //< Perpendicular distance to near
             // clipping plane
@@ -935,7 +935,7 @@ namespace renderkit {
         /// does not include the shift needed to move the eye to the
         /// correct location in the output display.
         /// @return True on success, false on failure.
-        virtual bool ConstructViewportForRender(
+        virtual bool OSVR_RENDERMANAGER_EXPORT ConstructViewportForRender(
             size_t whichEye //< Input; index of the eye to use
             , OSVR_ViewportDescription& viewport //< Output viewport
             );
@@ -954,7 +954,7 @@ namespace renderkit {
         /// To turn this into a viewport for the Present-buffer rotation
         /// based on that parameter, call RotateViewport().
         /// @return True on success, false on failure.
-        virtual bool ConstructViewportForPresent(
+        virtual bool OSVR_RENDERMANAGER_EXPORT ConstructViewportForPresent(
             size_t whichEye //< Input; index of the eye to use
             , OSVR_ViewportDescription& viewport //< Output viewport
             , bool swapEyes //< Should we swap left and right eyes?
@@ -965,14 +965,14 @@ namespace renderkit {
         /// ConstructViewport() function based on the rotation
         /// between the rendering space and the presentation space.
         /// @return Adjusted viewport.
-        virtual OSVR_ViewportDescription RotateViewport(
+        virtual OSVR_ViewportDescription OSVR_RENDERMANAGER_EXPORT RotateViewport(
             const OSVR_ViewportDescription& viewport //< Input viewport
             );
 
         /// @brief Construct ModelView for a given eye, space, and RenderParams
         ///
         /// @return True on success, false on failure.
-        virtual bool ConstructModelView(
+        virtual bool OSVR_RENDERMANAGER_EXPORT ConstructModelView(
             size_t whichSpace //< Input; index of the space to use
             , size_t whichEye //< Input; index of the eye to use
             , RenderParams params //< Input; render parameters
@@ -995,7 +995,7 @@ namespace renderkit {
         /// is applied to.
         ///  @return True on success, false (with untouched transform) on
         /// failure.
-        bool ComputeDisplayOrientationMatrix(
+        bool OSVR_RENDERMANAGER_EXPORT ComputeDisplayOrientationMatrix(
             float rotateDegrees //< Rotation in degrees around Z
             , bool flipInY //< Flip in Y after rotating?
             , matrix16& outMatrix //< Matrix to use.
@@ -1016,7 +1016,7 @@ namespace renderkit {
         ///  @param outMatrix[out] Transformation to use.
         ///  @return True on success, false (with untouched transform) on
         /// failure.
-        bool ComputeRenderBufferCropMatrix(
+        bool OSVR_RENDERMANAGER_EXPORT ComputeRenderBufferCropMatrix(
             OSVR_ViewportDescription normalizedCroppingViewport,
             matrix16& outMatrix);
 
@@ -1047,16 +1047,17 @@ namespace renderkit {
         virtual bool RenderFrameInitialize() = 0;
 
         /// @brief Initialize rendering for a new display
-        virtual bool
+        virtual bool OSVR_RENDERMANAGER_EXPORT
         RenderDisplayInitialize(size_t display //< Which display (0-indexed)
                                 ) = 0;
 
         /// @brief Initialize rendering for a specified eye
-        virtual bool RenderEyeInitialize(size_t eye //< Which eye (0-indexed)
+        virtual bool OSVR_RENDERMANAGER_EXPORT 
+        RenderEyeInitialize(size_t eye //< Which eye (0-indexed)
                                          ) = 0;
 
         /// @brief Render objects in a specified space (from m_callbacks)
-        virtual bool
+        virtual bool OSVR_RENDERMANAGER_EXPORT
         RenderSpace(size_t whichSpace //< Index into m_callbacks vector
                     , size_t whichEye //< Which eye are we rendering for?
                     , OSVR_PoseState pose //< ModelView transform to use
@@ -1065,16 +1066,17 @@ namespace renderkit {
                     ) = 0;
 
         /// @brief Finalize rendering for a specified eye
-        virtual bool RenderEyeFinalize(size_t eye //< Which eye (0-indexed)
+        virtual bool OSVR_RENDERMANAGER_EXPORT 
+        RenderEyeFinalize(size_t eye //< Which eye (0-indexed)
                                        ) = 0;
 
         /// @brief Finalize rendering for a new display
-        virtual bool
+        virtual bool OSVR_RENDERMANAGER_EXPORT
         RenderDisplayFinalize(size_t display //< Which display (0-indexed)
                               ) = 0;
 
         /// @brief Finalize rendering for a new frame
-        virtual bool RenderFrameFinalize() { return true; }
+        virtual bool OSVR_RENDERMANAGER_EXPORT RenderFrameFinalize() { return true; }
 
         //=============================================================
         // These methods must be implemented by all derived classes.
@@ -1094,10 +1096,10 @@ namespace renderkit {
         //  PresentFrameFinalize
 
         /// @brief Initialize presentation for a new frame
-        virtual bool PresentFrameInitialize() = 0;
+        virtual bool OSVR_RENDERMANAGER_EXPORT PresentFrameInitialize() = 0;
 
         /// @brief Initialize presentation for a new display
-        virtual bool
+        virtual bool OSVR_RENDERMANAGER_EXPORT
         PresentDisplayInitialize(size_t display //< Which display (0-indexed)
                                  ) = 0;
 
@@ -1105,7 +1107,7 @@ namespace renderkit {
         /// @todo add time shear parameters
         class PresentEyeParameters {
           public:
-            PresentEyeParameters() {
+            OSVR_RENDERMANAGER_EXPORT PresentEyeParameters() {
                 m_index = 0;
                 m_rotateDegrees = 0;
                 m_flipInY = false;
@@ -1130,21 +1132,22 @@ namespace renderkit {
             matrix16* m_timeWarp; //< Time Warp matrix to use (nullptr
             // for none)
         };
-        virtual bool PresentEye(PresentEyeParameters params) = 0;
+        virtual bool OSVR_RENDERMANAGER_EXPORT PresentEye(PresentEyeParameters params) = 0;
 
         /// @brief Set the specified eye to the specified color
         /// @param eye[in] The eye to set.
         /// @param color[in] The color to set, RGB, 0-1 for each.
         /// @return True on success, false on failure.
-        virtual bool SolidColorEye(size_t eye, const RGBColorf &color) = 0;
+        virtual bool OSVR_RENDERMANAGER_EXPORT
+        SolidColorEye(size_t eye, const RGBColorf &color) = 0;
 
         /// @brief Finalize presentation for a new display
-        virtual bool
+        virtual bool OSVR_RENDERMANAGER_EXPORT
         PresentDisplayFinalize(size_t display //< Which display (0-indexed)
                                ) = 0;
 
         /// @brief Finalize presentation for a new frame
-        virtual bool PresentFrameFinalize() = 0;
+        virtual bool OSVR_RENDERMANAGER_EXPORT PresentFrameFinalize() = 0;
 
         friend class RenderManagerNVidiaD3D11OpenGL;
         friend class ::osvr::Compositor::DisplayServerInterfaceD3D11Singleton;
