@@ -781,7 +781,7 @@ namespace renderkit {
                 // callbacks called during our busy-wait.
                 if (osvrClientUpdate(m_context) == OSVR_RETURN_FAILURE) {
                     m_log->error() << "RenderManager::PresentRenderBuffers(): "
-                                      "client context update failed.";
+                                      "Client context update failed.";
                     return false;
                 }
 
@@ -815,8 +815,8 @@ namespace renderkit {
         if (m_params.m_enableTimeWarp) {
             if (!ComputeAsynchronousTimeWarps(renderInfoUsed, currentRenderInfo,
                                               2.0f)) {
-                m_log->error() << "RenderManager::PresentRenderBuffers: Could not "
-                                  "compute time warps";
+                m_log->error() << "RenderManager::PresentRenderBuffers: "
+                                  "Could not compute time warps";
                 return false;
             }
         }
