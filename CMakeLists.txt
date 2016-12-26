@@ -117,6 +117,7 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/ComputeDistortionMesh.h
 	osvr/RenderKit/DistortionMesh.h
 	osvr/RenderKit/Float2.h
+	osvr/RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerCompositorD3D11.h
 )
 
 if (WIN32)
