@@ -59,6 +59,10 @@ Russ Taylor <russ@sensics.com>
 #include "GraphicsLibraryOpenGL.h"
 #endif
 
+#ifdef RM_USE_SENSICS
+#include "RenderManagerSensicsDS_D3D11.h"
+#endif
+
 #include "VendorIdTools.h"
 
 // OSVR Includes
@@ -2155,33 +2159,33 @@ namespace renderkit {
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
 #ifdef RM_USE_D3D11
-            if (p.m_directMode) {
-              // If we've been asked for asynchronous time warp, we layer
-              // the request on top of a request for a DirectRender instance
-              // to harness.  @todo This should be doable on top of a non-
-              // DirectMode interface as well.
-              if (p.m_asynchronousTimeWarp) {
-                RenderManager::ConstructorParameters pTemp = p;
-                pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
-                ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
-              } else {
-                // Try each available DirectRender library to see if we can
-                // get a pointer to a RenderManager that has access to the
-                // DirectMode display we want to use.
-                ret.reset(openRenderManagerDirectMode(contextParameter, p));
-              }
-              if (ret == nullptr) {
-                m_log->error() << "Could not open the"
-                  << " requested DirectMode display";
-              }
+            OSVR_COM_Compositor compositor = RenderManagerSensicsDS_D3D11::CreateCompositor();
+            if (compositor) {
+                ret.reset(new RenderManagerSensicsDS_D3D11(compositor, contextParameter, p));
             } else {
-                if (p.m_asynchronousTimeWarp) {
-                    RenderManager::ConstructorParameters pTemp = p;
-                    pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                    auto wrappedRm = new RenderManagerD3D11(contextParameter, pTemp);
-                    ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
-                } else {
+                if (p.m_directMode) {
+                    // If we've been asked for asynchronous time warp, we layer
+                    // the request on top of a request for a DirectRender instance
+                    // to harness.  @todo This should be doable on top of a non-
+                    // DirectMode interface as well.
+                    if (p.m_asynchronousTimeWarp) {
+                        RenderManager::ConstructorParameters pTemp = p;
+                        pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                        auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
+                        ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
+                    }
+                    else {
+                        // Try each available DirectRender library to see if we can
+                        // get a pointer to a RenderManager that has access to the
+                        // DirectMode display we want to use.
+                        ret.reset(openRenderManagerDirectMode(contextParameter, p));
+                    }
+                    if (ret == nullptr) {
+                        m_log->error() << "Could not open the"
+                            << " requested DirectMode display";
+                    }
+                }
+                else {
                     ret.reset(new RenderManagerD3D11(contextParameter, p));
                 }
             }
