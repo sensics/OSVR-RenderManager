@@ -10,3 +10,6 @@
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-Intel"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-Intel
 	url = git@github.com:sensics/OSVR-RenderManager-Intel.git
+[submodule "osvr/RenderKit/NDA/OSVR-RenderManager-Sensics"]
+	path = osvr/RenderKit/NDA/OSVR-RenderManager-Sensics
+	url = git@github.com:sensics/OSVR-RenderManager-Sensics.git
