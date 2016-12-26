@@ -538,8 +538,6 @@ namespace renderkit {
                 m_asynchronousTimeWarp = false;
                 m_maxMSBeforeVsyncTimeWarp = 0.0f;
 
-                m_distortionCorrection = false;
-
                 m_clientPredictionEnabled = false;
                 m_clientPredictionLocalTimeOverride = false;
 
@@ -605,7 +603,6 @@ namespace renderkit {
             /// would render 1/4 as many pixels.
             float m_renderOversampleFactor;
 
-            bool m_distortionCorrection; //< Use distortion correction?
             std::vector<DistortionParameters>
                 m_distortionParameters; //< One set per eye x display
 
