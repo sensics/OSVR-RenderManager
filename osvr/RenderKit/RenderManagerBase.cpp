@@ -36,6 +36,7 @@ Russ Taylor <russ@sensics.com>
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
 #include "RenderManagerD3D11ATW.h"
+#include "osvr/RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerSensicsDS_D3D11.h"
 #endif
 
 #ifdef RM_USE_NVIDIA_DIRECT_D3D11
@@ -2159,9 +2160,9 @@ namespace renderkit {
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
 #ifdef RM_USE_D3D11
-            OSVR_COM_Compositor compositor = RenderManagerSensicsDS_D3D11::CreateCompositor();
+            OSVR_COM_Compositor compositor = RenderManagerSDS_D3D11::CreateCompositor();
             if (compositor) {
-                ret.reset(new RenderManagerSensicsDS_D3D11(compositor, contextParameter, p));
+              ret.reset(new RenderManagerSDS_D3D11(compositor, contextParameter, p));
             } else {
                 if (p.m_directMode) {
                     // If we've been asked for asynchronous time warp, we layer
