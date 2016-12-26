@@ -55,7 +55,7 @@ if(WIN32)
 	endif()
 
 	set(SENSICS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Sensics")
-	if(EXISTS "${SENSICS_SRC_DIR}/RenderManagerSDS_D3D11.h")
+	if(EXISTS "${SENSICS_SRC_DIR}/RenderManagerSensicsDS_D3D11.h")
 		set(RM_USE_SENSICS TRUE)
 		set(HAVE_SENSICS_NDA_SUBMODULE TRUE)
 	endif()
@@ -117,7 +117,6 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/ComputeDistortionMesh.h
 	osvr/RenderKit/DistortionMesh.h
 	osvr/RenderKit/Float2.h
-	osvr/RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerCompositorD3D11.h
 )
 
 if (WIN32)
@@ -370,8 +369,6 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/osvr_compiler_tests.h
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"
 )
-
-
 
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
 if (NOT ANDROID)
