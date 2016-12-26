@@ -1228,7 +1228,7 @@ namespace renderkit {
         GLboolean stencilTest;
         glGetBooleanv(GL_STENCIL_TEST, &stencilTest);
         auto resetStencilTest = util::finally([&]{
-          if (blend) {
+          if (stencilTest) {
             glEnable(GL_STENCIL_TEST);
           }
           else {
