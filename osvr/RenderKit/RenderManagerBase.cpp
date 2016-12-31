@@ -2159,6 +2159,7 @@ namespace renderkit {
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
 #ifdef RM_USE_D3D11
+  #ifdef RM_USE_SENSICS
             // See if we are able to construct a Sensics Compositor.  If so,
             // construct a RenderManager based on it and return it; otherwise,
             // construct one based on the configuration parameters.
@@ -2166,6 +2167,7 @@ namespace renderkit {
             if (compositor) {
               ret.reset(new RenderManagerSensicsDS_D3D11(compositor, contextParameter, p));
             } else {
+  #endif
                 if (p.m_directMode) {
                     // If we've been asked for asynchronous time warp, we layer
                     // the request on top of a request for a DirectRender instance
@@ -2190,7 +2192,9 @@ namespace renderkit {
                 } else {
                     ret.reset(new RenderManagerD3D11(contextParameter, p));
                 }
+  #ifdef RM_USE_SENSICS
             }
+  #endif
 #else
               m_log->error() << "D3D11 render library not compiled in";
               return nullptr;
