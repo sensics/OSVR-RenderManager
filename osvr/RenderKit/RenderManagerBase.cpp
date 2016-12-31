@@ -36,7 +36,6 @@ Russ Taylor <russ@sensics.com>
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
 #include "RenderManagerD3D11ATW.h"
-#include "osvr/RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerSensicsDS_D3D11.h"
 #endif
 
 #ifdef RM_USE_NVIDIA_DIRECT_D3D11
