@@ -2160,6 +2160,9 @@ namespace renderkit {
         // and DirectMode selected.
         if (p.m_renderLibrary == "Direct3D11") {
 #ifdef RM_USE_D3D11
+            // See if we are able to construct a Sensics Compositor.  If so,
+            // construct a RenderManager based on it and return it; otherwise,
+            // construct one based on the configuration parameters.
             OSVR_COM_Compositor compositor = RenderManagerSensicsDS_D3D11::CreateCompositor();
             if (compositor) {
               ret.reset(new RenderManagerSensicsDS_D3D11(compositor, contextParameter, p));
@@ -2185,8 +2188,7 @@ namespace renderkit {
                         m_log->error() << "Could not open the"
                             << " requested DirectMode display";
                     }
-                }
-                else {
+                } else {
                     ret.reset(new RenderManagerD3D11(contextParameter, p));
                 }
             }
