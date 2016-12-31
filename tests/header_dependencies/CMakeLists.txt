@@ -18,6 +18,7 @@ set(IGNORED_HEADERS
         RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.h
         RenderKit/NDA/OSVR-RenderManager-Intel/RenderManagerIntelD3D.h
         RenderKit/NDA/OSVR-RenderManager-Intel/dxgi2_preview.h
+        RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerSensicsDS_D3D11.h
 )
 
 # Special cases
