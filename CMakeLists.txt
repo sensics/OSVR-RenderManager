@@ -378,8 +378,11 @@ endif()
 if (HAVE_SENSICS_NDA_SUBMODULE)
 	# Sensics is a header-only lib for now
 	message(STATUS " - Sensics support: enabled")
-	target_include_directories(osvrRenderManager PRIVATE "${SENSICS_SRC_DIR}")
-	target_include_directories(osvrRenderManager PRIVATE "${SENSICS_SRC_DIR}/vendor/ts-compositor")
+  find_package(osvrDisplayServerClient REQUIRED)
+  include_directories(${SENSICS_SRC_DIR})
+	target_link_libraries(osvrRenderManager
+		PRIVATE
+		osvr::osvrDisplayServerClient)
 endif()
 
 target_include_directories(osvrRenderManager PUBLIC
