@@ -75,7 +75,8 @@ class OSVRDisplayConfiguration {
     ///
     /// @returns a unique_ptr because that's what factory functions that return reference objects are recommended to do
     /// (they're convertable to shared_ptr, but not vice versa)
-    std::unique_ptr<OSVRDisplayConfiguration> duplicateWithoutOutputTransforms() const;
+    std::unique_ptr<OSVRDisplayConfiguration>
+    OSVR_RENDERMANAGER_EXPORT duplicateWithoutOutputTransforms() const;
 
     void OSVR_RENDERMANAGER_EXPORT print() const;
 
