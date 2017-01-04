@@ -43,6 +43,7 @@
 #include <exception>
 #include <stdexcept>
 #include <vector>
+#include <memory>
 
 struct DisplayConfigurationParseException : public std::runtime_error {
     DisplayConfigurationParseException(const std::string& message)
@@ -68,6 +69,13 @@ class OSVRDisplayConfiguration {
 
     void OSVR_RENDERMANAGER_EXPORT
     parse(const std::string& display_description);
+
+    /// Produces a duplicate object that leaves out/defaults the parameters related to display output transformation
+    /// (e.g. rotation, swap eyes).
+    ///
+    /// @returns a unique_ptr because that's what factory functions that return reference objects are recommended to do
+    /// (they're convertable to shared_ptr, but not vice versa)
+    std::unique_ptr<OSVRDisplayConfiguration> duplicateWithoutOutputTransforms() const;
 
     void OSVR_RENDERMANAGER_EXPORT print() const;
 

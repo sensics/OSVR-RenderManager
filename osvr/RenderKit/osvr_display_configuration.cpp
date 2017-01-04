@@ -632,6 +632,27 @@ void OSVRDisplayConfiguration::parse(const std::string& display_description) {
     }
 }
 
+std::unique_ptr<OSVRDisplayConfiguration> OSVRDisplayConfiguration::duplicateWithoutOutputTransforms() const {
+    /// Duplicated
+    std::unique_ptr<OSVRDisplayConfiguration> ret(new OSVRDisplayConfiguration(*this));
+
+    /// Now, to reset output transform components.
+    /// This resetting is kept in the same order as the parsing in parse(), for clarity.
+
+    /// Originally from first resolution: don't swap eyes.
+    ret->m_swapEyes = false;
+
+    /// From rendering: don't roll eyes
+    ret->m_rightRoll = 0;
+    ret->m_leftRoll = 0;
+
+    /// In each eye definition: don't rotate 180.
+    for (auto& eye : ret->m_eyes) {
+        eye.m_rotate180 = false;
+    }
+    return ret;
+}
+
 void OSVRDisplayConfiguration::print() const {
     std::cout << "Monocular horizontal FOV: " << m_monocularHorizontalFOV
               << std::endl;
