@@ -47,11 +47,13 @@ namespace osvr {
 
         class RenderManagerD3D11ATW : public RenderManagerD3D11Base {
         private:
+            // All of these keys should be 0 so that whoever wants the
+            // lock can get it, regardless of who last had it.
             // Indices into the keys for the Render Thread
             const UINT rtAcqKey = 0;
-            const UINT rtRelKey = 1;
+            const UINT rtRelKey = 0;
             // Indices into the keys for the ATW thread
-            const UINT atwAcqKey = 1;
+            const UINT atwAcqKey = 0;
             const UINT atwRelKey = 0;
 
             /// Holds the information needed to handle locking and unlocking of
