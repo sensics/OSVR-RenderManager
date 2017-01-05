@@ -2163,10 +2163,9 @@ namespace renderkit {
             // See if we are able to construct a Sensics Compositor.  If so,
             // construct a RenderManager based on it and return it; otherwise,
             // construct one based on the configuration parameters.
-            OSVR_COM_Compositor compositor = RenderManagerSensicsDS_D3D11::CreateCompositor();
-            if (compositor) {
-              ret.reset(new RenderManagerSensicsDS_D3D11(compositor, contextParameter, p));
-            } else {
+            ret.reset(new RenderManagerSensicsDS_D3D11(contextParameter, p));
+            if (!ret->doingOkay()) {
+                ret.reset(nullptr);
   #endif
                 if (p.m_directMode) {
                     // If we've been asked for asynchronous time warp, we layer
