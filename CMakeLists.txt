@@ -195,6 +195,8 @@ if(RM_USE_OPENGLES20)
 	list(APPEND OSVRRM_IMPL_COMMON_INCLUDE_DIRS ${OPENGLES2_INCLUDE_DIR})
 endif()
 
+set(OSVRRM_BACKEND_TARGETS)
+
 if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	# Usage dependencies
 	add_library(osvrRM-nvidia-requirements INTERFACE)
@@ -210,6 +212,7 @@ if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	osvrrm_setup_nda_object_target(osvrRenderManager-NVIDIA)
 	osvrrm_restore_symbols_in_debug()
 
+	list(APPEND OSVRRM_BACKEND_TARGETS osvrRenderManager-NVIDIA)
 	set(RM_USE_NVIDIA_DIRECT_D3D11 TRUE)
 	message(STATUS " - NVIDIA direct D3D11 support: enabled (found NVAPI and NVIDIA NDA submodule)")
 else()
@@ -231,6 +234,7 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	osvrrm_setup_nda_object_target(osvrRenderManager-AMD)
 	osvrrm_restore_symbols_in_debug()
 
+	list(APPEND OSVRRM_BACKEND_TARGETS osvrRenderManager-AMD)
 	set(RM_USE_AMD_DIRECT_D3D11 TRUE)
 	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR and AMD NDA submodule)")
 else()
@@ -250,6 +254,7 @@ if (HAVE_INTEL_NDA_SUBMODULE)
 	osvrrm_setup_nda_object_target(osvrRenderManager-Intel)
 	osvrrm_restore_symbols_in_debug()
 
+	list(APPEND OSVRRM_BACKEND_TARGETS osvrRenderManager-Intel)
 	set(RM_USE_INTEL_DIRECT_D3D11 TRUE)
 	message(STATUS " - Intel direct D3D11 support: enabled (found Intel NDA submodule)")
 else()
