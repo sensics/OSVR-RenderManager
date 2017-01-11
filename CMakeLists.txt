@@ -369,7 +369,7 @@ set (RenderManager_PUBLIC_HEADERS
 )
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
 if (NOT ANDROID)
-  target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
+	target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
 endif()
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
