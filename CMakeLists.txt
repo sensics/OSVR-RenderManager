@@ -469,6 +469,26 @@ target_link_libraries(osvrRenderManager
 	vendored-quat)
 osvrrm_copy_deps(osvr::osvrClientKit osvr::osvrClient osvr::osvrCommon osvr::osvrUtil)
 
+if(OSVRRM_ETW_FOUND AND BUILD_WITH_ETW_TRACING)
+	foreach(tgt ${OSVRRM_BACKEND_TARGETS})
+		target_compile_definitions(${tgt} PRIVATE OSVRRM_USE_ETW)
+		target_include_directories(${tgt} PRIVATE "${ETWPROVIDERS_INCLUDE_DIR}")
+	endforeach()
+	target_compile_definitions(osvrRenderManager PRIVATE OSVRRM_USE_ETW)
+	target_link_libraries(osvrRenderManager
+		PRIVATE
+		OSVRRM-ETWProviders)
+	add_custom_command(TARGET osvrRenderManager POST_BUILD
+		COMMAND "${CMAKE_COMMAND}" -E copy "${ETWPROVIDERS_RUNTIME_LIBRARY}" $<TARGET_FILE_DIR:osvrRenderManager>
+		COMMENT "Copying required DLL for ETWProviders"
+		VERBATIM)
+
+	install(FILES
+		"${ETWPROVIDERS_RUNTIME_LIBRARY}"
+		"${ETWPROVIDERS_MANIFEST}"
+		DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Runtime)
+endif()
+
 # Add the C++ interface target.
 add_library(osvrRenderManagerCpp INTERFACE)
 target_link_libraries(osvrRenderManagerCpp INTERFACE osvrRenderManager osvr::osvrClientKitCpp)
