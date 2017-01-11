@@ -10,3 +10,6 @@
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-Intel"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-Intel
 	url = git@github.com:sensics/OSVR-RenderManager-Intel.git
+[submodule "vendor/UIforETW"]
+	path = vendor/UIforETW
+	url = https://github.com/OSVR/UIforETWbins.git
