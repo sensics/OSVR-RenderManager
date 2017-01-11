@@ -33,6 +33,10 @@ Sensics, Inc.
 #include <d3d11.h>
 #include <DirectXMath.h>
 
+#ifdef OSVRRM_USE_ETW
+#include <ETWProviders/etwprof.h>
+#endif
+
 #include <iostream>
 
 namespace osvr {
@@ -251,6 +255,10 @@ namespace renderkit {
 
         // Forcefully sync device rendering to the shared surface.
         m_D3D11Context->Flush();
+
+#ifdef OSVRRM_USE_ETW
+        ETWRenderFrameMark();
+#endif
 
         // Present the just-rendered surface, waiting for vertical
         // blank if asked to.
