@@ -1324,12 +1324,43 @@ namespace renderkit {
         //====================================================================
         // Create the shader resource view.
         // @todo move into the registration code rather than PresentEye
+        D3D11_TEXTURE2D_DESC colorBufferDesc = { 0 };
+        params.m_buffer.D3D11->colorBuffer->GetDesc(&colorBufferDesc);
+        DXGI_FORMAT shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        switch (colorBufferDesc.Format) {
+        case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+          shaderResourceViewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+          break;
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+          shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+          break;
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+          shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+          break;
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+          shaderResourceViewFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+          break;
+        default:
+          m_log->error() << "osvr::renderkit::RenderManagerD3D11Base::PresentEye - unknown render target texture format. Defaulting to DXGI_FORMAT_R8G8B8A8_UNORM.";
+          shaderResourceViewFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+          break;
+        }
+
+        // We need to set things here, presumably the DXGI format, to
+        // make things render correctly when working with Unity or
+        // Unreal.  When this was taken out, we got black screens on
+        // both of them, even though the demo apps worked.
+        D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+        shaderResourceViewDesc.Format = shaderResourceViewFormat;
+        shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+        shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
         // We pass a nullptr to the description, resulting in a view that
         // can access the entire resource.
         ID3D11ShaderResourceView* renderTextureResourceView;
         hr = m_D3D11device->CreateShaderResourceView(
-            params.m_buffer.D3D11->colorBuffer, nullptr,
+            params.m_buffer.D3D11->colorBuffer, &shaderResourceViewDesc,
             &renderTextureResourceView);
         if (FAILED(hr)) {
             m_log->error() << "RenderManagerD3D11Base::PresentEye(): "
