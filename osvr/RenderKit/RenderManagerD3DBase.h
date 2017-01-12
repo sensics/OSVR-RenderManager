@@ -147,15 +147,15 @@ namespace renderkit {
             std::vector<UINT16> indices;
         };
 
-        // @todo One per eye/display combination in case of multiple displays
-        // per eye
+        /// @todo One per eye/display combination in case of multiple displays
+        /// per eye
         std::vector<DistortionMeshBuffer> m_distortionMeshBuffer;
 
         ID3D11DepthStencilState* m_depthStencilStateForPresent; // Depth/stencil
                                                                 // state that
                                                                 // disables both
 
-        // Type of matrices that we pass as uniform parameters to the shader.
+        /// Type of matrices that we pass as uniform parameters to the shader.
         struct cbPerObject {
             DirectX::XMMATRIX projection;
             DirectX::XMMATRIX modelView;
@@ -169,7 +169,12 @@ namespace renderkit {
                                      std::vector<RenderInfo> currentRenderInfo,
                                      float assumedDepth = 2.0f) override;
 
-        /// Wait for rendering completion on our D3D11 context and device.
+        /// @brief Wait for rendering completion on our D3D11 context and device.
+        ///
+        /// This function is used to avoid tearing caused by the presentation
+        /// of a buffer in DirectMode before rendering has completed into
+        /// that buffer.  This forces us to hold off on presentation until
+        /// rendering has completed.
         virtual bool OSVR_RENDERMANAGER_EXPORT WaitForRenderCompletion();
 
         //===================================================================
@@ -179,14 +184,10 @@ namespace renderkit {
         bool OSVR_RENDERMANAGER_EXPORT RenderPathSetup() override;
         bool OSVR_RENDERMANAGER_EXPORT RenderEyeInitialize(size_t eye) override;
         bool OSVR_RENDERMANAGER_EXPORT 
-        RenderSpace(size_t whichSpace //< Index into m_callbacks vector
-                         ,
-                         size_t whichEye //< Which eye are we rendering for?
-                         ,
-                         OSVR_PoseState pose //< ModelView transform to use
-                         ,
-                         OSVR_ViewportDescription viewport //< Viewport to use
-                         ,
+        RenderSpace(size_t whichSpace, //< Index into m_callbacks vector
+                         size_t whichEye, //< Which eye are we rendering for?
+                         OSVR_PoseState pose, //< ModelView transform to use
+                         OSVR_ViewportDescription viewport, //< Viewport to use
                          OSVR_ProjectionMatrix projection //< Projection to use
                          ) override;
 
