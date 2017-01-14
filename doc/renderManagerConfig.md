@@ -21,7 +21,7 @@ This entry is actually itself nested, there is an external one with a **meta** t
 
 * directDisplayIndex: [Ignored if not in DirectMode] The index of the available displays matching the requested resolution, starting with 0.  If there are multiple displays being used (full\_screen and 2 eyes), the indices of the following displays will be incremented by 1.
 
-* directHighPriorityEneabled: [Ignored if not in DirectMode] For video drivers that support high-priority rendering threads (only nVidia Pascal series are supported as of 11/16/2016), makes a high-priority thread for the DirectMode rendering thread.  If using ATW, this is the separate ATW thread.
+* directHighPriorityEnabled: [Ignored if not in DirectMode] For video drivers that support high-priority rendering threads (only nVidia Pascal series are supported as of 11/16/2016), makes a high-priority thread for the DirectMode rendering thread.  If using ATW, this is the separate ATW thread.
 
 * numBuffers: The number of buffers per swap chain, 1 = front-buffer rendering (not recommended), 2 = double buffered (which does not increase latency in DirectMode if waiting for vsync), 3+ = superfluous.
 
