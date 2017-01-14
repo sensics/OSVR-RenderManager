@@ -83,6 +83,12 @@ RenderManager also makes use of some fields from the **"display"/"hmd"** descrip
 
 * field\_of\_view: The entries here are used to describe the field of view and angular tilt of the HMD.
 
+### device/properties
+
+* vendor: The vendor name for the device, either the 3-letter name associated with the hardware VID or one of the aliases defined in DirectModeVendors.h in the RenderManager source.
+
+The other fields in this entry are ignored by RenderManager.
+
 ### resolutions
 
 * width/height: These are used along with **renderManagerConfig/renderOverfillFactor** and **renderMaangerConfig/renderOversampleFactor** to determine the resolution and aspect ratio of the texture provided to the application to render into.  If **rendeManager/display/rotation** is 90 or 270, the aspect ratio of the window asked for from the display system (or the display opened in DirectMode) will have its aspect ratio swapped.
