@@ -47,9 +47,11 @@ namespace osvr {
 
         class RenderManagerD3D11ATW : public RenderManagerD3D11Base {
         private:
-            // Indices into the keys for the Render Thread
-            const UINT rtAcqKey = 0;
-            const UINT rtRelKey = 1;
+            // Indices into the keys for the Render Thread (used by app)
+            // @todo need to expose these to the application to use
+
+            //const UINT rtAcqKey = 0;
+            //const UINT rtRelKey = 1;
             // Indices into the keys for the ATW thread
             const UINT atwAcqKey = 1;
             const UINT atwRelKey = 0;
@@ -59,7 +61,7 @@ namespace osvr {
             /// our own internal copy.
             typedef struct {
                 osvr::renderkit::RenderBuffer atwBuffer;
-                IDXGIKeyedMutex* rtMutex;
+                //IDXGIKeyedMutex* rtMutex;
                 IDXGIKeyedMutex* atwMutex;
                 HANDLE sharedResourceHandle;
                 ID3D11Texture2D *textureCopy;   //< nullptr if no copy needed.
@@ -223,21 +225,6 @@ namespace osvr {
                         setDoingOkay(false);
                         mQuit = true;
                     }
-                    auto bufferInfo = bufferInfoItr->second;
-                    hr = bufferInfoItr->second.atwMutex->ReleaseSync(atwRelKey);
-                    if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
-                                       << "Could not ReleaseSync in the render manager thread.";
-                        setDoingOkay(false);
-                        mQuit = true;
-                    }
-                    hr = bufferInfoItr->second.rtMutex->AcquireSync(rtAcqKey, INFINITE);
-                    if (FAILED(hr)) {
-                        m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
-                                       << "Could not lock the render thread's mutex";
-                        setDoingOkay(false);
-                        mQuit = true;
-                    }
                   }
                   mNextFrameInfo.colorBuffers.clear();
 
@@ -278,22 +265,6 @@ namespace osvr {
                               m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
                                   << "Could not find buffer info for RenderBuffer " << (size_t)key;
                               m_log->error() << "  (Be sure to register buffers before presenting them)";
-                              setDoingOkay(false);
-                              return false;
-                          }
-                          hr = bufferInfoItr->second.rtMutex->ReleaseSync(rtRelKey);
-                          if (FAILED(hr)) {
-                              m_log->error()
-                                  << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
-                                  << "Could not ReleaseSync on a client render target's IDXGIKeyedMutex during present.";
-                              setDoingOkay(false);
-                              return false;
-                          }
-                          // and lock the ATW thread's mutex
-                          hr = bufferInfoItr->second.atwMutex->AcquireSync(atwAcqKey, INFINITE);
-                          if (FAILED(hr)) {
-                              m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
-                                  << "Could not AcquireSync on the atw IDXGIKeyedMutex during present.";
                               setDoingOkay(false);
                               return false;
                           }
@@ -401,7 +372,10 @@ namespace osvr {
                                     setDoingOkay(false);
                                     mQuit = true;
                                 }
+
+                                // lock the GPU mutex
                                 atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
+                                bufferInfoItr->second.atwMutex->AcquireSync(atwAcqKey, INFINITE);
                             }
 
                             // Send the rendered results to the screen, using the
@@ -418,6 +392,24 @@ namespace osvr {
                                         << "PresentRenderBuffers() returned false, maybe because it was asked to quit";
                                     setDoingOkay(false);
                                     mQuit = true;
+                            }
+
+                            // release the GPU mutex locks, in reverse order
+                            for (size_t i = mNextFrameInfo.colorBuffers.size() - 1; i >= 0; i--) {
+                                // @todo: broken loop. for size = 2, i should be 2 - 1 = 1, then 0, then -1 < 0 so should break
+                                // but we're looping 3 times. why?
+                                auto key = mNextFrameInfo.colorBuffers[i];
+                                auto bufferInfoItr = mBufferMap.find(key);
+                                if (bufferInfoItr == mBufferMap.end()) {
+                                    // @TODO BUG - this loop is broken somehow. It's looping 3 times,
+                                    // when the colorBuffers.size() is 2, so for now just break? 
+
+                                    //m_log->error() << "No buffer info for key " << (size_t)key;
+                                    //setDoingOkay(false);
+                                    //mQuit = true;
+                                    break;
+                                }
+                                bufferInfoItr->second.atwMutex->ReleaseSync(atwRelKey);
                             }
 
                             struct timeval now;
@@ -540,19 +532,6 @@ namespace osvr {
                       }
                       dxgiResource->Release(); // we don't need this anymore
 
-                      // Now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
-                      // The application should have already locked these mutexes, so we
-                      // don't attempt to lock them here.
-                      hr = buffers[i].D3D11->colorBuffer->QueryInterface(
-                        __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
-                      if (FAILED(hr) || newInfo.rtMutex == nullptr) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                                         << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the "
-                                            "texture resource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-
                       // The application is maintaining two sets of buffers, so we don't
                       // need to make a copy of this texture when it is presented.  We just
                       // get a shared handle to it and re-use the existing texture.
@@ -624,25 +603,6 @@ namespace osvr {
                           return false;
                       }
                       dxgiResource->Release(); // we don't need this anymore
-
-                      // Now get the IDXGIKeyedMutex for the render thread's ID3D11Texture2D
-                      // Then lock the mutex for the render thread.
-                      hr = texture2D->QueryInterface(
-                        __uuidof(IDXGIKeyedMutex), (LPVOID*)&newInfo.rtMutex);
-                      if (FAILED(hr) || newInfo.rtMutex == nullptr) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                                         << "RegisterRenderBuffersInternal: Can't get the IDXGIKeyedMutex from the "
-                                            "created texture resource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-                      hr = newInfo.rtMutex->AcquireSync(rtAcqKey, INFINITE);
-                      if (FAILED(hr)) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                                         << "RegisterRenderBuffersInternal: Could not acquire mutex";
-                          setDoingOkay(false);
-                          return false;
-                      }
 
                       // Record the place to copy incoming textures to.
                       newInfo.textureCopy = texture2D;
