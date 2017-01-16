@@ -395,18 +395,13 @@ namespace osvr {
                             }
 
                             // release the GPU mutex locks, in reverse order
-                            for (size_t i = mNextFrameInfo.colorBuffers.size() - 1; i >= 0; i--) {
-                                // @todo: broken loop. for size = 2, i should be 2 - 1 = 1, then 0, then -1 < 0 so should break
-                                // but we're looping 3 times. why?
+                            for (int32_t i = static_cast<int32_t>(mNextFrameInfo.colorBuffers.size()) - 1; i >= 0; i--) {
                                 auto key = mNextFrameInfo.colorBuffers[i];
                                 auto bufferInfoItr = mBufferMap.find(key);
                                 if (bufferInfoItr == mBufferMap.end()) {
-                                    // @TODO BUG - this loop is broken somehow. It's looping 3 times,
-                                    // when the colorBuffers.size() is 2, so for now just break? 
-
-                                    //m_log->error() << "No buffer info for key " << (size_t)key;
-                                    //setDoingOkay(false);
-                                    //mQuit = true;
+                                    m_log->error() << "No buffer info for key " << (size_t)key;
+                                    setDoingOkay(false);
+                                    mQuit = true;
                                     break;
                                 }
                                 bufferInfoItr->second.atwMutex->ReleaseSync(atwRelKey);

@@ -288,22 +288,6 @@ int main(int argc, char* argv[]) {
                 return -1;
             }
 
-            // Grab and lock the mutex, so that we will be able to render
-            // to it whether or not RenderManager locks it on our behalf.
-            // it will not be auto-locked when we're in the non-ATW case.
-            IDXGIKeyedMutex* myMutex = nullptr;
-            hr = D3DTexture->QueryInterface(
-              __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
-            if (FAILED(hr) || myMutex == nullptr) {
-              std::cerr << "Could not get mutex pointer" << std::endl;
-              return -2;
-            }
-            hr = myMutex->AcquireSync(0, INFINITE);
-            if (FAILED(hr)) {
-              std::cerr << "Could not acquire mutex" << std::endl;
-              return -3;
-            }
-
             // Fill in the resource view for your render texture buffer here
             D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
             memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
@@ -443,12 +427,52 @@ int main(int argc, char* argv[]) {
 
         renderInfo = render->GetRenderInfo();
 
+        // Grab and lock the mutex, so that we will be able to render
+        // to it whether or not RenderManager locks it on our behalf.
+        // it will not be auto-locked when we're in the non-ATW case.
+        for (size_t i = 0; i < renderInfo.size(); i++) {
+            std::cout << "locking buffer " << i << std::endl;
+            IDXGIKeyedMutex* myMutex = nullptr;
+            hr = frameInfo[frame].renderBuffers[i].D3D11->colorBuffer->QueryInterface(
+                __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
+            if (FAILED(hr) || myMutex == nullptr) {
+                std::cerr << "Could not get mutex pointer" << std::endl;
+                return -2;
+            }
+            hr = myMutex->AcquireSync(0, INFINITE);
+            if (FAILED(hr)) {
+                std::cerr << "Could not acquire mutex" << std::endl;
+                return -3;
+            }
+            std::cout << "buffer " << i << " locked." << std::endl;
+        }
+
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
           renderInfo[i].library.D3D11->context->OMSetDepthStencilState(depthStencilState, 1);
             RenderView(renderInfo[i], frameInfo[frame].renderBuffers[i].D3D11->colorBufferView,
                 frameInfo[frame].depthStencilViews[i], myDevice,
                 renderInfo[i].library.D3D11->context);
+        }
+
+        // Grab and lock the mutex, so that we will be able to render
+        // to it whether or not RenderManager locks it on our behalf.
+        // it will not be auto-locked when we're in the non-ATW case.
+        for (int32_t i = static_cast<int32_t>(renderInfo.size()) - 1; i >= 0; i--) {
+            std::cout << "Unlocking buffer " << i << std::endl;
+            IDXGIKeyedMutex* myMutex = nullptr;
+            hr = frameInfo[frame].renderBuffers[i].D3D11->colorBuffer->QueryInterface(
+                __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
+            if (FAILED(hr) || myMutex == nullptr) {
+                std::cerr << "Could not get mutex pointer" << std::endl;
+                return -2;
+            }
+            hr = myMutex->ReleaseSync(1);
+            if (FAILED(hr)) {
+                std::cerr << "Could not acquire mutex" << std::endl;
+                return -3;
+            }
+            std::cout << "Buffer " << i << " unlocked." << std::endl;
         }
 
         // Send the rendered results to the screen
