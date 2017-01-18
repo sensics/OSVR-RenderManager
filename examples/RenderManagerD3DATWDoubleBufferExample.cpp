@@ -87,6 +87,7 @@ void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
 // Callbacks to draw things in world space, left-hand space, and right-hand
 // space.
 void RenderView(
+    size_t eye, //< Which eye we are rendering
     const OSVR_RenderInfoD3D11& renderInfo, //< Info needed to render
     ID3D11RenderTargetView* renderTargetView,
     ID3D11DepthStencilView* depthStencilView,
@@ -101,17 +102,12 @@ void RenderView(
     context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 
     // Set up the viewport we're going to draw into.
-    CD3D11_VIEWPORT viewport(static_cast<float>(renderInfo.viewport.left),
-        static_cast<float>(renderInfo.viewport.lower),
+    CD3D11_VIEWPORT viewport(
+        static_cast<float>(eye * renderInfo.viewport.width),
+        0.0f,
         static_cast<float>(renderInfo.viewport.width),
         static_cast<float>(renderInfo.viewport.height));
     context->RSSetViewports(1, &viewport);
-
-    // Make a grey background
-    FLOAT colorRgba[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
-    context->ClearRenderTargetView(renderTargetView, colorRgba);
-    context->ClearDepthStencilView(
-        depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     OSVR_PoseState_to_D3D(viewD3D, renderInfo.pose);
     OSVR_Projection_to_D3D(projectionD3D,
@@ -140,7 +136,7 @@ struct FrameInfo {
 
 int main(int argc, char* argv[]) {
     // Parse the command line
-    int delayMilliSeconds = 20;
+    int delayMilliSeconds = 500;
     int realParams = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -443,21 +439,24 @@ int main(int argc, char* argv[]) {
     // presentation, and promise not to re-use a buffer for rendering until
     // we're not presenting it.
     std::vector<OSVR_RenderBufferD3D11> renderBuffers;
-    std::vector<OSVR_ViewportDescription> NVCPs;
     // Register our constructed buffers so that we can use them for
     // presentation.
     for (size_t frame = 0; frame < frameInfo.size(); frame++) {
-        double fraction = 1.0 / renderInfo.size();
         for (size_t i = 0; i < renderInfo.size(); i++) {
             renderBuffers.push_back(frameInfo[frame].renderBuffer);
-
-            OSVR_ViewportDescription v;
-            v.left = fraction * i;
-            v.lower = 0.0;
-            v.width = fraction;
-            v.height = 1;
-            NVCPs.push_back(v);
         }
+    }
+
+    // create normalized cropping viewports for side-by-side rendering to a single render target
+    std::vector<OSVR_ViewportDescription> NVCPs;
+    double fraction = 1.0 / renderInfo.size();
+    for (size_t i = 0; i < renderInfo.size(); i++) {
+        OSVR_ViewportDescription v;
+        v.left = fraction * i;
+        v.lower = 0.0;
+        v.width = fraction;
+        v.height = 1;
+        NVCPs.push_back(v);
     }
 
     // Register our constructed buffers so that we can use them for
@@ -538,26 +537,25 @@ int main(int argc, char* argv[]) {
         }
         //std::cout << "RenderThread: buffer for frame " << frame << " locked." << std::endl;
 
+        myContext->OMSetDepthStencilState(depthStencilState, 1);
+
+        // Make a grey background
+        FLOAT colorRgba[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
+        myContext->ClearRenderTargetView(frameInfo[frame].renderBuffer.colorBufferView, colorRgba);
+        myContext->ClearDepthStencilView(
+            frameInfo[frame].depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
-            renderInfo[i].library.context->OMSetDepthStencilState(depthStencilState, 1);
-            RenderView(renderInfo[i], frameInfo[frame].renderBuffer.colorBufferView,
+            RenderView(i, renderInfo[i], frameInfo[frame].renderBuffer.colorBufferView,
                 frameInfo[frame].depthStencilView, myContext, myDevice);
         }
-
-        // Delay the requested length of time to simulate a long render time.
-        // Busy-wait so we don't get swapped out longer than we wanted.
-        auto end =
-            std::chrono::high_resolution_clock::now() +
-            std::chrono::milliseconds(delayMilliSeconds);
-        do {
-        } while (std::chrono::high_resolution_clock::now() < end);
 
         // Grab and lock the mutex, so that we will be able to render
         // to it whether or not RenderManager locks it on our behalf.
         // it will not be auto-locked when we're in the non-ATW case.
         //std::cout << "RenderThread: Unlocking buffer for frame " << frame << " using key " << 1 << std::endl;
-        hr = frameInfo[frame].keyedMutex->ReleaseSync(1);
+        hr = frameInfo[frame].keyedMutex->ReleaseSync(0);
         if (FAILED(hr)) {
             std::cerr << "RenderThread: could not unlock buffer for frame " << frame << std::endl;
             osvrDestroyRenderManager(render);
@@ -575,7 +573,7 @@ int main(int argc, char* argv[]) {
         }
         for (size_t i = 0; i < numRenderInfo; i++) {
             if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
-                presentState, renderBuffers[i], renderInfo[i], NVCPs[(frame * numRenderInfo) + i]))) {
+                presentState, renderBuffers[i], renderInfo[i], NVCPs[i]))) {
                 std::cerr << "Could not present render buffer " << i << std::endl;
                 osvrDestroyRenderManager(render);
                 return 202;
@@ -588,6 +586,16 @@ int main(int argc, char* argv[]) {
             return 203;
         }
         iteration++;
+
+        // Delay the requested length of time to simulate a long render time.
+        // Busy-wait so we don't get swapped out longer than we wanted.
+        if (delayMilliSeconds > 0) {
+            auto end =
+                std::chrono::high_resolution_clock::now() +
+                std::chrono::milliseconds(delayMilliSeconds);
+            do {
+            } while (std::chrono::high_resolution_clock::now() < end);
+        }
     }
 
     // Close the Renderer interface cleanly.

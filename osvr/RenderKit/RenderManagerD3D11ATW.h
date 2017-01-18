@@ -53,7 +53,7 @@ namespace osvr {
             //const UINT rtAcqKey = 0;
             //const UINT rtRelKey = 1;
             // Indices into the keys for the ATW thread
-            const UINT atwAcqKey = 1;
+            const UINT atwAcqKey = 0;
             const UINT atwRelKey = 0;
 
             /// Holds the information needed to handle locking and unlocking of
@@ -191,6 +191,7 @@ namespace osvr {
                     return true;
                 }
 
+                //m_log->info() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal: present called." << std::flush;
                 // We use a D3D query placed right at the end of rendering to make
                 // sure we wait until rendering has finished on our buffers before
                 // handing them over to the ATW thread.  We flush our queue so that
@@ -340,18 +341,25 @@ namespace osvr {
                     // @todo Consider making a function that both the RenderManagerBase.cpp
                     // and this code calls to check if we're within range.
                     osvr::renderkit::RenderTimingInfo timing;
-                    if (!mRenderManager->GetTimingInfo(0, timing)) {
-                        m_log->error() << "RenderManagerThread::threadFunc() = couldn't get timing info";
-                    }
-                    OSVR_TimeValue nextRetrace = timing.hardwareDisplayInterval;
-                    osvrTimeValueDifference(&nextRetrace,
-                        &timing.timeSincelastVerticalRetrace);
-                    if (osvrTimeValueGreater(&threshold, &nextRetrace)) {
+                    double expectedFrameInterval = -1;
+                    if (mRenderManager->GetTimingInfo(0, timing)) {
+
+                        OSVR_TimeValue nextRetrace = timing.hardwareDisplayInterval;
+                        osvrTimeValueDifference(&nextRetrace,
+                            &timing.timeSincelastVerticalRetrace);
+                        if (osvrTimeValueGreater(&threshold, &nextRetrace)) {
+                            timeToPresent = true;
+                        }
+                        expectedFrameInterval = static_cast<double>(
+                            timing.hardwareDisplayInterval.seconds +
+                            timing.hardwareDisplayInterval.microseconds / 1e6);
+                    } else {
+                        //m_log->error() << "RenderManagerThread::threadFunc() = couldn't get timing info";
+
+                        // if we can't get timing info, we're probably in extended mode.
+                        // in this case, render as often as possible.
                         timeToPresent = true;
                     }
-                    double expectedFrameInterval = static_cast<double>(
-                        timing.hardwareDisplayInterval.seconds +
-                        timing.hardwareDisplayInterval.microseconds / 1e6);
 
                     if (timeToPresent) {
                         // Lock our mutex so that we're not rendering while new buffers are
@@ -434,7 +442,7 @@ namespace osvr {
                                     break;
                                 }
                                 if (unlockedBuffers.find(bufferInfoItr->second.atwBuffer.D3D11->colorBuffer) == unlockedBuffers.end()) {
-                                    unlockedBuffers.emplace(bufferInfoItr->second.atwBuffer.D3D11->colorBuffer);
+                                    unlockedBuffers.insert(bufferInfoItr->second.atwBuffer.D3D11->colorBuffer);
                                     //m_log->info() << "RenderManagerD3D11ATW::threadFunc(): unlocking buffer " << i << " using key " << atwRelKey << std::flush;
                                     hr = bufferInfoItr->second.atwMutex->ReleaseSync(atwRelKey);
                                     if (FAILED(hr)) {
@@ -449,7 +457,7 @@ namespace osvr {
 
                             struct timeval now;
                             vrpn_gettimeofday(&now, nullptr);
-                            if (lastFrameTime.tv_sec != 0) {
+                            if (expectedFrameInterval >= 0 && lastFrameTime.tv_sec != 0) {
                                 double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
                                 if (frameInterval > expectedFrameInterval * 1.9) {
                                     m_log->info() << "RenderManagerThread::threadFunc(): Missed"
