@@ -515,7 +515,7 @@ int main(int argc, char* argv[]) {
         // to it whether or not RenderManager locks it on our behalf.
         // it will not be auto-locked when we're in the non-ATW case.
         //std::cout << "RenderThread: locking buffer for frame " << frame << " using key " << 0 << std::endl;
-        hr = frameInfo[frame].keyedMutex->AcquireSync(0, INFINITE);
+        hr = frameInfo[frame].keyedMutex->AcquireSync(0, 500);
         if (FAILED(hr) || hr == E_FAIL || hr == WAIT_ABANDONED || hr == WAIT_TIMEOUT) {
             std::cerr << "RenderThread: could not lock buffer for frame " << frame << std::endl;
             switch (hr) {

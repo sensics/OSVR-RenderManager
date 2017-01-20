@@ -54,6 +54,16 @@ namespace renderkit {
         OpenResults OSVR_RENDERMANAGER_EXPORT OpenDisplay() override;
 
       protected:
+
+       virtual bool OSVR_RENDERMANAGER_EXPORT PresentRenderBuffersInternal(
+              const std::vector<RenderBuffer>& buffers,
+              const std::vector<RenderInfo>& renderInfoUsed,
+              const RenderParams& renderParams = RenderParams(),
+              const std::vector<OSVR_ViewportDescription>&
+              normalizedCroppingViewports =
+              std::vector<OSVR_ViewportDescription>(),
+              bool flipInY = false) override;
+
         /// Construct a D3D RenderManager.
         OSVR_RENDERMANAGER_EXPORT RenderManagerD3D11Base(
             OSVR_ClientContext context,
