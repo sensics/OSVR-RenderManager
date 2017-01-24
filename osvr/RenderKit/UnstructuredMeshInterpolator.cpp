@@ -68,6 +68,37 @@ namespace renderkit {
         return fabs(dot) > threshold;
     }
 
+    /// Used to determine if two new points are almost in the
+    /// same direction relative to a test point.
+    /// If so, they are not good for use as a
+    /// basis for interpolation.
+    static bool same_direction(std::array<double, 2> const& test,
+      std::array<double, 2> const& p2,
+      std::array<double, 2> const& p3,
+      double threshold = 0.8) {
+      double dx1 = p2[0] - test[0];
+      double dy1 = p2[1] - test[1];
+      double dx2 = p3[0] - test[0];
+      double dy2 = p3[1] - test[1];
+      double len1 = sqrt(dx1 * dx1 + dy1 * dy1);
+      double len2 = sqrt(dx2 * dx2 + dy2 * dy2);
+
+      // If either vector is zero length, they not are in the same direction
+      if (len1 * len2 == 0) {
+        return false;
+      }
+
+      // Normalize the vectors
+      dx1 /= len1;
+      dy1 /= len1;
+      dx2 /= len2;
+      dy2 /= len2;
+
+      // See if the magnitude of their dot products is close to 1.
+      double dot = dx1 * dx2 + dy1 * dy2;
+      return dot > threshold;
+    }
+
     }
 
     static double pointDistance(double x1, double y1, double x2, double y2) {
