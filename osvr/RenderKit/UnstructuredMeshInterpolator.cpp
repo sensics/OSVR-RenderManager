@@ -43,7 +43,8 @@ namespace renderkit {
     /// basis for interpolation.
     static bool nearly_collinear(std::array<double, 2> const& p1,
                                  std::array<double, 2> const& p2,
-                                 std::array<double, 2> const& p3) {
+                                 std::array<double, 2> const& p3,
+                                 double threshold = 0.8) {
         double dx1 = p2[0] - p1[0];
         double dy1 = p2[1] - p1[1];
         double dx2 = p3[0] - p1[0];
@@ -64,7 +65,9 @@ namespace renderkit {
 
         // See if the magnitude of their dot products is close to 1.
         double dot = dx1 * dx2 + dy1 * dy2;
-        return fabs(dot) > 0.8;
+        return fabs(dot) > threshold;
+    }
+
     }
 
     static double pointDistance(double x1, double y1, double x2, double y2) {
