@@ -134,9 +134,9 @@ namespace renderkit {
         // into all grid elements that are within 1/4th (rounded up) of the
         // total span of the grid from its normalized location.
         int xHalfSpan =
-            static_cast<int>(0.9 + (1.0 / 4.0) * 0.5 * m_numSamplesX);
+            static_cast<int>(ceil(1.0 / 4.0) * 0.5 * m_numSamplesX);
         int yHalfSpan =
-            static_cast<int>(0.9 + (1.0 / 4.0) * 0.5 * m_numSamplesY);
+            static_cast<int>(ceil(1.0 / 4.0) * 0.5 * m_numSamplesY);
         for (size_t i = 0; i < points.size(); i++) {
             int xIndex, yIndex;
             if (getIndex(points[i][0][0], points[i][0][1], xIndex, yIndex)) {
