@@ -99,6 +99,54 @@ namespace renderkit {
       return dot > threshold;
     }
 
+    /// Determines whether points a and b are on the same side of the line
+    /// from p1 to p2, where all are assumed to lie in the Z=0 plane.
+    /// We check that the cross product of the vector from a to p1 with
+    /// the vector from a to b is in the same direction as the cross
+    /// product of the vector from a to p2 with the vector from a to b.
+    /// If either lines on the line, then both are considered to lie on
+    /// the same side of the line.
+    static bool sameSide(q_vec_type a, q_vec_type b, q_vec_type p1, q_vec_type p2) {
+      q_vec_type aToB, aToP1, aToP2;
+      q_vec_subtract(aToB, b, a);
+      q_vec_subtract(aToP1, p1, a);
+      q_vec_subtract(aToP2, p2, a);
+
+      q_vec_type cp1, cp2;
+      q_vec_cross_product(cp1, aToB, aToP1);
+      q_vec_cross_product(cp2, aToB, aToP2);
+
+      // See if the cross product of both are the same sign, indicating
+      // that they are on the same side of the line.  If the cross product
+      // is zero, this indicates that one or both of them was on the line,
+      // which also counts as on the same side.
+      return q_vec_dot_product(cp1, cp2) >= 0;
+    }
+
+    /// Used to determine if the three 2D points surround the
+    /// specified location, so that it will be an interpolation
+    /// rather than an extrapolation to determine its value.
+    static bool contains(double x, double y,
+      std::array<double, 2> const& p1,
+      std::array<double, 2> const& p2,
+      std::array<double, 2> const& p3) {
+
+      q_vec_type v1, v2, v3;
+      q_vec_set(v1, p1[0], p1[1], 0);
+      q_vec_set(v2, p2[0], p2[1], 0);
+      q_vec_set(v3, p3[0], p3[1], 0);
+      q_vec_type test;
+      q_vec_set(test, x, y, 0);
+
+      // The point should lie on the same side of the line between any
+      // pair of points as the third point lies.  We test all three
+      // pairs of points to ensure this.
+      if ((sameSide(v1, v2, test, v3)) &&
+          (sameSide(v1, v3, test, v2)) &&
+          (sameSide(v2, v3, test, v1))) {
+        return true;
+      }
+      return false;
     }
 
     static double pointDistance(double x1, double y1, double x2, double y2) {
@@ -267,19 +315,66 @@ namespace renderkit {
                 pointDistance(xN, yN, points[i][0][0], points[i][0][1]), i));
         }
 
+        // Find the nearest point.  We'll always use it.
         PointDistanceIndexMap::const_iterator it = map.begin();
         size_t first = it->second;
         it++;
-        size_t second = it->second;
-        it++;
+
+        // Keep looking for a second one that is not in the same direction
+        // from our test point as the first one.  Assuming we find one, it
+        // will be our second point.
+        std::array<double, 2> me = { xN, yN };
+        size_t second;
+        do {
+          second = it->second;
+          it++;
+        } while (same_direction(me, points[first][0], points[second][0],0.95) &&
+                 (it != map.end()));
+
+        // For now, fill in the third with the first in case we
+        // don't find a better one.
         size_t third = first;
+
+        // Look for a set of three points that interpolate the coordinate
+        // we are seeking.  That is, the point lies within the triangle
+        // formed by the three points.
+        // Keep track of where we should restart in case we don't find
+        // what we're looking for.
+        PointDistanceIndexMap::const_iterator restart = it;
         while (it != map.end()) {
+
+          // If the three points are collinear, then we don't want to
+          // use them.
+          if (nearly_collinear(points[first][0], points[second][0],
+                               points[it->second][0], 0.99)) {
+            it++;
+            continue;
+          }
+
+          // See if the point lies inside the triangle formed by the three points.
+          // If so, use this point.
+          if (contains(xN, yN, points[first][0], points[second][0],
+                       points[it->second][0])) {
+            third = it->second;
+            break;
+          }
+          it++;
+        }
+
+        // If we did not yet find a third point as an interpolator, then
+        // continue looking to see if we can find one as an extrapolator.
+        // This will happen past the edge of the mesh.
+        if (first == third) {
+          // Reset to where we should start
+          it = restart;
+          while (it != map.end()) {
             if (!nearly_collinear(points[first][0], points[second][0],
-                                  points[it->second][0])) {
-                third = it->second;
-                break;
+              points[it->second][0], 0.8)) {
+              third = it->second;
+              break;
             }
             it++;
+          }
         }
 
         // Push back all of the points we found, which may not include
