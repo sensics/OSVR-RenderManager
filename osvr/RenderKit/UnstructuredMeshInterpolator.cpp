@@ -94,7 +94,7 @@ namespace renderkit {
         q_vec_type ABC;
         q_vec_cross_product(ABC, v1, v2);
         if (q_vec_magnitude(ABC) == 0) {
-            // We can't get a normal, degenerate points, just return the first
+            // We can't get a normal: degenerate points, just return the first
             // value.
             return val1;
         }
