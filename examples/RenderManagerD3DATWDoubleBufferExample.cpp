@@ -435,18 +435,6 @@ int main(int argc, char* argv[]) {
         return -3;
     }
 
-    // Register all of our constructed buffers so that we can use them for
-    // presentation, and promise not to re-use a buffer for rendering until
-    // we're not presenting it.
-    std::vector<OSVR_RenderBufferD3D11> renderBuffers;
-    // Register our constructed buffers so that we can use them for
-    // presentation.
-    for (size_t frame = 0; frame < frameInfo.size(); frame++) {
-        for (size_t i = 0; i < renderInfo.size(); i++) {
-            renderBuffers.push_back(frameInfo[frame].renderBuffer);
-        }
-    }
-
     // create normalized cropping viewports for side-by-side rendering to a single render target
     std::vector<OSVR_ViewportDescription> NVCPs;
     double fraction = 1.0 / renderInfo.size();
@@ -468,9 +456,9 @@ int main(int argc, char* argv[]) {
         osvrDestroyRenderManager(render);
         return -4;
     }
-    for (size_t i = 0; i < numRenderInfo; i++) {
+    for (size_t i = 0; i < frameInfo.size(); i++) {
         if ((OSVR_RETURN_SUCCESS != osvrRenderManagerRegisterRenderBufferD3D11(
-            registerBufferState, renderBuffers[i]))) {
+            registerBufferState, frameInfo[i].renderBuffer))) {
             std::cerr << "Could not register render buffer " << i << std::endl;
             osvrDestroyRenderManager(render);
             return -5;
@@ -551,6 +539,16 @@ int main(int argc, char* argv[]) {
                 frameInfo[frame].depthStencilView, myContext, myDevice);
         }
 
+        // Delay the requested length of time to simulate a long render time.
+        // Busy-wait so we don't get swapped out longer than we wanted.
+        if (delayMilliSeconds > 0) {
+            auto end =
+                std::chrono::high_resolution_clock::now() +
+                std::chrono::milliseconds(delayMilliSeconds);
+            do {
+            } while (std::chrono::high_resolution_clock::now() < end);
+        }
+
         // Grab and lock the mutex, so that we will be able to render
         // to it whether or not RenderManager locks it on our behalf.
         // it will not be auto-locked when we're in the non-ATW case.
@@ -573,7 +571,7 @@ int main(int argc, char* argv[]) {
         }
         for (size_t i = 0; i < numRenderInfo; i++) {
             if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
-                presentState, renderBuffers[i], renderInfo[i], NVCPs[i]))) {
+                presentState, frameInfo[frame].renderBuffer, renderInfo[i], NVCPs[i]))) {
                 std::cerr << "Could not present render buffer " << i << std::endl;
                 osvrDestroyRenderManager(render);
                 return 202;
@@ -586,16 +584,6 @@ int main(int argc, char* argv[]) {
             return 203;
         }
         iteration++;
-
-        // Delay the requested length of time to simulate a long render time.
-        // Busy-wait so we don't get swapped out longer than we wanted.
-        if (delayMilliSeconds > 0) {
-            auto end =
-                std::chrono::high_resolution_clock::now() +
-                std::chrono::milliseconds(delayMilliSeconds);
-            do {
-            } while (std::chrono::high_resolution_clock::now() < end);
-        }
     }
 
     // Close the Renderer interface cleanly.

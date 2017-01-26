@@ -202,7 +202,7 @@ namespace renderkit {
                         IDXGIKeyedMutex* mutex = nullptr;
                         hr = colorBuffer->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
                         if (!FAILED(hr) && mutex != nullptr) {
-                            hr = mutex->AcquireSync(0, 500); // ignore failure
+                            hr = mutex->AcquireSync(0, 0); // ignore failure
                         }
                     }
                 }

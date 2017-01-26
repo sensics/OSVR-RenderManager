@@ -271,7 +271,6 @@ namespace osvr {
             void threadFunc() {
                 // Used to make sure we don't take too long to render
                 struct timeval lastFrameTime = {};
-                HRESULT hr;
                 bool quit = getQuit();
                 size_t iteration = 0;
                 while (!quit) {
