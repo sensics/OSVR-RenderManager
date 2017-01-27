@@ -2176,7 +2176,14 @@ namespace renderkit {
                   << " requested DirectMode display";
               }
             } else {
-              ret.reset(new RenderManagerD3D11(contextParameter, p));
+                if (p.m_asynchronousTimeWarp) {
+                    RenderManager::ConstructorParameters pTemp = p;
+                    pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                    auto wrappedRm = new RenderManagerD3D11(contextParameter, pTemp);
+                    ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
+                } else {
+                    ret.reset(new RenderManagerD3D11(contextParameter, p));
+                }
             }
 #else
               m_log->error() << "D3D11 render library not compiled in";

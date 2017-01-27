@@ -26,7 +26,8 @@ Russ Taylor <russ@sensics.com>
 // Internal Includes
 #include <osvr/ClientKit/Context.h>
 #include <osvr/ClientKit/Interface.h>
-#include <osvr/RenderKit/RenderManager.h>
+#include <osvr/RenderKit/RenderManagerC.h>
+#include <osvr/RenderKit/RenderManagerD3D11C.h>
 
 // Library/third-party includes
 #include <windows.h>
@@ -40,9 +41,6 @@ Russ Taylor <russ@sensics.com>
 #include <string>
 #include <chrono>
 #include <stdlib.h> // For exit()
-
-// This must come after we include <d3d11.h> so its pointer types are defined.
-#include <osvr/RenderKit/GraphicsLibraryD3D11.h>
 
 using namespace DirectX;
 
@@ -89,13 +87,13 @@ void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
 // Callbacks to draw things in world space, left-hand space, and right-hand
 // space.
 void RenderView(
-    const osvr::renderkit::RenderInfo &renderInfo   //< Info needed to render
-    , ID3D11RenderTargetView *renderTargetView
-    , ID3D11DepthStencilView *depthStencilView
-    , ID3D11Device *device
-    , ID3D11DeviceContext *context
-    )
-{
+    size_t eye, //< Which eye we are rendering
+    const OSVR_RenderInfoD3D11& renderInfo, //< Info needed to render
+    ID3D11RenderTargetView* renderTargetView,
+    ID3D11DepthStencilView* depthStencilView,
+    ID3D11DeviceContext* context,
+    ID3D11Device* device) {
+
     float projectionD3D[16];
     float viewD3D[16];
     XMMATRIX identity = XMMatrixIdentity();
@@ -104,26 +102,21 @@ void RenderView(
     context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 
     // Set up the viewport we're going to draw into.
-    CD3D11_VIEWPORT viewport(static_cast<float>(renderInfo.viewport.left),
-        static_cast<float>(renderInfo.viewport.lower),
+    CD3D11_VIEWPORT viewport(
+        static_cast<float>(eye * renderInfo.viewport.width),
+        0.0f,
         static_cast<float>(renderInfo.viewport.width),
         static_cast<float>(renderInfo.viewport.height));
     context->RSSetViewports(1, &viewport);
 
-    // Make a grey background
-    FLOAT colorRgba[4] = {0.3f, 0.3f, 0.3f, 1.0f};
-    context->ClearRenderTargetView(renderTargetView, colorRgba);
-    context->ClearDepthStencilView(
-        depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-    osvr::renderkit::OSVR_PoseState_to_D3D(viewD3D, renderInfo.pose);
-    osvr::renderkit::OSVR_Projection_to_D3D(projectionD3D,
+    OSVR_PoseState_to_D3D(viewD3D, renderInfo.pose);
+    OSVR_Projection_to_D3D(projectionD3D,
         renderInfo.projection);
 
-    XMMATRIX _projectionD3D(projectionD3D), _viewD3D(viewD3D);
+    XMMATRIX xm_projectionD3D(projectionD3D), xm_viewD3D(viewD3D);
 
     // draw room
-    simpleShader.use(device, context, _projectionD3D, _viewD3D, identity);
+    simpleShader.use(device, context, xm_projectionD3D, xm_viewD3D, identity);
     roomCube.draw(device, context);
 }
 
@@ -135,9 +128,10 @@ void Usage(std::string name) {
 struct FrameInfo {
     // Set up the vector of textures to render to and any framebuffer
     // we need to group them.
-    std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
-    std::vector<ID3D11Texture2D *> depthStencilTextures;
-    std::vector<ID3D11DepthStencilView *> depthStencilViews;
+    OSVR_RenderBufferD3D11 renderBuffer;
+    ID3D11Texture2D* depthStencilTexture;
+    ID3D11DepthStencilView* depthStencilView;
+    IDXGIKeyedMutex* keyedMutex;
 };
 
 int main(int argc, char* argv[]) {
@@ -208,20 +202,23 @@ int main(int argc, char* argv[]) {
 
     // Put the device and context into a structure to let RenderManager
     // know to use this one rather than creating its own.
-    osvr::renderkit::GraphicsLibrary library;
-    library.D3D11 = new osvr::renderkit::GraphicsLibraryD3D11;
-    library.D3D11->device = myDevice;
-    library.D3D11->context = myContext;
+    OSVR_GraphicsLibraryD3D11 library;
+    library.device = nullptr;
+    library.context = nullptr;
 
     // Open Direct3D and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,
     // which maps to the nVidia or other vendor direct mode
     // to reduce the latency.
-    osvr::renderkit::RenderManager* render =
-        osvr::renderkit::createRenderManager(context.get(), "Direct3D11",
-        library);
+    OSVR_RenderManager render;
+    OSVR_RenderManagerD3D11 renderD3D;
+    if (OSVR_RETURN_SUCCESS != osvrCreateRenderManagerD3D11(
+        context.get(), "Direct3D11", library, &render, &renderD3D)) {
+        std::cerr << "Could not create RenderManager" << std::endl;
+        return 1;
+    }
 
-    if ((render == nullptr) || (!render->doingOkay())) {
+    if (render == nullptr || osvrRenderManagerGetDoingOkay(render) != OSVR_RETURN_SUCCESS) {
         std::cerr << "Could not create RenderManager" << std::endl;
         return 1;
     }
@@ -232,153 +229,175 @@ int main(int argc, char* argv[]) {
 #endif
 
     // Open the display and make sure this worked.
-    osvr::renderkit::RenderManager::OpenResults ret = render->OpenDisplay();
-    if (ret.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
+    OSVR_OpenResultsD3D11 openResults;
+    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerOpenDisplayD3D11(
+        renderD3D, &openResults)) ||
+        (openResults.status == OSVR_OPEN_STATUS_FAILURE)) {
         std::cerr << "Could not open display" << std::endl;
+        osvrDestroyRenderManager(render);
         return 2;
     }
-    if (ret.library.D3D11 == nullptr) {
-        std::cerr << "Attempted to run a Direct3D11 program with a config file "
-            << "that specified a different rendering library."
+    if (openResults.library.device == nullptr) {
+        std::cerr << "Could not get device when opening display."
             << std::endl;
+        osvrDestroyRenderManager(render);
         return 3;
     }
+    if (openResults.library.context == nullptr) {
+        std::cerr << "Could not get context when opening display."
+            << std::endl;
+        osvrDestroyRenderManager(render);
+        return 4;
+    }
+
+    context.update();
 
     // Do a call to get the information we need to construct our
     // color and depth render-to-texture buffers.
-    std::vector<osvr::renderkit::RenderInfo> renderInfo;
-    context.update();
-    renderInfo = render->GetRenderInfo();
+    OSVR_RenderInfoCount numRenderInfo;
+    OSVR_RenderParams renderParams;
+    osvrRenderManagerGetDefaultRenderParams(&renderParams);
+    std::vector<OSVR_RenderInfoD3D11> renderInfo;
+
+    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetNumRenderInfo(
+        render, renderParams, &numRenderInfo))) {
+        std::cerr << "Could not get context number of render infos."
+            << std::endl;
+        osvrDestroyRenderManager(render);
+        return 5;
+    }
+
+    renderInfo.clear();
+    for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
+        OSVR_RenderInfoD3D11 info;
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoD3D11(
+            renderD3D, i, renderParams, &info))) {
+            std::cerr << "Could not get render info " << i
+                << std::endl;
+            osvrDestroyRenderManager(render);
+            return 6;
+        }
+        renderInfo.push_back(info);
+    }
 
     std::vector<FrameInfo> frameInfo(2);
     for (size_t frame = 0; frame < frameInfo.size(); frame++) {
-        for (size_t i = 0; i < renderInfo.size(); i++) {
 
-            // The color buffer for this eye.  We need to put this into
-            // a generic structure for the Present function, but we only need
-            // to fill in the Direct3D portion.
-            //  Note that this texture format must be RGBA and unsigned byte,
-            // so that we can present it to Direct3D for DirectMode.
-            ID3D11Texture2D* D3DTexture = nullptr;
-            unsigned width = static_cast<int>(renderInfo[i].viewport.width);
-            unsigned height = static_cast<int>(renderInfo[i].viewport.height);
+        // The color buffer for this eye.  We need to put this into
+        // a generic structure for the Present function, but we only need
+        // to fill in the Direct3D portion.
+        //  Note that this texture format must be RGBA and unsigned byte,
+        // so that we can present it to Direct3D for DirectMode.
+        ID3D11Texture2D* D3DTexture = nullptr;
+        unsigned width =
+            static_cast<int>(renderInfo[0].viewport.width * renderInfo.size());
+        unsigned height = static_cast<int>(renderInfo[0].viewport.height);
 
-            // Initialize a new render target texture description.
-            D3D11_TEXTURE2D_DESC textureDesc = {};
-            textureDesc.Width = width;
-            textureDesc.Height = height;
-            textureDesc.MipLevels = 1;
-            textureDesc.ArraySize = 1;
-            // textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            textureDesc.SampleDesc.Count = 1;
-            textureDesc.SampleDesc.Quality = 0;
-            textureDesc.Usage = D3D11_USAGE_DEFAULT;
-            // We need it to be both a render target and a shader resource
-            textureDesc.BindFlags =
-                D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            textureDesc.CPUAccessFlags = 0;
-            textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+        // Initialize a new render target texture description.
+        D3D11_TEXTURE2D_DESC textureDesc = {};
+        textureDesc.Width = width;
+        textureDesc.Height = height;
+        textureDesc.MipLevels = 1;
+        textureDesc.ArraySize = 1;
+        // textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        textureDesc.SampleDesc.Count = 1;
+        textureDesc.SampleDesc.Quality = 0;
+        textureDesc.Usage = D3D11_USAGE_DEFAULT;
+        // We need it to be both a render target and a shader resource
+        textureDesc.BindFlags =
+            D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        textureDesc.CPUAccessFlags = 0;
+        textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
-            // Create a new render target texture to use.
-            hr = renderInfo[i].library.D3D11->device->CreateTexture2D(
-                &textureDesc, NULL, &D3DTexture);
-            if (FAILED(hr)) {
-                std::cerr << "Can't create texture for eye " << i << std::endl;
-                return -1;
-            }
-
-            // Grab and lock the mutex, so that we will be able to render
-            // to it whether or not RenderManager locks it on our behalf.
-            // it will not be auto-locked when we're in the non-ATW case.
-            IDXGIKeyedMutex* myMutex = nullptr;
-            hr = D3DTexture->QueryInterface(
-              __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
-            if (FAILED(hr) || myMutex == nullptr) {
-              std::cerr << "Could not get mutex pointer" << std::endl;
-              return -2;
-            }
-            hr = myMutex->AcquireSync(0, INFINITE);
-            if (FAILED(hr)) {
-              std::cerr << "Could not acquire mutex" << std::endl;
-              return -3;
-            }
-
-            // Fill in the resource view for your render texture buffer here
-            D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-            memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
-            // This must match what was created in the texture to be rendered
-            renderTargetViewDesc.Format = textureDesc.Format;
-            renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-            renderTargetViewDesc.Texture2D.MipSlice = 0;
-
-            // Create the render target view.
-            ID3D11RenderTargetView*
-                renderTargetView; //< Pointer to our render target view
-            hr = renderInfo[i].library.D3D11->device->CreateRenderTargetView(
-                D3DTexture, &renderTargetViewDesc, &renderTargetView);
-            if (FAILED(hr)) {
-                std::cerr << "Could not create render target for eye " << i
-                    << std::endl;
-                return -2;
-            }
-
-            // Push the filled-in RenderBuffer onto the stack.
-            osvr::renderkit::RenderBufferD3D11* rbD3D =
-                new osvr::renderkit::RenderBufferD3D11;
-            rbD3D->colorBuffer = D3DTexture;
-            rbD3D->colorBufferView = renderTargetView;
-            osvr::renderkit::RenderBuffer rb;
-            rb.D3D11 = rbD3D;
-            frameInfo[frame].renderBuffers.push_back(rb);
-
-            //==================================================================
-            // Create a depth buffer
-
-            // Make the depth/stencil texture.
-            D3D11_TEXTURE2D_DESC textureDescription = { 0 };
-            textureDescription.SampleDesc.Count = 1;
-            textureDescription.SampleDesc.Quality = 0;
-            textureDescription.Usage = D3D11_USAGE_DEFAULT;
-            textureDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-            textureDescription.Width = width;
-            textureDescription.Height = height;
-            textureDescription.MipLevels = 1;
-            textureDescription.ArraySize = 1;
-            textureDescription.CPUAccessFlags = 0;
-            textureDescription.MiscFlags = 0;
-            /// @todo Make this a parameter
-            textureDescription.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-            ID3D11Texture2D* depthStencilBuffer;
-            hr = renderInfo[i].library.D3D11->device->CreateTexture2D(
-                &textureDescription, NULL, &depthStencilBuffer);
-            if (FAILED(hr)) {
-                std::cerr << "Could not create depth/stencil texture for eye " << i
-                    << std::endl;
-                return -4;
-            }
-            frameInfo[frame].depthStencilTextures.push_back(depthStencilBuffer);
-
-            // Create the depth/stencil view description
-            D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDescription;
-            memset(&depthStencilViewDescription, 0, sizeof(depthStencilViewDescription));
-            depthStencilViewDescription.Format = textureDescription.Format;
-            depthStencilViewDescription.ViewDimension =
-                D3D11_DSV_DIMENSION_TEXTURE2D;
-            depthStencilViewDescription.Texture2D.MipSlice = 0;
-
-            ID3D11DepthStencilView* depthStencilView;
-            hr = renderInfo[i].library.D3D11->device->CreateDepthStencilView(
-                depthStencilBuffer,
-                &depthStencilViewDescription,
-                &depthStencilView);
-            if (FAILED(hr)) {
-                std::cerr << "Could not create depth/stencil view for eye " << i
-                    << std::endl;
-                return -5;
-            }
-            frameInfo[frame].depthStencilViews.push_back(depthStencilView);
+        // Create a new render target texture to use.
+        hr = myDevice->CreateTexture2D(
+            &textureDesc, NULL, &D3DTexture);
+        if (FAILED(hr)) {
+            std::cerr << "Can't create texture" << std::endl;
+            return -1;
         }
+
+        IDXGIKeyedMutex* keyedMutex = nullptr;
+        hr = D3DTexture->QueryInterface(
+            __uuidof(IDXGIKeyedMutex), (LPVOID*)&keyedMutex);
+        if (FAILED(hr) || keyedMutex == nullptr) {
+            std::cerr << "Could not get mutex pointer" << std::endl;
+            return -2;
+        }
+        frameInfo[frame].keyedMutex = keyedMutex;
+
+        // Fill in the resource view for your render texture buffer here
+        D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+        memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
+        // This must match what was created in the texture to be rendered
+        renderTargetViewDesc.Format = textureDesc.Format;
+        renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+        renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+        // Create the render target view.
+        ID3D11RenderTargetView*
+            renderTargetView; //< Pointer to our render target view
+        hr = myDevice->CreateRenderTargetView(
+            D3DTexture, &renderTargetViewDesc, &renderTargetView);
+        if (FAILED(hr)) {
+            std::cerr << "Could not create render target"
+                << std::endl;
+            return -2;
+        }
+
+        // Push the filled-in RenderBuffer onto the vector.
+        OSVR_RenderBufferD3D11 rbD3D;
+        rbD3D.colorBuffer = D3DTexture;
+        rbD3D.colorBufferView = renderTargetView;
+        frameInfo[frame].renderBuffer = rbD3D;
+
+        //==================================================================
+        // Create a depth buffer
+
+        // Make the depth/stencil texture.
+        D3D11_TEXTURE2D_DESC textureDescription = { 0 };
+        textureDescription.SampleDesc.Count = 1;
+        textureDescription.SampleDesc.Quality = 0;
+        textureDescription.Usage = D3D11_USAGE_DEFAULT;
+        textureDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+        textureDescription.Width = width;
+        textureDescription.Height = height;
+        textureDescription.MipLevels = 1;
+        textureDescription.ArraySize = 1;
+        textureDescription.CPUAccessFlags = 0;
+        textureDescription.MiscFlags = 0;
+        /// @todo Make this a parameter
+        textureDescription.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+        ID3D11Texture2D* depthStencilBuffer;
+        hr = myDevice->CreateTexture2D(
+            &textureDescription, NULL, &depthStencilBuffer);
+        if (FAILED(hr)) {
+            std::cerr << "Could not create depth/stencil texture"
+                << std::endl;
+            return -4;
+        }
+        frameInfo[frame].depthStencilTexture = depthStencilBuffer;
+
+        // Create the depth/stencil view description
+        D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDescription;
+        memset(&depthStencilViewDescription, 0, sizeof(depthStencilViewDescription));
+        depthStencilViewDescription.Format = textureDescription.Format;
+        depthStencilViewDescription.ViewDimension =
+            D3D11_DSV_DIMENSION_TEXTURE2D;
+        depthStencilViewDescription.Texture2D.MipSlice = 0;
+
+        ID3D11DepthStencilView* depthStencilView;
+        hr = myDevice->CreateDepthStencilView(
+            depthStencilBuffer,
+            &depthStencilViewDescription,
+            &depthStencilView);
+        if (FAILED(hr)) {
+            std::cerr << "Could not create depth/stencil view"
+                << std::endl;
+            return -5;
+        }
+        frameInfo[frame].depthStencilView = depthStencilView;
     }
 
     // Create depth stencil state.
@@ -408,7 +427,7 @@ int main(int argc, char* argv[]) {
 
     // We only have one depth/stencil state for all displays.
     ID3D11DepthStencilState *depthStencilState;
-    hr = renderInfo[0].library.D3D11->device->CreateDepthStencilState(
+    hr = myDevice->CreateDepthStencilState(
         &depthStencilDescription,
         &depthStencilState);
     if (FAILED(hr)) {
@@ -416,22 +435,41 @@ int main(int argc, char* argv[]) {
         return -3;
     }
 
-    // Register all of our constructed buffers so that we can use them for
-    // presentation, and promise not to re-use a buffer for rendering until
-    // we're not presenting it.
-    std::vector<osvr::renderkit::RenderBuffer> allBuffers;
+    // create normalized cropping viewports for side-by-side rendering to a single render target
+    std::vector<OSVR_ViewportDescription> NVCPs;
+    double fraction = 1.0 / renderInfo.size();
+    for (size_t i = 0; i < renderInfo.size(); i++) {
+        OSVR_ViewportDescription v;
+        v.left = fraction * i;
+        v.lower = 0.0;
+        v.width = fraction;
+        v.height = 1;
+        NVCPs.push_back(v);
+    }
+
     // Register our constructed buffers so that we can use them for
     // presentation.
-    for (size_t frame = 0; frame < frameInfo.size(); frame++) {
-      for (size_t buf = 0; buf < frameInfo[frame].renderBuffers.size(); buf++) {
-        allBuffers.push_back(frameInfo[frame].renderBuffers[buf]);
-      }
+    OSVR_RenderManagerRegisterBufferState registerBufferState;
+    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartRegisterRenderBuffers(
+        &registerBufferState))) {
+        std::cerr << "Could not start registering render buffers" << std::endl;
+        osvrDestroyRenderManager(render);
+        return -4;
     }
-    if (!render->RegisterRenderBuffers(allBuffers, true)) {
-      std::cerr << "RegisterRenderBuffers() returned false, cannot continue" << std::endl;
-      quit = true;
+    for (size_t i = 0; i < frameInfo.size(); i++) {
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerRegisterRenderBufferD3D11(
+            registerBufferState, frameInfo[i].renderBuffer))) {
+            std::cerr << "Could not register render buffer " << i << std::endl;
+            osvrDestroyRenderManager(render);
+            return -5;
+        }
     }
-    allBuffers.clear();
+    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishRegisterRenderBuffers(
+        render, registerBufferState, true))) {
+        std::cerr << "Could not finish registering render buffers" << std::endl;
+        osvrDestroyRenderManager(render);
+        return -6;
+    }
 
     size_t iteration = 0;
     // Continue rendering until it is time to quit.
@@ -441,26 +479,110 @@ int main(int argc, char* argv[]) {
         // update tracker state.
         context.update();
 
-        renderInfo = render->GetRenderInfo();
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetNumRenderInfo(
+            render, renderParams, &numRenderInfo))) {
+            std::cerr << "Could not get context number of render infos."
+                << std::endl;
+            osvrDestroyRenderManager(render);
+            return 105;
+        }
+        renderInfo.clear();
+        for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
+            OSVR_RenderInfoD3D11 info;
+            if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoD3D11(
+                renderD3D, i, renderParams, &info))) {
+                std::cerr << "Could not get render info " << i
+                    << std::endl;
+                osvrDestroyRenderManager(render);
+                return 106;
+            }
+            renderInfo.push_back(info);
+        }
+
+        // Grab and lock the mutex, so that we will be able to render
+        // to it whether or not RenderManager locks it on our behalf.
+        // it will not be auto-locked when we're in the non-ATW case.
+        //std::cout << "RenderThread: locking buffer for frame " << frame << " using key " << 0 << std::endl;
+        hr = frameInfo[frame].keyedMutex->AcquireSync(0, 500);
+        if (FAILED(hr) || hr == E_FAIL || hr == WAIT_ABANDONED || hr == WAIT_TIMEOUT) {
+            std::cerr << "RenderThread: could not lock buffer for frame " << frame << std::endl;
+            switch (hr) {
+            case E_FAIL:
+                std::cerr << "RenderThread: error == E_FAIL" << std::endl;
+                break;
+            case WAIT_ABANDONED:
+                std::cerr << "RenderThread: error == WAIT_ABANDONED" << std::endl;
+                break;
+            case WAIT_TIMEOUT:
+                std::cerr << "RenderThread: error == WAIT_TIMEOUT" << std::endl;
+                break;
+            default:
+                std::cerr << "RenderThread: error == (unknown error type: " << hr << ")" << std::endl;
+                break;
+            }
+            osvrDestroyRenderManager(render);
+            return 201;
+        }
+        //std::cout << "RenderThread: buffer for frame " << frame << " locked." << std::endl;
+
+        myContext->OMSetDepthStencilState(depthStencilState, 1);
+
+        // Make a grey background
+        FLOAT colorRgba[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
+        myContext->ClearRenderTargetView(frameInfo[frame].renderBuffer.colorBufferView, colorRgba);
+        myContext->ClearDepthStencilView(
+            frameInfo[frame].depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
-          renderInfo[i].library.D3D11->context->OMSetDepthStencilState(depthStencilState, 1);
-            RenderView(renderInfo[i], frameInfo[frame].renderBuffers[i].D3D11->colorBufferView,
-                frameInfo[frame].depthStencilViews[i], myDevice,
-                renderInfo[i].library.D3D11->context);
+            RenderView(i, renderInfo[i], frameInfo[frame].renderBuffer.colorBufferView,
+                frameInfo[frame].depthStencilView, myContext, myDevice);
         }
-
-        // Send the rendered results to the screen
-        render->PresentRenderBuffers(frameInfo[frame].renderBuffers, renderInfo);
 
         // Delay the requested length of time to simulate a long render time.
         // Busy-wait so we don't get swapped out longer than we wanted.
-        auto end =
-          std::chrono::high_resolution_clock::now() +
-          std::chrono::milliseconds(delayMilliSeconds);
-        do {
-        } while (std::chrono::high_resolution_clock::now() < end);
+        if (delayMilliSeconds > 0) {
+            auto end =
+                std::chrono::high_resolution_clock::now() +
+                std::chrono::milliseconds(delayMilliSeconds);
+            do {
+            } while (std::chrono::high_resolution_clock::now() < end);
+        }
+
+        // Grab and lock the mutex, so that we will be able to render
+        // to it whether or not RenderManager locks it on our behalf.
+        // it will not be auto-locked when we're in the non-ATW case.
+        //std::cout << "RenderThread: Unlocking buffer for frame " << frame << " using key " << 1 << std::endl;
+        hr = frameInfo[frame].keyedMutex->ReleaseSync(0);
+        if (FAILED(hr)) {
+            std::cerr << "RenderThread: could not unlock buffer for frame " << frame << std::endl;
+            osvrDestroyRenderManager(render);
+            return 201;
+        }
+        //std::cout << "RenderThread: Buffer for frame " << frame << " unlocked." << std::endl;
+
+        // Send the rendered results to the screen
+        OSVR_RenderManagerPresentState presentState;
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
+            &presentState))) {
+            std::cerr << "Could not start presenting render buffers" << std::endl;
+            osvrDestroyRenderManager(render);
+            return 201;
+        }
+        for (size_t i = 0; i < numRenderInfo; i++) {
+            if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
+                presentState, frameInfo[frame].renderBuffer, renderInfo[i], NVCPs[i]))) {
+                std::cerr << "Could not present render buffer " << i << std::endl;
+                osvrDestroyRenderManager(render);
+                return 202;
+            }
+        }
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
+            render, presentState, renderParams, false))) {
+            std::cerr << "Could not finish presenting render buffers" << std::endl;
+            osvrDestroyRenderManager(render);
+            return 203;
+        }
         iteration++;
     }
 
