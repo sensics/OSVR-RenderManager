@@ -70,9 +70,9 @@ OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrCreateRenderManagerD3D11(
     OSVR_RenderManagerD3D11* renderManagerD3D11Out);
 
 /**  DEPRECATED, use the collection render info API instead. */
-OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerGetRenderInfoD3D11(
-    OSVR_RenderManagerD3D11 renderManager, OSVR_RenderInfoCount renderInfoIndex,
-    OSVR_RenderParams renderParams, OSVR_RenderInfoD3D11* renderInfoOut);
+OSVR_RENDERMANAGER_DEPRECATED OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
+osvrRenderManagerGetRenderInfoD3D11(OSVR_RenderManagerD3D11 renderManager, OSVR_RenderInfoCount renderInfoIndex,
+                                    OSVR_RenderParams renderParams, OSVR_RenderInfoD3D11* renderInfoOut);
 
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrRenderManagerOpenDisplayD3D11(OSVR_RenderManagerD3D11 renderManager,
