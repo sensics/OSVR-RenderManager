@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
     // Open the display and make sure this worked.
     OSVR_OpenResultsD3D11 openResults;
     if ( (OSVR_RETURN_SUCCESS != osvrRenderManagerOpenDisplayD3D11(
-        renderD3D, &openResults)) || 
+        renderD3D, &openResults)) ||
         (openResults.status == OSVR_OPEN_STATUS_FAILURE) ) {
       std::cerr << "Could not open display" << std::endl;
 	  osvrDestroyRenderManager(render);
@@ -443,6 +443,7 @@ int main(int argc, char* argv[]) {
 
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
+            /// @todo is there a particular reason why this call is separate?
             renderInfo[i].library.context->OMSetDepthStencilState(
                 depthStencilState, 1);
             RenderView(renderInfo[i], renderBuffers[i].colorBufferView,
