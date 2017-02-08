@@ -55,6 +55,7 @@ osvrRenderManagerGetNumRenderInfo(OSVR_RenderManager renderManager,
     osvr::renderkit::RenderManager::RenderParams _renderParams;
     ConvertRenderParams(renderParams, _renderParams);
     auto rm = reinterpret_cast<osvr::renderkit::RenderManager*>(renderManager);
+    /// @todo perf this is creating and destroying a vector just to get its size!
     auto ri = rm->GetRenderInfo(_renderParams);
     *numRenderInfoOut = ri.size();
     return OSVR_RETURN_SUCCESS;
