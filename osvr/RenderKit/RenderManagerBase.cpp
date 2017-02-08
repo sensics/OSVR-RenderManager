@@ -885,6 +885,7 @@ namespace renderkit {
                     // Nothing to do here.
                     break;
                 }
+                /// @todo do we want to make this effectively modulo 360?
 
                 /// Pass rotate_pixels_degrees
                 PresentEyeParameters p;
@@ -1163,6 +1164,7 @@ namespace renderkit {
         // Incorporate pitch_tilt (degrees, positive is downwards)
         // We assume that this results in a shearing of the image that leaves
         // the plane of the screen the same.
+        /// @todo in this case how would that differ from a non-0.5 yCOP?
         auto pitchTilt = m_params.m_displayConfiguration->getPitchTilt();
         if (pitchTilt != 0 * util::radians) {
             /// @todo
@@ -1193,10 +1195,8 @@ namespace renderkit {
         }
 
         /// @todo Figure out interactions between the above shifts and
-        /// distortions
-        /// and make sure to do them in the right order, or to adjust as needed
-        /// to
-        /// make them consistent when they are composed.
+        /// distortions and make sure to do them in the right order, or to adjust as needed
+        /// to make them consistent when they are composed.
 
         // Set the values in the projection matrix
         projection.left = left;
@@ -1476,6 +1476,7 @@ namespace renderkit {
         // right eyes.  We further assume that head space is between
         // the two eyes.  If the display descriptor wants us to swap
         // eyes, we do so by inverting the offset for each eye.
+        /// @todo dealing with eye tracking here or mono displays
         q_xyz_quat_type q_headFromRotatedEye;
         makeIdentity(q_headFromRotatedEye);
         if (whichEye % 2 == 0) {
@@ -1647,8 +1648,7 @@ namespace renderkit {
             // Scale the coordinates in X and Y so that they match the width and
             // height of a window at the specified distance from the origin.
             // We divide by the near clip distance to make the result match that
-            // at
-            // a unit distance and then multiply by the assumed depth.
+            // at a unit distance and then multiply by the assumed depth.
             float xScale = static_cast<float>(
                 (usedRenderInfo[eye].projection.right -
                  usedRenderInfo[eye].projection.left) /
@@ -1660,15 +1660,12 @@ namespace renderkit {
 
             // Compute the translation to use during forward transform.
             // Translate the points so that their center lies in the middle of
-            // the
-            // view frustum pushed out to the specified distance from the
+            // the view frustum pushed out to the specified distance from the
             // origin.
             // We take the mean coordinate of the two edges as the center that
-            // is
-            // to be moved to, and we move the space origin to there.
+            // is to be moved to, and we move the space origin to there.
             // We divide by the near clip distance to make the result match that
-            // at
-            // a unit distance and then multiply by the assumed depth.
+            // at a unit distance and then multiply by the assumed depth.
             // This assumes the default r texture coordinate of 0.
             float xTrans = static_cast<float>(
                 (usedRenderInfo[eye].projection.right +
@@ -1778,10 +1775,8 @@ namespace renderkit {
     }
 
     bool RenderManager::ComputeDisplayOrientationMatrix(
-        float rotateDegrees //< Rotation in degrees around Z
-        ,
-        bool flipInY //< Flip in Y after rotating?
-        ,
+        float rotateDegrees, //< Rotation in degrees around Z
+        bool flipInY, //< Flip in Y after rotating?
         matrix16& outMatrix //< Matrix to use.
         ) {
         // NOTE: These operations occur from the right to the left, so later
