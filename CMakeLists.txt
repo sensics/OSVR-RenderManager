@@ -111,6 +111,7 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/DistortionMesh.h
 	osvr/RenderKit/Float2.h
 	osvr/RenderKit/PoseStateCaching.h
+	osvr/RenderKit/DeltaQuatDeadReckoning.h
 )
 
 if (WIN32)
