@@ -65,6 +65,7 @@ Russ Taylor <russ@sensics.com>
 #endif
 
 #include "VendorIdTools.h"
+#include "DeltaQuatDeadReckoning.h"
 
 // OSVR Includes
 #include <osvr/ClientKit/InterfaceStateC.h>
@@ -131,33 +132,10 @@ static void PredictFuturePose(
 
   // If we have a change in orientation, make it.
   if (vel.angularVelocityValid) {
-
-    // Start out the new orientation at the original one
-    // from OSVR.
-    q_type newOrientation;
-    osvrQuatToQuatlib(newOrientation, &poseIn.rotation);
-
-    // Rotate it by the amount to rotate once for every integral multiple
-    // of the rotation time we've been asked to go.
-    q_type rotationAmount;
-    osvrQuatToQuatlib(rotationAmount,
-      &vel.angularVelocity.incrementalRotation);
-
-    double remaining = predictionIntervalSec;
-    while (remaining > vel.angularVelocity.dt) {
-      q_mult(newOrientation, rotationAmount, newOrientation);
-      remaining -= vel.angularVelocity.dt;
-    }
-
-    // Then rotate it by the remaining fractional amount.
-    double fractionTime = remaining / vel.angularVelocity.dt;
-    q_type identity = { 0, 0, 0, 1 };
-    q_type fractionRotation;
-    q_slerp(fractionRotation, identity, rotationAmount, fractionTime);
-    q_mult(newOrientation, fractionRotation, newOrientation);
-
-    // Then put it back into OSVR format in the output pose.
-    osvrQuatFromQuatlib(&out.rotation, newOrientation);
+      Eigen::Quaterniond newRotation =
+          osvr::util::applyQuatDeadReckoning(ei::map(poseIn.rotation), vel.angularVelocity.dt,
+                                             ei::map(vel.angularVelocity.incrementalRotation), predictionIntervalSec);
+      ei::map(out.rotation) = newRotation;
   }
 
   // If we have a linear velocity, apply it.
