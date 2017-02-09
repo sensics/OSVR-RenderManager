@@ -32,6 +32,7 @@ Russ Taylor <russ@sensics.com>
 #include "osvr_display_configuration.h"
 #include "DirectModeVendors.h"
 #include "CleanPNPIDString.h"
+#include "PoseStateCaching.h"
 
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
@@ -286,6 +287,9 @@ namespace renderkit {
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
         m_context = osvrClientInit("com.osvr.renderManager");
+
+        /// Start watching for head poses.
+        m_headPoseCache.reset(new PoseStateCaching(m_context, "/me/head", p.m_clientPredictionLocalTimeOverride));
 
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
@@ -1506,8 +1510,7 @@ namespace renderkit {
             /// DO NOT update the client here, so that we're using the
             /// same state for all eyes.
             OSVR_TimeValue timestamp;
-            if (osvrGetPoseState(m_roomFromHeadInterface, &timestamp,
-                                 &m_roomFromHead) == OSVR_RETURN_FAILURE) {
+            if (!m_headPoseCache || !m_headPoseCache->getLastReport(timestamp, m_roomFromHead)) {
                 // This it not an error -- they may have put in an invalid
                 // state name for the head; we just ignore that case.
             }
@@ -1525,16 +1528,12 @@ namespace renderkit {
                   (timing.timeUntilNextPresentRequired.microseconds / 1e3f);
               }
 
-              // Adjust the time at which the most-recent tracking info was
-              // set based on whether we're supposed to override it with "now".
-              // If not, find out how long ago it was.
+              // Find out how long ago this tracker info was found.
               float msSinceTrackerReport = 0;
-              if (!m_params.m_clientPredictionLocalTimeOverride) {
-                OSVR_TimeValue now;
-                osvrTimeValueGetNow(&now);
-                msSinceTrackerReport = static_cast<float>(
-                  osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3
-                  );
+              {
+                  OSVR_TimeValue now;
+                  osvrTimeValueGetNow(&now);
+                  msSinceTrackerReport = static_cast<float>(osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3);
               }
 
               // The delay before rendering for each
@@ -1554,10 +1553,11 @@ namespace renderkit {
               OSVR_VelocityState vel;
               vel.linearVelocityValid = false;
               vel.angularVelocityValid = false;
-              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp,
-                  &vel) != OSVR_RETURN_SUCCESS) {
-                // We're okay with failure here, we just use a zero
-                // velocity to predict.
+              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
+                  // We're okay with failure here, we just use a zero
+                  // velocity to predict.
+                  // Using normal get state calls here because we're effectively
+                  // throwing away the returned timestamp for this data.
               }
 
               // Predict the future pose of the head based on the velocity
@@ -1785,6 +1785,20 @@ namespace renderkit {
             Eigen::Projective3f(translate * scale).matrix();
 
         return true;
+    }
+
+    bool RenderManager::hasHeadPose() const {
+        if (!m_headPoseCache) {
+            return false;
+        }
+        return m_headPoseCache->hasReport();
+    }
+
+    bool RenderManager::getLastHeadPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const {
+        if (!m_headPoseCache) {
+            return false;
+        }
+        return m_headPoseCache->getLastReport(tv, pose);
     }
 
     static double pointDistance(double x1, double y1, double x2, double y2) {

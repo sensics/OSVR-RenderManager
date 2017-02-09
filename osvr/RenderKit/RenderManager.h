@@ -55,6 +55,8 @@ namespace Compositor {
   class DisplayServerInterfaceD3D11Singleton;
 }
 namespace renderkit {
+    // forward declaration to avoid dragging in dependencies.
+    class PoseStateCaching;
 
     //=========================================================================
     // Handles optimizing rendering given a description of the desired rendering
@@ -1156,6 +1158,12 @@ namespace renderkit {
       protected:
         /// Logger to use for writing information, warning, and errors.
         util::log::LoggerPtr m_log;
+
+        bool hasHeadPose() const;
+        bool getLastHeadPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
+
+      private:
+        std::unique_ptr<PoseStateCaching> m_headPoseCache;
     };
 
     //=========================================================================
