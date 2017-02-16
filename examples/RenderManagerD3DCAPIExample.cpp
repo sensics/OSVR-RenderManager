@@ -212,26 +212,29 @@ int main(int argc, char* argv[]) {
     // getting rendering info for each buffer we're going to create.
     // We first find out the number of buffers, which pulls in the
     // info internally and stores it until we can query each one.
-    OSVR_RenderInfoCount numRenderInfo;
     OSVR_RenderParams renderParams;
     osvrRenderManagerGetDefaultRenderParams(&renderParams);
-    std::vector<OSVR_RenderInfoD3D11> renderInfo;
-    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetNumRenderInfo(
-        render, renderParams, &numRenderInfo))) {
-      std::cerr << "Could not get context number of render infos."
-        << std::endl;
-	  osvrDestroyRenderManager(render);
-	  return 5;
+    OSVR_RenderInfoCollection renderInfoCollection;
+    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
+      render, renderParams, &renderInfoCollection))) {
+      std::cerr << "Could not get render info" << std::endl;
+      osvrDestroyRenderManager(render);
+      return 5;
     }
+
+    OSVR_RenderInfoCount numRenderInfo;
+    osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+
+    std::vector<OSVR_RenderInfoD3D11> renderInfo;
     renderInfo.clear();
     for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
       OSVR_RenderInfoD3D11 info;
-      if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoD3D11(
-          renderD3D, i, renderParams, &info))) {
+      if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+          renderInfoCollection, i, &info))) {
         std::cerr << "Could not get render info " << i
           << std::endl;
-		osvrDestroyRenderManager(render);
-		return 6;
+		    osvrDestroyRenderManager(render);
+		    return 6;
       }
       renderInfo.push_back(info);
     }
@@ -421,22 +424,24 @@ int main(int argc, char* argv[]) {
         // update tracker state.
         context.update();
 
-        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetNumRenderInfo(
-          render, renderParams, &numRenderInfo))) {
-          std::cerr << "Could not get context number of render infos."
-            << std::endl;
-		  osvrDestroyRenderManager(render);
-		  return 105;
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
+          render, renderParams, &renderInfoCollection))) {
+          std::cerr << "Could not get render info" << std::endl;
+          osvrDestroyRenderManager(render);
+          return 105;
         }
+        osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+
+
         renderInfo.clear();
         for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
           OSVR_RenderInfoD3D11 info;
-          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoD3D11(
-            renderD3D, i, renderParams, &info))) {
+          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+            renderInfoCollection, i, &info))) {
             std::cerr << "Could not get render info " << i
               << std::endl;
-			osvrDestroyRenderManager(render);
-			return 106;
+            osvrDestroyRenderManager(render);
+            return 106;
           }
           renderInfo.push_back(info);
         }
