@@ -188,23 +188,23 @@ int main(int argc, char* argv[]) {
     // Open the display and make sure this worked.
     OSVR_OpenResultsD3D11 openResults;
     if ( (OSVR_RETURN_SUCCESS != osvrRenderManagerOpenDisplayD3D11(
-        renderD3D, &openResults)) || 
-        (openResults.status == OSVR_OPEN_STATUS_FAILURE) ) {
-      std::cerr << "Could not open display" << std::endl;
-	  osvrDestroyRenderManager(render);
-      return 2;
+          renderD3D, &openResults)) ||
+          (openResults.status == OSVR_OPEN_STATUS_FAILURE) ) {
+        std::cerr << "Could not open display" << std::endl;
+        osvrDestroyRenderManager(render);
+        return 2;
     }
     if (openResults.library.device == nullptr) {
         std::cerr << "Could not get device when opening display."
                   << std::endl;
-		osvrDestroyRenderManager(render);
-		return 3;
+		    osvrDestroyRenderManager(render);
+		    return 3;
     }
     if (openResults.library.context == nullptr) {
         std::cerr << "Could not get context when opening display."
           << std::endl;
-		osvrDestroyRenderManager(render);
-		return 4;
+		    osvrDestroyRenderManager(render);
+		    return 4;
     }
 
     // Do a call to get the information we need to construct our
@@ -212,29 +212,33 @@ int main(int argc, char* argv[]) {
     // getting rendering info for each buffer we're going to create.
     // We first find out the number of buffers, which pulls in the
     // info internally and stores it until we can query each one.
-    OSVR_RenderInfoCount numRenderInfo;
     OSVR_RenderParams renderParams;
     osvrRenderManagerGetDefaultRenderParams(&renderParams);
-    std::vector<OSVR_RenderInfoD3D11> renderInfo;
-    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetNumRenderInfo(
-        render, renderParams, &numRenderInfo))) {
-      std::cerr << "Could not get context number of render infos."
-        << std::endl;
-	  osvrDestroyRenderManager(render);
-	  return 5;
+    OSVR_RenderInfoCollection renderInfoCollection;
+    if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
+      render, renderParams, &renderInfoCollection))) {
+      std::cerr << "Could not get render info" << std::endl;
+      osvrDestroyRenderManager(render);
+      return 5;
     }
+
+    OSVR_RenderInfoCount numRenderInfo;
+    osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+
+    std::vector<OSVR_RenderInfoD3D11> renderInfo;
     renderInfo.clear();
     for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
       OSVR_RenderInfoD3D11 info;
-      if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoD3D11(
-          renderD3D, i, renderParams, &info))) {
+      if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+          renderInfoCollection, i, &info))) {
         std::cerr << "Could not get render info " << i
           << std::endl;
-		osvrDestroyRenderManager(render);
-		return 6;
+		    osvrDestroyRenderManager(render);
+		    return 6;
       }
       renderInfo.push_back(info);
     }
+    osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
     // Set up the vector of textures to render to and any framebuffer
     // we need to group them.
@@ -275,8 +279,8 @@ int main(int argc, char* argv[]) {
             &textureDesc, nullptr, &D3DTexture);
         if (FAILED(hr)) {
             std::cerr << "Can't create texture for eye " << i << std::endl;
-			osvrDestroyRenderManager(render);
-			return -1;
+			      osvrDestroyRenderManager(render);
+			      return -1;
         }
 
         // Fill in the resource view for your render texture buffer here
@@ -294,8 +298,8 @@ int main(int argc, char* argv[]) {
         if (FAILED(hr)) {
             std::cerr << "Could not create render target for eye " << i
                       << std::endl;
-			osvrDestroyRenderManager(render);
-			return -2;
+			      osvrDestroyRenderManager(render);
+			      return -2;
         }
 
         // Push the filled-in RenderBuffer onto the vector.
@@ -327,8 +331,8 @@ int main(int argc, char* argv[]) {
         if (FAILED(hr)) {
             std::cerr << "Could not create depth/stencil texture for eye " << i
                       << std::endl;
-			osvrDestroyRenderManager(render);
-			return -4;
+			      osvrDestroyRenderManager(render);
+			      return -4;
         }
         depthStencilTextures.push_back(depthStencilBuffer);
 
@@ -346,8 +350,8 @@ int main(int argc, char* argv[]) {
         if (FAILED(hr)) {
             std::cerr << "Could not create depth/stencil view for eye " << i
                       << std::endl;
-			osvrDestroyRenderManager(render);
-			return -5;
+			      osvrDestroyRenderManager(render);
+			      return -5;
         }
         depthStencilViews.push_back(depthStencilView);
     }
@@ -382,32 +386,32 @@ int main(int argc, char* argv[]) {
         &depthStencilDescription, &depthStencilState);
     if (FAILED(hr)) {
         std::cerr << "Could not create depth/stencil state" << std::endl;
-		osvrDestroyRenderManager(render);
-		return -3;
+		    osvrDestroyRenderManager(render);
+		    return -3;
     }
 
     // Register our constructed buffers so that we can use them for
     // presentation.
     OSVR_RenderManagerRegisterBufferState registerBufferState;
     if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartRegisterRenderBuffers(
-      &registerBufferState))) {
-      std::cerr << "Could not start registering render buffers" << std::endl;
-	  osvrDestroyRenderManager(render);
-	  return -4;
+          &registerBufferState))) {
+        std::cerr << "Could not start registering render buffers" << std::endl;
+	      osvrDestroyRenderManager(render);
+	      return -4;
     }
     for (size_t i = 0; i < numRenderInfo; i++) {
       if ((OSVR_RETURN_SUCCESS != osvrRenderManagerRegisterRenderBufferD3D11(
-        registerBufferState, renderBuffers[i]))) {
+          registerBufferState, renderBuffers[i]))) {
         std::cerr << "Could not register render buffer " << i << std::endl;
-		osvrDestroyRenderManager(render);
-		return -5;
+		    osvrDestroyRenderManager(render);
+		    return -5;
       }
     }
     if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishRegisterRenderBuffers(
       render, registerBufferState, false))) {
       std::cerr << "Could not start finish registering render buffers" << std::endl;
-	  osvrDestroyRenderManager(render);
-	  return -6;
+	    osvrDestroyRenderManager(render);
+	    return -6;
     }
 
     // Timing of frame rates
@@ -421,25 +425,28 @@ int main(int argc, char* argv[]) {
         // update tracker state.
         context.update();
 
-        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetNumRenderInfo(
-          render, renderParams, &numRenderInfo))) {
-          std::cerr << "Could not get context number of render infos."
-            << std::endl;
-		  osvrDestroyRenderManager(render);
-		  return 105;
+        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
+          render, renderParams, &renderInfoCollection))) {
+          std::cerr << "Could not get render info" << std::endl;
+          osvrDestroyRenderManager(render);
+          return 105;
         }
+        osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+
+
         renderInfo.clear();
         for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
           OSVR_RenderInfoD3D11 info;
-          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoD3D11(
-            renderD3D, i, renderParams, &info))) {
+          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+            renderInfoCollection, i, &info))) {
             std::cerr << "Could not get render info " << i
               << std::endl;
-			osvrDestroyRenderManager(render);
-			return 106;
+            osvrDestroyRenderManager(render);
+            return 106;
           }
           renderInfo.push_back(info);
         }
+        osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
@@ -462,8 +469,8 @@ int main(int argc, char* argv[]) {
           if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
             &presentState))) {
             std::cerr << "Could not start presenting render buffers" << std::endl;
-			osvrDestroyRenderManager(render);
-			return 201;
+			      osvrDestroyRenderManager(render);
+			      return 201;
           }
           OSVR_ViewportDescription fullView;
           fullView.left = fullView.lower = 0;
@@ -472,15 +479,15 @@ int main(int argc, char* argv[]) {
             if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
               presentState, renderBuffers[i], renderInfo[i], fullView))) {
               std::cerr << "Could not present render buffer " << i << std::endl;
-			  osvrDestroyRenderManager(render);
-			  return 202;
+			        osvrDestroyRenderManager(render);
+			        return 202;
             }
           }
           if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
             render, presentState, renderParams, false))) {
             std::cerr << "Could not finish presenting render buffers" << std::endl;
-			osvrDestroyRenderManager(render);
-			return 203;
+			      osvrDestroyRenderManager(render);
+			      return 203;
           }
         } else {
           // send a black screen.
