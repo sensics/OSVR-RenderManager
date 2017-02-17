@@ -238,6 +238,7 @@ int main(int argc, char* argv[]) {
       }
       renderInfo.push_back(info);
     }
+    osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
     // Set up the vector of textures to render to and any framebuffer
     // we need to group them.
@@ -445,6 +446,7 @@ int main(int argc, char* argv[]) {
           }
           renderInfo.push_back(info);
         }
+        osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
         // Render into each buffer using the specified information.
         for (size_t i = 0; i < renderInfo.size(); i++) {
