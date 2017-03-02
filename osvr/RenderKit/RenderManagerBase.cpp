@@ -1917,6 +1917,17 @@ namespace renderkit {
       )
     {
       RenderManagerD3D11Base *ret = nullptr;
+#ifdef RM_USE_SENSICS
+      /// Try to open the Sensics Compositor.  If it works, we can use
+      /// it.  If not, delete it.  We need to try this DirectMode
+      /// interface before trying any of those that open the device because
+      /// the Sensics Compositor will already have the device open.
+      ret = new RenderManagerSensicsDS_D3D11(context, params);
+      if (!ret->doingOkay()) {
+        delete ret;
+        ret = nullptr;
+      }
+#endif
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11) || defined(RM_USE_AMD_DIRECT_D3D11) || defined(RM_USE_INTEL_DIRECT_D3D11)
 #if defined(RM_USE_NVIDIA_DIRECT_D3D11)
       if ((ret == nullptr) && RenderManagerNVidiaD3D11::DirectModeAvailable(
