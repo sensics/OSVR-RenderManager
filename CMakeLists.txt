@@ -56,7 +56,6 @@ if(WIN32)
 
 	set(SENSICS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Sensics")
 	if(EXISTS "${SENSICS_SRC_DIR}/RenderManagerSensicsDS_D3D11.h")
-		set(RM_USE_SENSICS TRUE)
 		set(HAVE_SENSICS_NDA_SUBMODULE TRUE)
 	endif()
 endif()
@@ -377,17 +376,20 @@ endif()
 
 if (HAVE_SENSICS_NDA_SUBMODULE)
 	# Sensics is a header-only lib for now
-	message(STATUS " - Sensics support: enabled")
-	find_package(osvrDisplayServerClient REQUIRED)
-	include_directories(${SENSICS_SRC_DIR})
-	if(TARGET osvr::osvrDisplayServerClient_static)
-		target_link_libraries(osvrRenderManager
-			PRIVATE
-			osvr::osvrDisplayServerClient_static)
-	else()
-		target_link_libraries(osvrRenderManager
-			PRIVATE
-			osvr::osvrDisplayServerClient)
+	find_package(osvrDisplayServerClient)
+	if (osvrDisplayServerClient_FOUND)
+		message(STATUS " - Sensics support: enabled")
+		set(RM_USE_SENSICS TRUE)
+		include_directories(${SENSICS_SRC_DIR})
+		if(TARGET osvr::osvrDisplayServerClient_static)
+			target_link_libraries(osvrRenderManager
+				PRIVATE
+				osvr::osvrDisplayServerClient_static)
+		else()
+			target_link_libraries(osvrRenderManager
+				PRIVATE
+				osvr::osvrDisplayServerClient)
+		endif()
 	endif()
 endif()
 
