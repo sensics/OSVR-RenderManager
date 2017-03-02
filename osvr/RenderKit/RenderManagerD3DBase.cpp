@@ -229,18 +229,20 @@ namespace renderkit {
         bool ret = RenderManager::PresentRenderBuffersInternal(buffers, renderInfoUsed, renderParams, normalizedCroppingViewports, flipInY);
 
         // Unlock any buffers we succeeded in locking.
-        auto it = lockedTextures.begin();
-        while (it != lockedTextures.end()) {
+        for (auto it : lockedTextures) {
             D3D11_TEXTURE2D_DESC desc = { 0 };
-            (*it)->GetDesc(&desc);
+            it->GetDesc(&desc);
             if ((desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) == D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) {
                 IDXGIKeyedMutex* mutex = nullptr;
-                hr = (*it)->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
+                hr = it->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
                 if (!FAILED(hr) && mutex != nullptr) {
-                    hr = mutex->ReleaseSync(0); // ignore failure
+                    hr = mutex->ReleaseSync(0);
+                    if (FAILED(hr)) {
+                      m_log->warn() << "RenderManagerD3D11Base::PresentRenderBuffersInternal: "
+                        << " Could not  release mutex";
+                    }
                 }
             }
-            it++;
         }
 
         return ret;
