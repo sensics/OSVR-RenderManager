@@ -356,6 +356,7 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/DistortionMesh.h
 	osvr/RenderKit/DistortionParameters.h
 	osvr/RenderKit/RenderManager.h
+	osvr/RenderKit/RenderManagerD3DBase.h
 	osvr/RenderKit/RenderManagerC.h
 	osvr/RenderKit/RenderManagerD3D11C.h
 	osvr/RenderKit/RenderManagerOpenGLC.h
