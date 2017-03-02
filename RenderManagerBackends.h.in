@@ -31,5 +31,6 @@
 #cmakedefine RM_USE_INTEL_DIRECT_D3D11 1
 #cmakedefine RM_USE_NVIDIA_DIRECT_D3D11_OPENGL 1
 #cmakedefine RM_USE_OPENGL 1
+#cmakedefine RM_USE_SENSICS 1
 
 #endif // INCLUDED_RenderManagerCapabilities_h_GUID_A214911C_4127_41B2_9B93_3849E94FA364

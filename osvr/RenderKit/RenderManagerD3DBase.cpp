@@ -190,19 +190,36 @@ namespace renderkit {
         bool flipInY) {
 
         HRESULT hr;
-        {
-            std::set<ID3D11Texture2D*> lockedTextures;
-            for (size_t i = 0; i < buffers.size(); i++) {
-                auto colorBuffer = buffers[i].D3D11->colorBuffer;
-                if (lockedTextures.find(colorBuffer) == lockedTextures.end()) {
-                    lockedTextures.insert(colorBuffer);
-                    D3D11_TEXTURE2D_DESC desc = { 0 };
-                    colorBuffer->GetDesc(&desc);
-                    if ((desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) == D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) {
-                        IDXGIKeyedMutex* mutex = nullptr;
-                        hr = colorBuffer->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
-                        if (!FAILED(hr) && mutex != nullptr) {
-                            hr = mutex->AcquireSync(0, 0); // ignore failure
+        // The locking/unlocking behavior here is a bit complicated.
+        // (1) If the buffers are not lockable then we detect this and don't lock
+        //     or unlock.
+        // (2) If the buffers are lockable:
+        //     (a) If the application has not locked buffers, then we
+        //         must lock them so that we can use them.
+        //     (b) If the application has locked the buffers and plans to
+        //         unlock them, then we must not unlock them.
+        // Solution:
+        //    If the buffers are not lockable, then we neither lock nor unlock
+        // them.  If they are lockable, then we try to lock them.  If this fails,
+        // the application has them locked so we do not try to unlock them.  If it
+        // works, we go ahead and unlock them to put them back the way we found them.
+
+        // This set holds the textures that we have actually succeeded in locking.
+        std::set<ID3D11Texture2D*> lockedTextures;
+        for (size_t i = 0; i < buffers.size(); i++) {
+            auto colorBuffer = buffers[i].D3D11->colorBuffer;
+            if (lockedTextures.find(colorBuffer) == lockedTextures.end()) {
+                D3D11_TEXTURE2D_DESC desc = { 0 };
+                colorBuffer->GetDesc(&desc);
+                if ((desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) == D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) {
+                    IDXGIKeyedMutex* mutex = nullptr;
+                    hr = colorBuffer->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
+                    if (!FAILED(hr) && mutex != nullptr) {
+                        hr = mutex->AcquireSync(0, 0); // ignore failure
+                        if (!FAILED(hr)) {
+                          // We were able to lock this texture, so we keep track of it so
+                          // we know not to lock it again and to unlock it.
+                          lockedTextures.insert(colorBuffer);
                         }
                     }
                 }
@@ -211,20 +228,18 @@ namespace renderkit {
 
         bool ret = RenderManager::PresentRenderBuffersInternal(buffers, renderInfoUsed, renderParams, normalizedCroppingViewports, flipInY);
 
-        {
-            std::set<ID3D11Texture2D*> unlockedTextures;
-            for (int i = static_cast<int>(buffers.size()) - 1; i >= 0; i--) {
-                auto colorBuffer = buffers[i].D3D11->colorBuffer;
-                if (unlockedTextures.find(colorBuffer) == unlockedTextures.end()) {
-                    unlockedTextures.insert(colorBuffer);
-                    D3D11_TEXTURE2D_DESC desc = { 0 };
-                    colorBuffer->GetDesc(&desc);
-                    if ((desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) == D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) {
-                        IDXGIKeyedMutex* mutex = nullptr;
-                        hr = colorBuffer->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
-                        if (!FAILED(hr) && mutex != nullptr) {
-                            hr = mutex->ReleaseSync(0); // ignore failure
-                        }
+        // Unlock any buffers we succeeded in locking.
+        for (auto it : lockedTextures) {
+            D3D11_TEXTURE2D_DESC desc = { 0 };
+            it->GetDesc(&desc);
+            if ((desc.MiscFlags & D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) == D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) {
+                IDXGIKeyedMutex* mutex = nullptr;
+                hr = it->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
+                if (!FAILED(hr) && mutex != nullptr) {
+                    hr = mutex->ReleaseSync(0);
+                    if (FAILED(hr)) {
+                      m_log->warn() << "RenderManagerD3D11Base::PresentRenderBuffersInternal: "
+                        << " Could not  release mutex";
                     }
                 }
             }

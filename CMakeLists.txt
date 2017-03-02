@@ -37,6 +37,7 @@ find_package(JsonCpp REQUIRED)
 # Check for the NDA submodules
 set(HAVE_NVIDIA_NDA_SUBMODULE FALSE)
 set(HAVE_AMD_NDA_SUBMODULE FALSE)
+set(HAVE_SENSICS_NDA_SUBMODULE FALSE)
 if(WIN32)
 	set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
 	if(EXISTS "${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp")
@@ -51,6 +52,12 @@ if(WIN32)
 	set(INTEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Intel")
 	if(EXISTS "${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp")
 		set(HAVE_INTEL_NDA_SUBMODULE TRUE)
+	endif()
+
+	set(SENSICS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Sensics")
+	if(EXISTS "${SENSICS_SRC_DIR}/RenderManagerSensicsDS_D3D11.h")
+		set(RM_USE_SENSICS TRUE)
+		set(HAVE_SENSICS_NDA_SUBMODULE TRUE)
 	endif()
 endif()
 
@@ -362,10 +369,28 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/osvr_compiler_tests.h
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"
 )
+
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
 if (NOT ANDROID)
   target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
 endif()
+
+if (HAVE_SENSICS_NDA_SUBMODULE)
+	# Sensics is a header-only lib for now
+	message(STATUS " - Sensics support: enabled")
+	find_package(osvrDisplayServerClient REQUIRED)
+	include_directories(${SENSICS_SRC_DIR})
+	if(TARGET osvr::osvrDisplayServerClient_static)
+		target_link_libraries(osvrRenderManager
+			PRIVATE
+			osvr::osvrDisplayServerClient_static)
+	else()
+		target_link_libraries(osvrRenderManager
+			PRIVATE
+			osvr::osvrDisplayServerClient)
+	endif()
+endif()
+
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
