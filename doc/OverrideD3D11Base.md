@@ -24,13 +24,13 @@ The RenderManagerD3D11 class defined in RenderManagerD3D.cpp provides an example
 
 **PresentRenderBuffersInternal()** is a protected method that can be overridden if the device is going to do its own time warp and buffer orientation correction (rotations by 90, 180, or 270 degrees; flipping buffers).
 
-**GetTimingInfo()** can be overridden to provide information about how long each eye has until it needs to be presented to make the next vertical sync.
-
 **UpdateDistortionMeshesInternal()** If the class implements distortion correction itself, it should override the *UpdateDistortionMeshesInternal()* function and have it simply return true.
 
-**GetRenderInfoInternal()** can be overridden by derived classes that are talking to an external compositor to provide the rendering information.
-
 **RegisterRenderBuffersInternal()** can be overridden by derived classes that have to take a special action when a buffer is registered (for example, the OpenGL/D3D wrapping class has to share the buffer between OpenGL and D3D).
+
+**GetTimingInfo()** can be overridden to provide information about how long each eye has until it needs to be presented to make the next vertical sync.
+
+**GetRenderInfoInternal()** can be overridden by derived classes that are talking to an external compositor to provide the rendering information.
 
 ## Render() path
 
