@@ -262,6 +262,17 @@ else()
 	message(STATUS " - Intel direct support: disabled (need Intel NDA submodule)")
 endif()
 
+if (HAVE_SENSICS_NDA_SUBMODULE)
+	# Sensics is a header-only lib for now
+	find_package(osvrDisplayServerClient)
+	if (osvrDisplayServerClient_FOUND)
+		message(STATUS " - Sensics support: enabled")
+		set(RM_USE_SENSICS TRUE)
+		include_directories(${SENSICS_SRC_DIR})
+	endif()
+endif()
+
+
 #-----------------------------------------------------------------------------
 # SDL init/quit handler code that makes sure we only do it once.
 if (SDL2_FOUND)
@@ -375,25 +386,6 @@ if (NOT ANDROID)
   target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
 endif()
 
-if (HAVE_SENSICS_NDA_SUBMODULE)
-	# Sensics is a header-only lib for now
-	find_package(osvrDisplayServerClient)
-	if (osvrDisplayServerClient_FOUND)
-		message(STATUS " - Sensics support: enabled")
-		set(RM_USE_SENSICS TRUE)
-		include_directories(${SENSICS_SRC_DIR})
-		if(TARGET osvr::osvrDisplayServerClient_static)
-			target_link_libraries(osvrRenderManager
-				PRIVATE
-				osvr::osvrDisplayServerClient_static)
-		else()
-			target_link_libraries(osvrRenderManager
-				PRIVATE
-				osvr::osvrDisplayServerClient)
-		endif()
-	endif()
-endif()
-
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
@@ -414,6 +406,17 @@ if (RM_USE_INTEL_DIRECT_D3D11)
 	target_link_libraries(osvrRenderManager
 		PRIVATE
 		osvrRM-intel-requirements)
+endif()
+if (RM_USE_SENSICS)
+		if(TARGET osvr::osvrDisplayServerClient_static)
+			target_link_libraries(osvrRenderManager
+				PRIVATE
+				osvr::osvrDisplayServerClient_static)
+		else()
+			target_link_libraries(osvrRenderManager
+				PRIVATE
+				osvr::osvrDisplayServerClient)
+		endif()
 endif()
 if (WIN32)
 	target_link_libraries(osvrRenderManager PRIVATE D3D11)
