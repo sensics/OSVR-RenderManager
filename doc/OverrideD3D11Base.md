@@ -1,6 +1,6 @@
 # Overriding methods in OSVR RenderManagerD3D11Base
 
-This document describes how to derive a class from the **RnedermanagerD3D11Base** class to provide an implementation that handles its own D3D11 device and context creation, perhaps getting its information from an external Compositor interface.  This is also useful for derived classes that want to implement distortion correction, time warp, or other features of RenderManager in a different way than the base class does.
+This document describes how to derive a class from the **RendermanagerD3D11Base** class to provide an implementation that handles its own D3D11 device and context creation, perhaps getting its information from an external Compositor interface.  This is also useful for derived classes that want to implement distortion correction, time warp, or other features of RenderManager in a different way than the base class does.
 
 ## Introduction
 
