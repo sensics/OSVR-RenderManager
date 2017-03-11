@@ -50,10 +50,13 @@ Russ Taylor <russ@sensics.com>
 // files that the client has to include.
 class OSVRDisplayConfiguration;
 
-namespace osvr {
-namespace Compositor {
-  class DisplayServerInterfaceD3D11Singleton;
+namespace sensics {
+  namespace compositor {
+    class DisplayServerInterfaceD3D11Singleton;
+  }
 }
+
+namespace osvr {
 namespace renderkit {
 
     //=========================================================================
@@ -1146,8 +1149,7 @@ namespace renderkit {
         /// @brief Finalize presentation for a new frame
         virtual bool OSVR_RENDERMANAGER_EXPORT PresentFrameFinalize() = 0;
 
-        friend class RenderManagerNVidiaD3D11OpenGL;
-        friend class ::osvr::Compositor::DisplayServerInterfaceD3D11Singleton;
+        friend class ::sensics::compositor::DisplayServerInterfaceD3D11Singleton;
         friend RenderManager OSVR_RENDERMANAGER_EXPORT*
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
