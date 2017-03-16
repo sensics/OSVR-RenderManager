@@ -214,7 +214,7 @@ namespace renderkit {
 
         friend class RenderManagerD3D11OpenGL;
         friend class RenderManagerD3D11ATW;
-        friend class ::osvr::Compositor::DisplayServerInterfaceD3D11Singleton;
+        friend class ::sensics::compositor::DisplayServerInterfaceD3D11Singleton;
     };
 
 } // namespace renderkit

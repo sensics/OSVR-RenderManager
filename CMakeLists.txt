@@ -408,14 +408,14 @@ if (RM_USE_INTEL_DIRECT_D3D11)
 		osvrRM-intel-requirements)
 endif()
 if (RM_USE_SENSICS)
-		if(TARGET osvr::osvrDisplayServerClient_static)
+		if(TARGET sensics::osvrDisplayServerClient_static)
 			target_link_libraries(osvrRenderManager
 				PRIVATE
-				osvr::osvrDisplayServerClient_static)
+				sensics::osvrDisplayServerClient_static)
 		else()
 			target_link_libraries(osvrRenderManager
 				PRIVATE
-				osvr::osvrDisplayServerClient)
+				sensics::osvrDisplayServerClient)
 		endif()
 endif()
 if (WIN32)
