@@ -70,10 +70,10 @@ namespace renderkit {
             ConstructorParameters p);
 
         virtual bool OSVR_RENDERMANAGER_EXPORT UpdateDistortionMeshesInternal(
-            DistortionMeshType type //< Type of mesh to produce
+            DistortionMeshType type ///< Type of mesh to produce
             ,
             std::vector<DistortionParameters> const&
-                distort //< Distortion parameters
+                distort ///< Distortion parameters
             ) override;
 
         /// Call before calling OpenDisplay() to set the DXGIAdapter if you
@@ -91,16 +91,16 @@ namespace renderkit {
         /// Get the DXGIFactor1 corresponding to the adapter.
         Microsoft::WRL::ComPtr<IDXGIFactory1> OSVR_RENDERMANAGER_EXPORT getDXGIFactory();
 
-        bool m_displayOpen; //< Has our display been opened?
+        bool m_displayOpen; ///< Has our display been opened?
 
         /// The adapter, if and only if explicitly set.
         Microsoft::WRL::ComPtr<IDXGIAdapter> m_adapter;
 
         // D3D-related state information
         /// @todo Release these pointers in destructor
-        ID3D11Device* m_D3D11device; //< Pointer to the D3D11 device to use.
+        ID3D11Device* m_D3D11device; ///< Pointer to the D3D11 device to use.
         ID3D11DeviceContext*
-            m_D3D11Context; //< Pointer to the D3D11 context to use.
+            m_D3D11Context; ///< Pointer to the D3D11 context to use.
 
         //============================================================================
         // Information needed to provide render and depth/stencil buffers for
@@ -194,11 +194,11 @@ namespace renderkit {
         bool OSVR_RENDERMANAGER_EXPORT RenderPathSetup() override;
         bool OSVR_RENDERMANAGER_EXPORT RenderEyeInitialize(size_t eye) override;
         bool OSVR_RENDERMANAGER_EXPORT 
-        RenderSpace(size_t whichSpace, //< Index into m_callbacks vector
-                         size_t whichEye, //< Which eye are we rendering for?
-                         OSVR_PoseState pose, //< ModelView transform to use
-                         OSVR_ViewportDescription viewport, //< Viewport to use
-                         OSVR_ProjectionMatrix projection //< Projection to use
+        RenderSpace(size_t whichSpace, ///< Index into m_callbacks vector
+                         size_t whichEye, ///< Which eye are we rendering for?
+                         OSVR_PoseState pose, ///< ModelView transform to use
+                         OSVR_ViewportDescription viewport, ///< Viewport to use
+                         OSVR_ProjectionMatrix projection ///< Projection to use
                          ) override;
 
         bool OSVR_RENDERMANAGER_EXPORT RenderFrameInitialize() override { return true; }

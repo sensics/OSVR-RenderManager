@@ -47,14 +47,14 @@ namespace renderkit {
         class DisplayInfo {
           public:
             /// @todo Release these pointers in destructor
-            SDL_Window* m_window = nullptr; //< SDL window pointer
-            HWND m_rawWindow = nullptr; //< Raw Windows handle for the window
+            SDL_Window* m_window = nullptr; ///< SDL window pointer
+            HWND m_rawWindow = nullptr; ///< Raw Windows handle for the window
             IDXGISwapChain* m_swapChain =
-                nullptr; //< Pointer to the swap chain to use
+                nullptr; ///< Pointer to the swap chain to use
             ID3D11Texture2D* m_renderTarget =
-                nullptr; //< Pointer to render target texture
+                nullptr; ///< Pointer to render target texture
             ID3D11RenderTargetView* m_renderTargetView =
-                nullptr; //< Pointer to our render target view
+                nullptr; ///< Pointer to our render target view
         };
         std::vector<DisplayInfo> m_displays;
 

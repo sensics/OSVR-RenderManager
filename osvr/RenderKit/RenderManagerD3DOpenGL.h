@@ -71,7 +71,7 @@ namespace renderkit {
             ConstructorParameters p,
             std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness);
 
-        bool m_displayOpen; //< Has our display been opened?
+        bool m_displayOpen; ///< Has our display been opened?
 
         // We harness a D3D11 DirectMode renderer to do our
         // DirectMode work and to handle the timing.
@@ -102,10 +102,10 @@ namespace renderkit {
         bool RenderEyeInitialize(size_t eye) override;
 
         OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(
-            DistortionMeshType type //< Type of mesh to produce
+            DistortionMeshType type ///< Type of mesh to produce
             ,
             std::vector<DistortionParameters> const&
-                distort //< Distortion parameters
+                distort ///< Distortion parameters
             ) override {
             return m_D3D11Renderer->UpdateDistortionMeshesInternal(type,
                                                                    distort);

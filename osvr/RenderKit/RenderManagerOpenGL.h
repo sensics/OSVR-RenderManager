@@ -94,13 +94,13 @@ namespace renderkit {
             ConstructorParameters p);
 
         OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(
-            DistortionMeshType type //< Type of mesh to produce
+            DistortionMeshType type ///< Type of mesh to produce
             ,
             std::vector<DistortionParameters> const&
-                distort //< Distortion parameters
+                distort ///< Distortion parameters
             ) override;
 
-        bool m_displayOpen; //< Has our display been opened?
+        bool m_displayOpen; ///< Has our display been opened?
 
         // Methods to open and close a window, used to get
         // the GL contexts established.  We have these outside
@@ -108,15 +108,15 @@ namespace renderkit {
         // use them to make and destroy contexts as needed.
         class GLContextParams {
           public:
-            std::string windowTitle; //< Window title
-            bool fullScreen;         //< Do we want full screen?
-            int width;               //< If not full screen, how wide?
-            int height;              //< If not full screen, how high?
-            int xPos;                //< Where on the virtual desktop?
-            int yPos;                //< Where on the virtual desktop?
-            int bitsPerPixel;        //< How many bits per pixel?
-            unsigned numBuffers;     //< How many buffers (2 = double buffering)
-            bool visible;            //< Should the window be initially visible?
+            std::string windowTitle; ///< Window title
+            bool fullScreen;         ///< Do we want full screen?
+            int width;               ///< If not full screen, how wide?
+            int height;              ///< If not full screen, how high?
+            int xPos;                ///< Where on the virtual desktop?
+            int yPos;                ///< Where on the virtual desktop?
+            int bitsPerPixel;        ///< How many bits per pixel?
+            unsigned numBuffers;     ///< How many buffers (2 = double buffering)
+            bool visible;            ///< Should the window be initially visible?
             GLContextParams() {
                 windowTitle = "OSVR";
                 fullScreen = false;
@@ -129,7 +129,7 @@ namespace renderkit {
                 visible = true;
             }
         };
-        OSVR_OpenGLToolkitFunctions m_toolkit;  //< OpenGL windowing toolkit to use
+        OSVR_OpenGLToolkitFunctions m_toolkit;  ///< OpenGL windowing toolkit to use
 
         /// Delete m_programId in destructor.
         void deleteProgram();
@@ -145,20 +145,20 @@ namespace renderkit {
         // Special vertex/fragment shader information for our shader that
         // handles
         // asynchronous time warp and/or distortion.
-        GLuint m_programId;           //< Groups the shaders for time warp/distortion
-        GLuint m_projectionUniformId; //< Pointer to projection matrix, vertex
+        GLuint m_programId;           ///< Groups the shaders for time warp/distortion
+        GLuint m_projectionUniformId; ///< Pointer to projection matrix, vertex
                                       /// shader
         GLuint
-            m_modelViewUniformId; //< Pointer to modelView matrix, vertex shader
-        GLuint m_textureUniformId; //< Pointer to texture matrix, vertex shader
+            m_modelViewUniformId; ///< Pointer to modelView matrix, vertex shader
+        GLuint m_textureUniformId; ///< Pointer to texture matrix, vertex shader
 
         // To do with our Render() path.
-        std::vector<GLuint> m_frameBuffers;      //< Groups a color buffer and a depth buffer (per display)
-        GLuint m_initialFrameBuffer;    //< Frame buffer when we started rendering.
+        std::vector<GLuint> m_frameBuffers;      ///< Groups a color buffer and a depth buffer (per display)
+        GLuint m_initialFrameBuffer;    ///< Frame buffer when we started rendering.
 
         std::vector<RenderBuffer>
-            m_colorBuffers; //< Color buffers to hand to render callbacks
-        std::vector<GLuint> m_depthBuffers; //< Depth/stencil buffers to hand to
+            m_colorBuffers; ///< Color buffers to hand to render callbacks
+        std::vector<GLuint> m_depthBuffers; ///< Depth/stencil buffers to hand to
                                             /// render callbacks
 
         struct DistortionVertex {
@@ -202,15 +202,15 @@ namespace renderkit {
         bool RenderFrameInitialize() override;
         bool RenderDisplayInitialize(size_t display) override;
         bool RenderEyeInitialize(size_t eye) override;
-        bool RenderSpace(size_t whichSpace //< Index into m_callbacks vector
+        bool RenderSpace(size_t whichSpace ///< Index into m_callbacks vector
                          ,
-                         size_t whichEye //< Which eye are we rendering for?
+                         size_t whichEye ///< Which eye are we rendering for?
                          ,
-                         OSVR_PoseState pose //< ModelView transform to use
+                         OSVR_PoseState pose ///< ModelView transform to use
                          ,
-                         OSVR_ViewportDescription viewport //< Viewport to use
+                         OSVR_ViewportDescription viewport ///< Viewport to use
                          ,
-                         OSVR_ProjectionMatrix projection //< Projection to use
+                         OSVR_ProjectionMatrix projection ///< Projection to use
                          ) override;
         bool RenderEyeFinalize(size_t eye) override { return true; }
 		bool RenderDisplayFinalize(size_t display);

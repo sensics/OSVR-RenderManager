@@ -99,10 +99,10 @@ namespace renderkit {
         /// Note that NVIDIA likes the byte order flipped.
         inline PNPIDNullTerminatedStdArray fullHexVidToPnp(std::uint16_t vid) {
             return PNPIDNullTerminatedStdArray{
-                hexToChar(vid >> BIT_OFFSET_0), //< shift off to put first character in bits 0-7 then decode
-                hexToChar(vid >> BIT_OFFSET_1), //< shift off for second character then decode
-                hexToChar(vid >> BIT_OFFSET_2), //< shift off for third character then decode
-                '\0'                            //< always null terminated
+                hexToChar(vid >> BIT_OFFSET_0), ///< shift off to put first character in bits 0-7 then decode
+                hexToChar(vid >> BIT_OFFSET_1), ///< shift off for second character then decode
+                hexToChar(vid >> BIT_OFFSET_2), ///< shift off for third character then decode
+                '\0'                            ///< always null terminated
             };
         }
     } // namespace vendorid

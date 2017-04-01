@@ -104,11 +104,11 @@ namespace renderkit {
         /// searched.
         std::vector<    // Range in X
             std::vector<  // Range in Y
-            MonoPointDistortionMeshDescription //< Points
+            MonoPointDistortionMeshDescription ///< Points
             >
             > m_grid;
-        int m_numSamplesX = 0; //< Size of the grid in X
-        int m_numSamplesY = 0; //< Size of the grid in Y
+        int m_numSamplesX = 0; ///< Size of the grid in X
+        int m_numSamplesY = 0; ///< Size of the grid in Y
 
         /// Return the index of the closest grid point to a
         /// specified location.  Clamps to the range of
