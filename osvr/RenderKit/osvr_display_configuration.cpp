@@ -304,27 +304,24 @@ inline void parseDistortionMonoPointMeshes(
     }
 }
 
-inline void parseDistortionRGBPointMeshes(
-    Json::Value const& distortion,
-    osvr::renderkit::RGBPointDistortionMeshDescriptions& mesh) {
-    Json::Value myDistortion = distortion;
+inline void parseDistortionRGBPointMeshes(Json::Value myDistortion,
+                                          osvr::renderkit::RGBPointDistortionMeshDescriptions& mesh) {
     Json::Reader reader;
 
     // See if we have the name of an external file to parse.  If so, we open it
     // and grab its values to parse.  Otherwise, we parse the ones that they
     // sent in.
     auto externalDistortion =
-        getExternalDistortionFile("RGB point samples", reader, distortion,
-                                  "rgb_point_samples_external_file");
+        getExternalDistortionFile("RGB point samples", reader, myDistortion, "rgb_point_samples_external_file");
     if (externalDistortion) {
-        myDistortion = externalDistortion.distortion;
+        myDistortion.swap(externalDistortion.distortion);
     }
 
     std::array<std::string, 3> names = {
         "red_point_samples", "green_point_samples", "blue_point_samples"};
 
     for (size_t clr = 0; clr < 3; clr++) {
-        const Json::Value eyeArray = myDistortion[names[clr].c_str()];
+        const Json::Value& eyeArray = myDistortion[names[clr].c_str()];
         if (eyeArray.isNull() || eyeArray.empty()) {
             /// @todo A proper "no-op" default should be placed here, instead of
             /// erroring out.
