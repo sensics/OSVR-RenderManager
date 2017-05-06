@@ -54,7 +54,7 @@ namespace osvr {
             typedef struct {
                 osvr::renderkit::RenderBuffer atwBuffer;
                 HANDLE sharedResourceHandle;
-                ID3D11Texture2D *textureCopy;   //< nullptr if no copy needed.
+                ID3D11Texture2D *textureCopy;   ///< nullptr if no copy needed.
             } RenderBufferATWInfo;
             std::map<ID3D11Texture2D*, RenderBufferATWInfo> mBufferMap;
 

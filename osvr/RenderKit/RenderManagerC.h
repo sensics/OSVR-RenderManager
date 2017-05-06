@@ -158,10 +158,8 @@ osvrRenderManagerFinishRegisterRenderBuffers(
     OSVR_RenderManagerRegisterBufferState registerBufferState,
     OSVR_CBool appWillNotOverwriteBeforeNewPresent);
 
-OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
-osvrRenderManagerPresentSolidColorf(
-    OSVR_RenderManager renderManager,
-    OSVR_RGB_FLOAT rgb);
+OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode osvrRenderManagerPresentSolidColorf(OSVR_RenderManager renderManager,
+                                                                              OSVR_RGB_FLOAT rgb);
 
 /// This function gets all of the RenderInfo collection in one atomic call.
 /// Use osvrRenderManagerGetNumRenderInfoInCollection to get the size of the

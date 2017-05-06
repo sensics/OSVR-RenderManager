@@ -83,9 +83,9 @@ namespace renderkit {
     class GraphicsLibrary {
       public:
         GraphicsLibraryD3D11* D3D11 =
-            nullptr; //< #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+            nullptr; ///< #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
         GraphicsLibraryOpenGL* OpenGL =
-            nullptr; //< #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
+            nullptr; ///< #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
     };
 
     /// @brief Used to pass Render Texture targets to be rendered
@@ -106,9 +106,9 @@ namespace renderkit {
         }
 
         RenderBufferD3D11*
-            D3D11; //< #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+            D3D11; ///< #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
         RenderBufferOpenGL*
-            OpenGL; //< #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
+            OpenGL; ///< #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
     };
 
     /// @brief Timing information about the rendering system
@@ -143,9 +143,9 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef void (*DisplayCallback)(
-        void* userData, //< Passed into SetDisplayCallback
-        GraphicsLibrary library, //< Graphics library context to use
-        RenderBuffer buffers //< Information on buffers to render to
+        void* userData, ///< Passed into SetDisplayCallback
+        GraphicsLibrary library, ///< Graphics library context to use
+        RenderBuffer buffers ///< Information on buffers to render to
         );
 
     /// @brief Describes the parameters for a view/projection callback handler.
@@ -163,13 +163,13 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef void (*ViewProjectionCallback)(
-        void* userData, //< Passed into SetViewProjectionCallback
-        GraphicsLibrary library, //< Graphics library context to use
-        RenderBuffer buffers, //< Information on buffers to render to
-        OSVR_ViewportDescription viewport, //< Viewport set by RenderManager
+        void* userData, ///< Passed into SetViewProjectionCallback
+        GraphicsLibrary library, ///< Graphics library context to use
+        RenderBuffer buffers, ///< Information on buffers to render to
+        OSVR_ViewportDescription viewport, ///< Viewport set by RenderManager
         OSVR_ProjectionMatrix
-            projection, //< Projection matrix set by RenderManager
-        size_t whichEye //< Which eye are we setting up for?
+            projection, ///< Projection matrix set by RenderManager
+        size_t whichEye ///< Which eye are we setting up for?
         );
 
     /// @brief Describes the parameters for a render callback handler.
@@ -189,14 +189,14 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef void (*RenderCallback)(
-        void* userData, //< Passed into AddRenderCallback
-        GraphicsLibrary library, //< Graphics library context to use
-        RenderBuffer buffers, //< Information on buffers to render to
-        OSVR_ViewportDescription viewport, //< Viewport we're rendering into
-        OSVR_PoseState pose, //< OSVR ModelView matrix set by RenderManager
+        void* userData, ///< Passed into AddRenderCallback
+        GraphicsLibrary library, ///< Graphics library context to use
+        RenderBuffer buffers, ///< Information on buffers to render to
+        OSVR_ViewportDescription viewport, ///< Viewport we're rendering into
+        OSVR_PoseState pose, ///< OSVR ModelView matrix set by RenderManager
         OSVR_ProjectionMatrix
-            projection, //< Projection matrix set by RenderManager
-        OSVR_TimeValue deadline //< When the frame should be sent to the screen
+            projection, ///< Projection matrix set by RenderManager
+        OSVR_TimeValue deadline ///< When the frame should be sent to the screen
         );
 
     /// @brief Describes the parameters needed to render to an eye.
@@ -218,12 +218,12 @@ namespace renderkit {
     ///  NOTE: Because OSVR supports multiple graphics libraries, the
     /// client will need select the appropriate entry from the union.
     typedef struct {
-        GraphicsLibrary library; //< Graphics library context to use
+        GraphicsLibrary library; ///< Graphics library context to use
         OSVR_ViewportDescription
-            viewport;        //< Viewport to render into (will start at 0,0)
-        OSVR_PoseState pose; //< OSVR ModelView matrix set by RenderManager
+            viewport;        ///< Viewport to render into (will start at 0,0)
+        OSVR_PoseState pose; ///< OSVR ModelView matrix set by RenderManager
         OSVR_ProjectionMatrix
-            projection; //< Projection matrix set by RenderManager
+            projection; ///< Projection matrix set by RenderManager
     } RenderInfo;
 
     class RenderManager {
@@ -252,8 +252,8 @@ namespace renderkit {
         typedef enum { FAILURE, PARTIAL, COMPLETE } OpenStatus;
         /// @brief Return type from OpenResults() method
         typedef struct {
-            OpenStatus status;       //< How did the opening go?
-            GraphicsLibrary library; //< Graphics library pointers
+            OpenStatus status;       ///< How did the opening go?
+            GraphicsLibrary library; ///< Graphics library pointers
         } OpenResults;
 
         /// @brief Opens the window or display to be used for rendering.
@@ -271,8 +271,8 @@ namespace renderkit {
         /// (mainly, clearing it).  The userdata pointer
         /// will be handed to the callback function.
         bool OSVR_RENDERMANAGER_EXPORT SetDisplayCallback(
-            DisplayCallback callback, //< Function to call to set this viewport
-            void* userData = nullptr //< Passed to callback function
+            DisplayCallback callback, ///< Function to call to set this viewport
+            void* userData = nullptr ///< Passed to callback function
             );
 
         ///-------------------------------------------------------------
@@ -286,8 +286,8 @@ namespace renderkit {
         /// where this is available.
         bool OSVR_RENDERMANAGER_EXPORT SetViewProjectionCallback(
             ViewProjectionCallback
-                callback, //< Function to call to set this viewport
-            void* userData = nullptr //< Passed to callback function
+                callback, ///< Function to call to set this viewport
+            void* userData = nullptr ///< Passed to callback function
             );
 
         ///-------------------------------------------------------------
@@ -304,16 +304,16 @@ namespace renderkit {
         /// have the correct space configured in the rendering engine.
         bool OSVR_RENDERMANAGER_EXPORT AddRenderCallback(
             const std::string&
-                interfaceName, //< Name of the space, or "/" for world
-            RenderCallback callback, //< Function to call to render this space
-            void* userData = nullptr //< Passed to callback function
+                interfaceName, ///< Name of the space, or "/" for world
+            RenderCallback callback, ///< Function to call to render this space
+            void* userData = nullptr ///< Passed to callback function
             );
         /// @brief Remove a previously-added callback handler for a given space.
         bool OSVR_RENDERMANAGER_EXPORT RemoveRenderCallback(
-            const std::string& interfaceName, //< Name given to AddRenderCallback
+            const std::string& interfaceName, ///< Name given to AddRenderCallback
             RenderCallback
-                callback, //< Function pointer given to AddRenderCallback
-            void* userData = nullptr //< Pointer given to AddRenderCallback
+                callback, ///< Function pointer given to AddRenderCallback
+            void* userData = nullptr ///< Pointer given to AddRenderCallback
             );
 
         ///-------------------------------------------------------------
@@ -334,12 +334,12 @@ namespace renderkit {
           public:
             RenderParams(){};
             const OSVR_PoseState* worldFromRoomAppend =
-                nullptr; //< Room space to insert
+                nullptr; ///< Room space to insert
             const OSVR_PoseState* roomFromHeadReplace =
-                nullptr; //< Overrides head space
+                nullptr; ///< Overrides head space
             double nearClipDistanceMeters = 0.1;
             double farClipDistanceMeters = 100.0;
-            double IPDMeters = 0.063; //< Inter-puppilary distance of the viewer
+            double IPDMeters = 0.063; ///< Inter-puppilary distance of the viewer
         };
 
         /// @brief Render the scene with minimum latency.
@@ -527,7 +527,7 @@ namespace renderkit {
                 m_numBuffers = 2;
                 m_verticalSync = true;
                 m_verticalSyncBlocksRendering = false;
-                m_renderLibrary = ""; ///< Unspecified, which is invalid.
+                m_renderLibrary = ""; ////< Unspecified, which is invalid.
 
                 m_windowTitle = "OSVR";
                 m_windowFullScreen = false;
@@ -553,36 +553,36 @@ namespace renderkit {
                 TwoSeventy
             } Display_Rotation;
 
-            bool m_directMode; //< Should we render using DirectMode?
+            bool m_directMode; ///< Should we render using DirectMode?
 
             void addCandidatePNPID(const char* pnpid);
             std::vector<uint32_t>
-                m_directVendorIds; //< Vendor IDs of the displays to use
+                m_directVendorIds; ///< Vendor IDs of the displays to use
             /// Hardware PNPIDs of the displays, corresponding 1-1 with
             /// m_directVendorIds
             std::vector<std::string> m_pnpIds;
 
             /// @todo Mode selection should include update rate/pixel format
             /// selections.
-            int32_t m_directModeIndex; //< Which mode to use (-1 to select based
+            int32_t m_directModeIndex; ///< Which mode to use (-1 to select based
             // on params)?
-            uint32_t m_directDisplayIndex; //< Which display to use
-            bool m_directHighPriority;     //< Do high-priority rendering in
+            uint32_t m_directDisplayIndex; ///< Which display to use
+            bool m_directHighPriority;     ///< Do high-priority rendering in
             // DirectMode?
-            unsigned m_numBuffers; //< How many buffers (2 = double buffering)
-            bool m_verticalSync;   //< Do we wait for Vsync to swap buffers?
-            bool m_verticalSyncBlocksRendering; //< Block rendering waiting for
+            unsigned m_numBuffers; ///< How many buffers (2 = double buffering)
+            bool m_verticalSync;   ///< Do we wait for Vsync to swap buffers?
+            bool m_verticalSyncBlocksRendering; ///< Block rendering waiting for
             // sync?
-            std::string m_renderLibrary; //< Which rendering library to use
+            std::string m_renderLibrary; ///< Which rendering library to use
 
-            std::string m_windowTitle; //< Title of any window we create
-            bool m_windowFullScreen;   //< If not Direct Mode, do we want full
+            std::string m_windowTitle; ///< Title of any window we create
+            bool m_windowFullScreen;   ///< If not Direct Mode, do we want full
                                        /// screen?
-            int m_windowXPosition;     //< Where to put the window
-            int m_windowYPosition;     //< Where to put the window
-            Display_Rotation m_displayRotation; //< Present mode: Rotate display
+            int m_windowXPosition;     ///< Where to put the window
+            int m_windowYPosition;     ///< Where to put the window
+            Display_Rotation m_displayRotation; ///< Present mode: Rotate display
             // about Z when presenting
-            unsigned m_bitsPerColor; //< Color depth of the window we want
+            unsigned m_bitsPerColor; ///< Color depth of the window we want
 
             /// This expands the size of the render window, adding more pixels
             /// around the border, so that there is margin to be rendered when
@@ -607,10 +607,10 @@ namespace renderkit {
             float m_renderOversampleFactor;
 
             std::vector<DistortionParameters>
-                m_distortionParameters; //< One set per eye x display
+                m_distortionParameters; ///< One set per eye x display
 
-            bool m_enableTimeWarp;       //< Use time warp?
-            bool m_asynchronousTimeWarp; //< Use Asynchronous time warp?
+            bool m_enableTimeWarp;       ///< Use time warp?
+            bool m_asynchronousTimeWarp; ///< Use Asynchronous time warp?
                                          //(requires enable)
 
             /// Render waits until at most this many ms before vsync to do
@@ -618,15 +618,15 @@ namespace renderkit {
             float m_maxMSBeforeVsyncTimeWarp;
 
             /// Prediction settings.
-            bool m_clientPredictionEnabled; //< Use client-side prediction?
+            bool m_clientPredictionEnabled; ///< Use client-side prediction?
             /// Static Delay + Delay from present to eye start
             std::vector<float> m_eyeDelaysMS;
-            bool m_clientPredictionLocalTimeOverride;  //< Override tracker timestamp?
+            bool m_clientPredictionLocalTimeOverride;  ///< Override tracker timestamp?
 
             std::shared_ptr<OSVRDisplayConfiguration>
-                m_displayConfiguration; //< Display configuration
+                m_displayConfiguration; ///< Display configuration
 
-            std::string m_roomFromHeadName; //< Transform to use for head space
+            std::string m_roomFromHeadName; ///< Transform to use for head space
 
             /// Graphics library (device/context) to use instead of creating one
             /// if the pointer is non-NULL.  Note that the appropriate context
@@ -662,9 +662,9 @@ namespace renderkit {
         // them.
         // There is a different function for each style of distortion mesh.
         virtual OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshes(
-            DistortionMeshType type, //< Type of mesh to produce
+            DistortionMeshType type, ///< Type of mesh to produce
             std::vector<DistortionParameters> const&
-                distort //< Distortion parameters
+                distort ///< Distortion parameters
             );
 
         //=============================================================
@@ -729,14 +729,14 @@ namespace renderkit {
           const RGBColorf& color);
 
         virtual bool OSVR_RENDERMANAGER_EXPORT UpdateDistortionMeshesInternal(
-            DistortionMeshType type //< Type of mesh to produce
+            DistortionMeshType type ///< Type of mesh to produce
             ,
             std::vector<DistortionParameters> const&
-                distort //< Distortion parameters
+                distort ///< Distortion parameters
             ) = 0;
 
         std::vector<RenderInfo>
-            m_latchedRenderInfo; //< Stores vector of latched RenderInfo
+            m_latchedRenderInfo; ///< Stores vector of latched RenderInfo
         virtual size_t OSVR_RENDERMANAGER_EXPORT
           LatchRenderInfoInternal(const RenderParams& params = RenderParams());
 
@@ -753,7 +753,7 @@ namespace renderkit {
         /// Head space to use, or nullptr in case of none (which should
         /// be checked for, but is sort of an error).
         OSVR_ClientInterface m_roomFromHeadInterface;
-        OSVR_PoseState m_roomFromHead; //< Transform to use for head space
+        OSVR_PoseState m_roomFromHead; ///< Transform to use for head space
 
         /// @brief Stores display callback information
         ///
@@ -920,12 +920,12 @@ namespace renderkit {
         /// oversized view required by the m_renderOverfillFactor.
         /// @return True on success, false on failure.
         virtual bool OSVR_RENDERMANAGER_EXPORT ConstructProjection(
-            size_t whichEye //< Input; index of the eye to use
-            , double nearClipDistanceMeters //< Perpendicular distance to near
+            size_t whichEye ///< Input; index of the eye to use
+            , double nearClipDistanceMeters ///< Perpendicular distance to near
             // clipping plane
-            , double farClipDistanceMeters //< Perpendicular distance to far
+            , double farClipDistanceMeters ///< Perpendicular distance to far
             // clipping plane
-            , OSVR_ProjectionMatrix& projection //< Output projection
+            , OSVR_ProjectionMatrix& projection ///< Output projection
             );
 
         /// @brief Fill in the viewport for a given eye on the Render path
@@ -936,8 +936,8 @@ namespace renderkit {
         /// correct location in the output display.
         /// @return True on success, false on failure.
         virtual bool OSVR_RENDERMANAGER_EXPORT ConstructViewportForRender(
-            size_t whichEye //< Input; index of the eye to use
-            , OSVR_ViewportDescription& viewport //< Output viewport
+            size_t whichEye ///< Input; index of the eye to use
+            , OSVR_ViewportDescription& viewport ///< Output viewport
             );
 
         /// @brief Fill in the viewport for a given eye on the Present path
@@ -955,9 +955,9 @@ namespace renderkit {
         /// based on that parameter, call RotateViewport().
         /// @return True on success, false on failure.
         virtual bool OSVR_RENDERMANAGER_EXPORT ConstructViewportForPresent(
-            size_t whichEye //< Input; index of the eye to use
-            , OSVR_ViewportDescription& viewport //< Output viewport
-            , bool swapEyes //< Should we swap left and right eyes?
+            size_t whichEye ///< Input; index of the eye to use
+            , OSVR_ViewportDescription& viewport ///< Output viewport
+            , bool swapEyes ///< Should we swap left and right eyes?
             );
 
         /// @brief Adjust the viewport based on m_displayRotation
@@ -966,18 +966,18 @@ namespace renderkit {
         /// between the rendering space and the presentation space.
         /// @return Adjusted viewport.
         virtual OSVR_ViewportDescription OSVR_RENDERMANAGER_EXPORT RotateViewport(
-            const OSVR_ViewportDescription& viewport //< Input viewport
+            const OSVR_ViewportDescription& viewport ///< Input viewport
             );
 
         /// @brief Construct ModelView for a given eye, space, and RenderParams
         ///
         /// @return True on success, false on failure.
         virtual bool OSVR_RENDERMANAGER_EXPORT ConstructModelView(
-            size_t whichSpace //< Input; index of the space to use
-            , size_t whichEye //< Input; index of the eye to use
-            , RenderParams params //< Input; render parameters
+            size_t whichSpace ///< Input; index of the space to use
+            , size_t whichEye ///< Input; index of the eye to use
+            , RenderParams params ///< Input; render parameters
             , OSVR_PoseState&
-                eyeFromSpace //< Output info needed to make ModelView
+                eyeFromSpace ///< Output info needed to make ModelView
             );
 
         /// @brief Compute in-display rotations/flip matrix.
@@ -996,9 +996,9 @@ namespace renderkit {
         ///  @return True on success, false (with untouched transform) on
         /// failure.
         bool OSVR_RENDERMANAGER_EXPORT ComputeDisplayOrientationMatrix(
-            float rotateDegrees //< Rotation in degrees around Z
-            , bool flipInY //< Flip in Y after rotating?
-            , matrix16& outMatrix //< Matrix to use.
+            float rotateDegrees ///< Rotation in degrees around Z
+            , bool flipInY ///< Flip in Y after rotating?
+            , matrix16& outMatrix ///< Matrix to use.
             );
 
         /// @brief Compute texture matrix adjustment to subset render buffer
@@ -1048,31 +1048,31 @@ namespace renderkit {
 
         /// @brief Initialize rendering for a new display
         virtual bool OSVR_RENDERMANAGER_EXPORT
-        RenderDisplayInitialize(size_t display //< Which display (0-indexed)
+        RenderDisplayInitialize(size_t display ///< Which display (0-indexed)
                                 ) = 0;
 
         /// @brief Initialize rendering for a specified eye
         virtual bool OSVR_RENDERMANAGER_EXPORT 
-        RenderEyeInitialize(size_t eye //< Which eye (0-indexed)
+        RenderEyeInitialize(size_t eye ///< Which eye (0-indexed)
                                          ) = 0;
 
         /// @brief Render objects in a specified space (from m_callbacks)
         virtual bool OSVR_RENDERMANAGER_EXPORT
-        RenderSpace(size_t whichSpace //< Index into m_callbacks vector
-                    , size_t whichEye //< Which eye are we rendering for?
-                    , OSVR_PoseState pose //< ModelView transform to use
-                    , OSVR_ViewportDescription viewport //< Viewport to use
-                    , OSVR_ProjectionMatrix projection //< Projection to use
+        RenderSpace(size_t whichSpace ///< Index into m_callbacks vector
+                    , size_t whichEye ///< Which eye are we rendering for?
+                    , OSVR_PoseState pose ///< ModelView transform to use
+                    , OSVR_ViewportDescription viewport ///< Viewport to use
+                    , OSVR_ProjectionMatrix projection ///< Projection to use
                     ) = 0;
 
         /// @brief Finalize rendering for a specified eye
         virtual bool OSVR_RENDERMANAGER_EXPORT 
-        RenderEyeFinalize(size_t eye //< Which eye (0-indexed)
+        RenderEyeFinalize(size_t eye ///< Which eye (0-indexed)
                                        ) = 0;
 
         /// @brief Finalize rendering for a new display
         virtual bool OSVR_RENDERMANAGER_EXPORT
-        RenderDisplayFinalize(size_t display //< Which display (0-indexed)
+        RenderDisplayFinalize(size_t display ///< Which display (0-indexed)
                               ) = 0;
 
         /// @brief Finalize rendering for a new frame
@@ -1100,7 +1100,7 @@ namespace renderkit {
 
         /// @brief Initialize presentation for a new display
         virtual bool OSVR_RENDERMANAGER_EXPORT
-        PresentDisplayInitialize(size_t display //< Which display (0-indexed)
+        PresentDisplayInitialize(size_t display ///< Which display (0-indexed)
                                  ) = 0;
 
         /// @brief Initialize presentation for a specified eye
@@ -1116,11 +1116,11 @@ namespace renderkit {
                 m_timeWarp = nullptr;
             }
 
-            size_t m_index;         //< Which eye (0-indexed)
-            double m_rotateDegrees; //< How much to rotate eye when showing in
+            size_t m_index;         ///< Which eye (0-indexed)
+            double m_rotateDegrees; ///< How much to rotate eye when showing in
             // screen
-            bool m_flipInY; //< Should we flip in Y after all other transforms?
-            RenderBuffer m_buffer; //< Buffer to draw.
+            bool m_flipInY; ///< Should we flip in Y after all other transforms?
+            RenderBuffer m_buffer; ///< Buffer to draw.
             /// This is a viewport in the texture-coordinate range of (0-1)
             /// telling
             /// how much of the buffer is taken up by this eye.  It should
@@ -1129,7 +1129,7 @@ namespace renderkit {
             /// there are
             /// two or more eyes packed into the same buffer.
             OSVR_ViewportDescription m_normalizedCroppingViewport;
-            matrix16* m_timeWarp; //< Time Warp matrix to use (nullptr
+            matrix16* m_timeWarp; ///< Time Warp matrix to use (nullptr
             // for none)
         };
         virtual bool OSVR_RENDERMANAGER_EXPORT PresentEye(PresentEyeParameters params) = 0;
@@ -1143,7 +1143,7 @@ namespace renderkit {
 
         /// @brief Finalize presentation for a new display
         virtual bool OSVR_RENDERMANAGER_EXPORT
-        PresentDisplayFinalize(size_t display //< Which display (0-indexed)
+        PresentDisplayFinalize(size_t display ///< Which display (0-indexed)
                                ) = 0;
 
         /// @brief Finalize presentation for a new frame

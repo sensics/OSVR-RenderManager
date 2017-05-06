@@ -87,12 +87,12 @@ class SDLToolkitImpl {
   // Classes and structures needed to do our rendering.
   class DisplayInfo {
   public:
-    SDL_Window* m_window = nullptr; //< The window we're rendering into
+    SDL_Window* m_window = nullptr; ///< The window we're rendering into
   };
   std::vector<DisplayInfo> m_displays;
 
   SDL_GLContext
-    m_GLContext; //< The context we use to render to all displays
+    m_GLContext; ///< The context we use to render to all displays
 
   osvr::util::log::LoggerPtr m_log;
 
@@ -666,8 +666,8 @@ namespace renderkit {
         //======================================================
         // Construct the shaders and program we'll use to present things
         // handling time warp/distortion.
-        GLuint vertexShaderId;   //< Vertex shader for time warp/distortion
-        GLuint fragmentShaderId; //< Fragment shader for time warp/distortion
+        GLuint vertexShaderId;   ///< Vertex shader for time warp/distortion
+        GLuint fragmentShaderId; ///< Fragment shader for time warp/distortion
 
         vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShaderId, 1, &distortionVertexShader, nullptr);
@@ -834,11 +834,11 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::RenderSpace(
-        size_t whichSpace //< Index into m_callbacks vector
-        , size_t whichEye //< Which eye are we rendering for?
-        , OSVR_PoseState pose //< ModelView transform to use
-        , OSVR_ViewportDescription viewport //< Viewport to use
-        , OSVR_ProjectionMatrix projection //< Projection to use
+        size_t whichSpace ///< Index into m_callbacks vector
+        , size_t whichEye ///< Which eye are we rendering for?
+        , OSVR_PoseState pose ///< ModelView transform to use
+        , OSVR_ViewportDescription viewport ///< Viewport to use
+        , OSVR_ProjectionMatrix projection ///< Projection to use
         ) {
         /// @todo Fill in the timing information
         OSVR_TimeValue deadline;
@@ -928,10 +928,10 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::UpdateDistortionMeshesInternal(
-        DistortionMeshType type //< Type of mesh to produce
+        DistortionMeshType type ///< Type of mesh to produce
         ,
         std::vector<DistortionParameters> const&
-            distort //< Distortion parameters
+            distort ///< Distortion parameters
         ) {
 
 #ifdef OSVR_RM_USE_OPENGLES20
