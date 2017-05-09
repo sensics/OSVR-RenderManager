@@ -30,7 +30,9 @@ Sensics, Inc.
 #include <osvr/Util/Finally.h>
 
 // clang-format off
+#ifndef OSVR_ANDROID
 #include <GL/glew.h>
+#endif
 #ifdef _WIN32
   #include <GL/wglew.h>
 #endif
@@ -686,6 +688,13 @@ namespace renderkit {
         }
 
         checkForGLError("RenderManagerOpenGL::OpenDisplay after fragment shader compile");
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        glBindAttribLocation(vertexShaderId, 0, "position");
+        glBindAttribLocation(vertexShaderId, 1, "textureCoordinateR");
+        glBindAttribLocation(vertexShaderId, 2, "textureCoordinateG");
+        glBindAttribLocation(vertexShaderId, 3, "textureCoordinateB");
+#endif
 
         fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShaderId, 1, &distortionFragmentShader, nullptr);
