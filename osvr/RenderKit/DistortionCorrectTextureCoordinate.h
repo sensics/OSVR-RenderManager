@@ -210,9 +210,13 @@ namespace renderkit {
             xyN.cwiseProduct(Vector2f::Map(distort.m_distortionD.data()));
 
         // Compute the distance from the COP in D space
-        // (direction and squared magnitude)
-        const Vector2f xyDDiff =
-            xyD - Vector2f::Map(distort.m_distortionCOP.data());
+        // (direction and squared magnitude).  First convert from a COP
+        // that ranges from 0-1 across the entire viewport into D space
+        // by multiplying it by D on each axis.
+        Eigen::Vector2f COPinD =
+          Vector2f::Map(distort.m_distortionD.data()).cwiseProduct(
+          Vector2f::Map(distort.m_distortionCOP.data()));
+        const Vector2f xyDDiff = xyD - COPinD;
         const float rMag2 = xyDDiff.squaredNorm();
         if (rMag2 == 0) { // We're at the center -- no distortion
             ret = inCoords;
@@ -240,8 +244,7 @@ namespace renderkit {
             rFactor *= rMag;
             rNew += params[i] * rFactor;
         }
-        const Vector2f xyDNew =
-            Vector2f::Map(distort.m_distortionCOP.data()) + rNew * xyDNorm;
+        const Vector2f xyDNew = COPinD + rNew * xyDNorm;
 
         // Convert from D space back to unit space
         const Vector2f xyNNew = xyDNew.cwiseQuotient(
