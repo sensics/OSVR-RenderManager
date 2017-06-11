@@ -212,6 +212,16 @@ namespace osvr {
                     }
 
                     if (bufferInfoItr->second.textureCopy != nullptr) {
+                        // If we've already copied this buffer as part of an earlier
+                        // renderBuffer, then skip copying it this time.
+                        for (size_t j = 0; j < i; j++) {
+                            if (renderBuffers[j].D3D11->colorBuffer ==
+                                  renderBuffers[i].D3D11->colorBuffer) {
+                                continue;
+                            }
+                        }
+
+                        // Lock the mutex, copy, and then release it.
                         IDXGIKeyedMutex* mutex = nullptr;
                         hr = bufferInfoItr->second.textureCopy->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
                         if (!FAILED(hr) && (mutex != nullptr)) {
@@ -497,6 +507,17 @@ namespace osvr {
                       // the render thread's device.  We need to introspect the texture
                       // to find its size and we need to make sure that we don't make
                       // two copies of the same buffer.
+
+                      // If we already have a mapping for this buffer (from an earlier
+                      // registration or because they registered the same buffer more than
+                      // once), delete the earlier mapping.
+                      auto existing = mBufferMap.find(buffers[i].D3D11->colorBuffer);
+                      if ((existing != mBufferMap.end() &&
+                          (mBufferMap[buffers[i].D3D11->colorBuffer].textureCopy !=
+                           nullptr)) ) {
+                        mBufferMap[buffers[i].D3D11->colorBuffer].textureCopy->Release();
+                      }
+
                       // @todo Handle the case where the client sends us the same buffer
                       // twice or more, with multiple eyes packed into the same one.  We
                       // don't want to duplicate that buffer more than once.
