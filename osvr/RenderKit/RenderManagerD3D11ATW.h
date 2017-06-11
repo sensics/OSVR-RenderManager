@@ -532,15 +532,12 @@ namespace osvr {
                       newInfo.textureCopy = textureCopy;
                     }
 
-                    // We can't use the render thread's ID3D11RenderTargetView. Create one from
-                    // the ATW's ID3D11Texture2D handle.
-                    newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
-                    newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
-
                     // We do not need a render target view for the ATW thread -- it will
                     // only be reading from the buffer, not rendering into it.  Our base
                     // class will create our RenderTargetView the first time the app calls
                     // Render().
+                    newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
+                    newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
                     newInfo.atwBuffer.D3D11->colorBufferView = nullptr; // We don't need this.
 		    newInfo.atwBuffer.D3D11->depthStencilBuffer = nullptr;
 		    newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
