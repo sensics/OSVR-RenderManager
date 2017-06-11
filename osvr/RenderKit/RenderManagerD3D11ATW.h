@@ -477,19 +477,20 @@ namespace osvr {
                     }
                     dxgiResource->Release(); // we don't need this anymore
 
-                    // Get a pointer on this thread to the texture we're getting
-                    // from the caller's thread.
+                    // Get a pointer on our device to the texture we're getting
+                    // from the caller's device.
                     hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
                       (LPVOID*)&texture2D);
                     if (FAILED(hr)) {
                       m_log->error() << "RenderManagerD3D11ATW::"
-                        << "RegisterRenderBuffersInternal: - failed to open shared resource.";
+                        << "RegisterRenderBuffersInternal: - failed to open shared resource "
+                        << "for buffer " << i;
                       setDoingOkay(false);
                       return false;
                     }
 
                     if (!appWillNotOverwriteBeforeNewPresent) {
-                      // The application is not maintaining two sets of buffers, so we
+                      // The application is not maintaining two sets of buffers, so we'll
                       // need to make a copy of this texture when it is presented.  Here
                       // we allocate a place to put it.  We have to allocate a shared
                       // resource, so it can be used by both threads.  It is allocated on
