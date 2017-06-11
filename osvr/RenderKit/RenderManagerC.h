@@ -63,6 +63,7 @@ typedef struct OSVR_RenderParams {
     OSVR_PoseState* roomFromHeadReplace; //< Overrides head space
     double nearClipDistanceMeters;
     double farClipDistanceMeters;
+    double IPDMeters;
 } OSVR_RenderParams;
 
 //=========================================================================

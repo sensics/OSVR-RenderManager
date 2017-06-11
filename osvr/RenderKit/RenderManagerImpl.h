@@ -99,6 +99,7 @@ inline void ConvertRenderParams(
         renderParams.nearClipDistanceMeters;
     renderParamsOut.roomFromHeadReplace = renderParams.roomFromHeadReplace;
     renderParamsOut.worldFromRoomAppend = renderParams.worldFromRoomAppend;
+    renderParamsOut.IPDMeters = renderParams.IPDMeters;
 }
 
 template <class OSVR_GraphicsLibraryType, class OSVR_RenderManagerType>
