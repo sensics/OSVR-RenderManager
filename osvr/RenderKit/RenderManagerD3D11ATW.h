@@ -486,10 +486,6 @@ namespace osvr {
                         mBufferMap[buffers[i].D3D11->colorBuffer].textureCopy->Release();
                       }
 
-                      // @todo Handle the case where the client sends us the same buffer
-                      // twice or more, with multiple eyes packed into the same one.  We
-                      // don't want to duplicate that buffer more than once.
-
                       // Construct the new texture that is to be used for the copy.
                       D3D11_TEXTURE2D_DESC info;
                       buffers[i].D3D11->colorBuffer->GetDesc(&info);
