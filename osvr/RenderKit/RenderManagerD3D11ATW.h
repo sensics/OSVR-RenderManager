@@ -454,42 +454,41 @@ namespace osvr {
                     auto atwDevice = renderInfo[i % numRenderInfos].library.D3D11->device;
                     ID3D11Texture2D *texture2D = nullptr;
 
-                    if (appWillNotOverwriteBeforeNewPresent) {
-                      // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
-                      // get that, we need to get the IDXGIResource* first
-                      IDXGIResource* dxgiResource = NULL;
-                      hr = buffers[i].D3D11->colorBuffer->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
-                      if (FAILED(hr)) {
-                          m_log->error()
-                              << "RenderManagerD3D11ATW::"
-                              << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
+                    // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
+                    // get that, we need to get the IDXGIResource* first
+                    IDXGIResource* dxgiResource = NULL;
+                    hr = buffers[i].D3D11->colorBuffer->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
+                    if (FAILED(hr)) {
+                      m_log->error()
+                        << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource.";
+                      setDoingOkay(false);
+                      return false;
+                    }
 
-                      // now get the shared HANDLE
-                      hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
-                      if (FAILED(hr)) {
-                          m_log->error()
-                              << "RenderManagerD3D11ATW::"
-                              << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-                      dxgiResource->Release(); // we don't need this anymore
+                    // now get the shared HANDLE
+                    hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
+                    if (FAILED(hr)) {
+                      m_log->error()
+                        << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource.";
+                      setDoingOkay(false);
+                      return false;
+                    }
+                    dxgiResource->Release(); // we don't need this anymore
 
-                      // The application is maintaining two sets of buffers, so we don't
-                      // need to make a copy of this texture when it is presented.  We just
-                      // get a shared handle to it and re-use the existing texture.
-                      hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
-                        (LPVOID*)&texture2D);
-                      if (FAILED(hr)) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                                         << "RegisterRenderBuffersInternal: - failed to open shared resource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-                    } else {
+                    // Get a pointer on this thread to the texture we're getting
+                    // from the caller's thread.
+                    hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
+                      (LPVOID*)&texture2D);
+                    if (FAILED(hr)) {
+                      m_log->error() << "RenderManagerD3D11ATW::"
+                        << "RegisterRenderBuffersInternal: - failed to open shared resource.";
+                      setDoingOkay(false);
+                      return false;
+                    }
+
+                    if (!appWillNotOverwriteBeforeNewPresent) {
                       // The application is not maintaining two sets of buffers, so we
                       // need to make a copy of this texture when it is presented.  Here
                       // we allocate a place to put it.  We have to allocate a shared
@@ -528,41 +527,6 @@ namespace osvr {
                           return false;
                       }
 
-                      // We need to get the shared resource HANDLE for the ID3D11Texture2D,
-                      //  but in order to get that, we need to get the IDXGIResource* first
-                      IDXGIResource* dxgiResource = NULL;
-                      hr = textureCopy->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
-                      if (FAILED(hr)) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                                         << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for created "
-                                            "texture resource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-
-                      // now get the shared HANDLE
-                      hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
-                      if (FAILED(hr)) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                                         << "RegisterRenderBuffersInternal: Can't get the shared handle from the "
-                                            "dxgiResource from the created texture.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-                      dxgiResource->Release(); // we don't need this anymore
-
-                      // The application is maintaining two sets of buffers, so we don't
-                      // need to make a copy of this texture when it is presented.  We just
-                      // get a shared handle to it and re-use the existing texture.
-                      hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
-                          (LPVOID*)&texture2D);
-                      if (FAILED(hr)) {
-                          m_log->error() << "RenderManagerD3D11ATW::"
-                              << "RegisterRenderBuffersInternal: - failed to open shared resource.";
-                          setDoingOkay(false);
-                          return false;
-                      }
-
                       // Record the place to copy incoming textures to.
                       newInfo.textureCopy = textureCopy;
                     }
@@ -577,10 +541,8 @@ namespace osvr {
                     // class will create our RenderTargetView the first time the app calls
                     // Render().
                     newInfo.atwBuffer.D3D11->colorBufferView = nullptr; // We don't need this.
-
-					newInfo.atwBuffer.D3D11->depthStencilBuffer = nullptr;
-					newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
-
+		    newInfo.atwBuffer.D3D11->depthStencilBuffer = nullptr;
+		    newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
                     renderBuffers.push_back(newInfo.atwBuffer);
                   }
 
