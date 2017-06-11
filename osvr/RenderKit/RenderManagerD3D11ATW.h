@@ -501,6 +501,7 @@ namespace osvr {
                       // twice or more, with multiple eyes packed into the same one.  We
                       // don't want to duplicate that buffer more than once.
 
+                      // Construct the new texture that is to be used for the copy.
                       D3D11_TEXTURE2D_DESC info;
                       buffers[i].D3D11->colorBuffer->GetDesc(&info);
 
@@ -544,6 +545,9 @@ namespace osvr {
                     renderBuffers.push_back(newInfo.atwBuffer);
                   }
 
+                  // Lock our mutex so that we're not rendering while new buffers are
+                  // being added or old ones modified.
+                  std::lock_guard<std::mutex> lock(mLock);
                   mBufferMap[buffers[i].D3D11->colorBuffer] = newInfo;
                 }
 
