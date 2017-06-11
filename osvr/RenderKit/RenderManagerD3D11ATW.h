@@ -214,7 +214,7 @@ namespace osvr {
                     if (bufferInfoItr->second.textureCopy != nullptr) {
                         IDXGIKeyedMutex* mutex = nullptr;
                         hr = bufferInfoItr->second.textureCopy->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
-                        if (!FAILED(hr) && mutex != nullptr) {
+                        if (!FAILED(hr) && (mutex != nullptr)) {
                             hr = mutex->AcquireSync(0, 500); // ignore failure
                         }
 
