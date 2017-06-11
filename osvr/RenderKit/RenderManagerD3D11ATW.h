@@ -214,11 +214,15 @@ namespace osvr {
                     if (bufferInfoItr->second.textureCopy != nullptr) {
                         // If we've already copied this buffer as part of an earlier
                         // renderBuffer, then skip copying it this time.
+                      bool alreadyCopied = false;
                         for (size_t j = 0; j < i; j++) {
                             if (renderBuffers[j].D3D11->colorBuffer ==
                                   renderBuffers[i].D3D11->colorBuffer) {
-                                continue;
+                                alreadyCopied = true;
                             }
+                        }
+                        if (alreadyCopied) {
+                          continue;
                         }
 
                         // Lock the mutex, copy, and then release it.
