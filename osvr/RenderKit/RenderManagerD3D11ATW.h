@@ -200,7 +200,6 @@ namespace osvr {
                 // associated with the presented buffers, copy the texture into
                 // the associated buffer.  This is to handle the case where the client
                 // did not promise not to overwrite the texture before it is presented.
-                std::cout << "XXX Presenting buffers" << std::endl;
                 for (size_t i = 0; i < renderBuffers.size(); i++) {
                     auto key = renderBuffers[i].D3D11->colorBuffer;
                     auto bufferInfoItr = mBufferMap.find(key);
@@ -229,7 +228,6 @@ namespace osvr {
                             hr = mutex->AcquireSync(0, 500); // ignore failure
                         }
 
-                        std::cout << "  XXX Copying buffer " << renderBuffers[i].D3D11->colorBuffer << std::endl;
                         m_D3D11Context->CopyResource(bufferInfoItr->second.textureCopy,
                             renderBuffers[i].D3D11->colorBuffer);
 
