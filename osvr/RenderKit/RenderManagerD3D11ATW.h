@@ -456,7 +456,7 @@ namespace osvr {
 
                     // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
                     // get that, we need to get the IDXGIResource* first
-                    IDXGIResource* dxgiResource = NULL;
+                    IDXGIResource* dxgiResource = nullptr;
                     hr = buffers[i].D3D11->colorBuffer->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
                     if (FAILED(hr)) {
                       m_log->error()
@@ -519,7 +519,7 @@ namespace osvr {
                       textureDesc.CPUAccessFlags = 0;
                       textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
                       ID3D11Texture2D* textureCopy = nullptr;
-                      hr = m_D3D11device->CreateTexture2D(&textureDesc, NULL, &textureCopy);
+                      hr = m_D3D11device->CreateTexture2D(&textureDesc, nullptr, &textureCopy);
                       if (FAILED(hr)) {
                           m_log->error() << "RenderManagerD3D11ATW::"
                                          << "RegisterRenderBuffersInternal: - Can't create copy texture for buffer "
