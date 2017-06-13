@@ -265,7 +265,7 @@ endif()
 if (HAVE_SENSICS_NDA_SUBMODULE)
 	# Sensics is a header-only lib for now
 	find_package(osvrDisplayServerClient)
-	if (osvrDisplayServerClient_FOUND)
+	if (osvrDisplayServerClient_FOUND AND (TARGET sensics::osvrDisplayServerClient OR TARGET sensics::osvrDisplayServerClient_static))
 		message(STATUS " - Sensics support: enabled")
 		set(RM_USE_SENSICS TRUE)
 		include_directories(${SENSICS_SRC_DIR})
