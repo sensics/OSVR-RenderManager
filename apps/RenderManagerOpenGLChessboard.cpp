@@ -453,9 +453,8 @@ void SetupEye(void* userData,                                     //< Passed int
                static_cast<GLint>(viewport.width), static_cast<GLint>(viewport.height));
 }
 
-// Callbacks to draw things in head space.
-void DrawHead(void* userData, //< Passed into AddRenderCallback
-
+// Callback to draw things in world space.
+void DrawWorld(void* userData, //< Passed into AddRenderCallback
               osvr::renderkit::GraphicsLibrary library,           //< Graphics library context to use
               osvr::renderkit::RenderBuffer buffers,              //< Buffers to use
               osvr::renderkit::OSVR_ViewportDescription viewport, //< Viewport we're rendering into
@@ -466,11 +465,11 @@ void DrawHead(void* userData, //< Passed into AddRenderCallback
     // Make sure our pointers are filled in correctly.  The config file selects
     // the graphics library to use, and may not match our needs.
     if (library.OpenGL == nullptr) {
-        std::cerr << "DrawHead: No OpenGL GraphicsLibrary, this should not happen" << std::endl;
+        std::cerr << "DrawWorld: No OpenGL GraphicsLibrary, this should not happen" << std::endl;
         return;
     }
     if (buffers.OpenGL == nullptr) {
-        std::cerr << "DrawHead: No OpenGL RenderBuffer, this should not happen" << std::endl;
+        std::cerr << "DrawWorld: No OpenGL RenderBuffer, this should not happen" << std::endl;
         return;
     }
 
@@ -540,8 +539,8 @@ int main(int argc, char* argv[]) {
     // Set callback to handle setting up rendering in a display
     render->SetDisplayCallback(SetupDisplay);
 
-    // Register callback to render things in head space.
-    render->AddRenderCallback("/me/head", DrawHead);
+    // Register callback to render things in world space.
+    render->AddRenderCallback("/", DrawWorld);
 
     // Set up a handler to cause us to exit cleanly.
     osvr::server::registerShutdownHandler<&CtrlHandler>();
@@ -575,6 +574,12 @@ int main(int argc, char* argv[]) {
     // Frame timing
     size_t countFrames = 0;
 
+    // Always render from the identity pose, not allowing head tracking to operate.
+    osvr::renderkit::RenderManager::RenderParams params;
+    OSVR_PoseState identity;
+    osvrPose3SetIdentity(&identity);
+    params.roomFromHeadReplace = &identity;
+
     // Continue rendering until it is time to quit.
     using ourClock = std::chrono::high_resolution_clock;
     auto start = ourClock::now();
@@ -583,8 +588,8 @@ int main(int argc, char* argv[]) {
         // update tracker state.
         context.update();
 
-        if (!render->Render()) {
-            std::cerr << "Render() returned false, maybe because it was asked to quit" << std::endl;
+        if (!render->Render(params)) {
+          std::cerr << "Render() returned false, maybe because it was asked to quit" << std::endl;
             quit.quit = true;
         }
 
