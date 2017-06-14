@@ -72,7 +72,6 @@ osvrRenderManagerGetDefaultRenderParams(OSVR_RenderParams* renderParamsOut) {
     osvr::renderkit::RenderManager::RenderParams rp;
     _renderParamsOut.nearClipDistanceMeters = rp.nearClipDistanceMeters;
     _renderParamsOut.farClipDistanceMeters = rp.farClipDistanceMeters;
-    _renderParamsOut.IPDMeters = rp.IPDMeters;
     _renderParamsOut.worldFromRoomAppend = nullptr;
     _renderParamsOut.roomFromHeadReplace = nullptr;
     return OSVR_RETURN_SUCCESS;
