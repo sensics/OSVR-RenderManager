@@ -189,66 +189,68 @@ namespace osvr {
                 // of the previous by doing this waiting on another thread.
                 WaitForRenderCompletion();
 
-                // Lock our mutex so we don't adjust the buffers while rendering is happening.
-                // This lock is automatically released when we're done with this function.
-                std::lock_guard<std::mutex> lock(mLock);
-                HRESULT hr;
+                { // Adding block to scope the lock_guard.
+                  // Lock our mutex so we don't adjust the buffers while rendering is happening.
+                  // This lock is automatically released when we're done with this function.
+                  std::lock_guard<std::mutex> lock(mLock);
+                  HRESULT hr;
 
-                mNextFrameInfo.colorBuffers.clear();
+                  mNextFrameInfo.colorBuffers.clear();
 
-                // If we have non-NULL texture-copy pointers in any of the buffers
-                // associated with the presented buffers, copy the texture into
-                // the associated buffer.  This is to handle the case where the client
-                // did not promise not to overwrite the texture before it is presented.
-                for (size_t i = 0; i < renderBuffers.size(); i++) {
+                  // If we have non-NULL texture-copy pointers in any of the buffers
+                  // associated with the presented buffers, copy the texture into
+                  // the associated buffer.  This is to handle the case where the client
+                  // did not promise not to overwrite the texture before it is presented.
+                  for (size_t i = 0; i < renderBuffers.size(); i++) {
                     auto key = renderBuffers[i].D3D11->colorBuffer;
                     auto bufferInfoItr = mBufferMap.find(key);
                     if (bufferInfoItr == mBufferMap.end()) {
-                        m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
-                            << "Could not find buffer info for RenderBuffer " << (size_t)key;
-                        m_log->error() << "  (Be sure to register buffers before presenting them)";
-                        setDoingOkay(false);
-                        return false;
+                      m_log->error() << "RenderManagerD3D11ATW::PresentRenderBuffersInternal "
+                        << "Could not find buffer info for RenderBuffer " << (size_t)key;
+                      m_log->error() << "  (Be sure to register buffers before presenting them)";
+                      setDoingOkay(false);
+                      return false;
                     }
 
                     if (bufferInfoItr->second.textureCopy != nullptr) {
-                        // If we've already copied this buffer as part of an earlier
-                        // renderBuffer, then skip copying it this time.
+                      // If we've already copied this buffer as part of an earlier
+                      // renderBuffer, then skip copying it this time.
                       bool alreadyCopied = false;
-                        for (size_t j = 0; j < i; j++) {
-                            if (renderBuffers[j].D3D11->colorBuffer ==
-                                  renderBuffers[i].D3D11->colorBuffer) {
-                                alreadyCopied = true;
-                            }
+                      for (size_t j = 0; j < i; j++) {
+                        if (renderBuffers[j].D3D11->colorBuffer ==
+                          renderBuffers[i].D3D11->colorBuffer) {
+                          alreadyCopied = true;
                         }
-                        if (alreadyCopied) {
-                          continue;
-                        }
+                      }
+                      if (alreadyCopied) {
+                        continue;
+                      }
 
-                        // Lock the mutex, copy, and then release it.
-                        IDXGIKeyedMutex* mutex = nullptr;
-                        hr = bufferInfoItr->second.textureCopy->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
-                        if (!FAILED(hr) && (mutex != nullptr)) {
-                            hr = mutex->AcquireSync(0, 500); // ignore failure
-                        }
+                      // Lock the mutex, copy, and then release it.
+                      IDXGIKeyedMutex* mutex = nullptr;
+                      hr = bufferInfoItr->second.textureCopy->QueryInterface(__uuidof(IDXGIKeyedMutex), (LPVOID*)&mutex);
+                      if (!FAILED(hr) && (mutex != nullptr)) {
+                        hr = mutex->AcquireSync(0, 500); // ignore failure
+                      }
 
-                        m_D3D11Context->CopyResource(bufferInfoItr->second.textureCopy,
-                            renderBuffers[i].D3D11->colorBuffer);
+                      m_D3D11Context->CopyResource(bufferInfoItr->second.textureCopy,
+                        renderBuffers[i].D3D11->colorBuffer);
 
-                        if (mutex) {
-                            hr = mutex->ReleaseSync(0);
-                        }
+                      if (mutex) {
+                        hr = mutex->ReleaseSync(0);
+                      }
                     }
-                }
+                  }
 
-                for (size_t i = 0; i < renderBuffers.size(); i++) {
+                  for (size_t i = 0; i < renderBuffers.size(); i++) {
                     mNextFrameInfo.colorBuffers.push_back(renderBuffers[i].D3D11->colorBuffer);
+                  }
+                  mNextFrameInfo.renderInfo = renderInfoUsed;
+                  mNextFrameInfo.flipInY = flipInY;
+                  mNextFrameInfo.renderParams = renderParams;
+                  mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
+                  mFirstFramePresented = true;
                 }
-                mNextFrameInfo.renderInfo = renderInfoUsed;
-                mNextFrameInfo.flipInY = flipInY;
-                mNextFrameInfo.renderParams = renderParams;
-                mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
-                mFirstFramePresented = true;
                 return true;
             }
 
@@ -572,11 +574,12 @@ namespace osvr {
                     newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
                     renderBuffers.push_back(newInfo.atwBuffer);
                   }
-
-                  // Lock our mutex so that we're not rendering while new buffers are
-                  // being added or old ones modified.
-                  std::lock_guard<std::mutex> lock(mLock);
-                  mBufferMap[buffers[i].D3D11->colorBuffer] = newInfo;
+                  { // Adding block to scope the lock_guard.
+                    // Lock our mutex so that we're not rendering while new buffers are
+                    // being added or old ones modified.
+                    std::lock_guard<std::mutex> lock(mLock);
+                    mBufferMap[buffers[i].D3D11->colorBuffer] = newInfo;
+                  }
                 }
 
                 if (!mRenderManager->RegisterRenderBuffers(renderBuffers,
