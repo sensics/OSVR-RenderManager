@@ -568,8 +568,8 @@ namespace osvr {
                     newInfo.atwBuffer.D3D11 = new osvr::renderkit::RenderBufferD3D11();
                     newInfo.atwBuffer.D3D11->colorBuffer = texture2D;
                     newInfo.atwBuffer.D3D11->colorBufferView = nullptr; // We don't need this.
-		    newInfo.atwBuffer.D3D11->depthStencilBuffer = nullptr;
-		    newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
+                    newInfo.atwBuffer.D3D11->depthStencilBuffer = nullptr;
+                    newInfo.atwBuffer.D3D11->depthStencilView = nullptr;
                     renderBuffers.push_back(newInfo.atwBuffer);
                   }
 
