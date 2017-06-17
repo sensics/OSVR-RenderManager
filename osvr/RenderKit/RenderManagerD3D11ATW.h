@@ -423,11 +423,11 @@ namespace osvr {
             bool PresentFrameFinalize() override { return true; }
 
             bool SolidColorEye(size_t eye, const RGBColorf &color) override {
-				std::lock_guard<std::mutex> lock(mLock);
-				// Stop the rendering thread from overwriting with warped
-				// versions of the most recently presented buffers.
-				mFirstFramePresented = false;
-				return mRenderManager->SolidColorEye(eye, color);
+              std::lock_guard<std::mutex> lock(mLock);
+              // Stop the rendering thread from overwriting with warped
+              // versions of the most recently presented buffers.
+              mFirstFramePresented = false;
+              return mRenderManager->SolidColorEye(eye, color);
             }
 
             //===================================================================
