@@ -37,6 +37,9 @@ namespace renderkit {
         // Opens the D3D renderer we're going to use.
         OpenResults OpenDisplay() override;
 
+        bool OSVR_RENDERMANAGER_EXPORT
+          GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override;
+
       protected:
         /// Construct a D3D RenderManager.
         RenderManagerD3D11(
@@ -55,8 +58,19 @@ namespace renderkit {
                 nullptr; ///< Pointer to render target texture
             ID3D11RenderTargetView* m_renderTargetView =
                 nullptr; ///< Pointer to our render target view
+
+            /// Size and timing info
+            DXGI_RATIONAL m_refreshRate;
         };
         std::vector<DisplayInfo> m_displays;
+
+        //===================================================================
+        // Member variables and threads needed to do our timing.
+
+        /// Time of the most-recent presentation that we have an accurate
+        /// measurement of.  In some cases, this will be the most-recent
+        /// actual surface present.  In other cases, it may be far in the past.
+        struct timeval m_earlierPresentTime = {};
 
         //===================================================================
         // Overloaded render functions from the base class.
