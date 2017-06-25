@@ -58,9 +58,6 @@ namespace renderkit {
                 nullptr; ///< Pointer to render target texture
             ID3D11RenderTargetView* m_renderTargetView =
                 nullptr; ///< Pointer to our render target view
-
-            /// Size and timing info
-            DXGI_RATIONAL m_refreshRate;
         };
         std::vector<DisplayInfo> m_displays;
 
