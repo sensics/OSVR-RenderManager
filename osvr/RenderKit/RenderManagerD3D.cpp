@@ -26,7 +26,8 @@ Sensics, Inc.
 #include "RenderManagerD3D.h"
 #include "GraphicsLibraryD3D11.h"
 #include "RenderManagerSDLInitQuit.h"
-#include <vrpn_Shared.h>  // For vrpn_gettimeofday()
+#include <Dwmapi.h>
+#include <comdef.h>
 
 #include <osvr/Util/Logger.h>
 #include "SDL_syswm.h"
@@ -186,67 +187,6 @@ namespace renderkit {
                 return withFailure();
             }
 
-            // Find and store our refresh rate for the timing calculations.
-            // If this swap chain does not have a specified refresh rate, then
-            // we'll store 0 in both the numerator and denominator, so later code
-            // should handle that.
-            DXGI_SWAP_CHAIN_DESC desc;
-            hr = m_displays[display].m_swapChain->GetDesc(&desc);
-            if (FAILED(hr)) {
-              m_log->error() << "RenderManagerIntelD3D11::OpenDisplay: Could not get "
-                "swap chain description for display";
-              return withFailure();
-            }
-            m_displays[display].m_refreshRate = desc.BufferDesc.RefreshRate;
-
-            // Wait until a frame has presented and then store the time of the
-            // most-recent frame.  Wait for sync during presentation
-            hr = m_displays[display].m_swapChain->Present(1, 0);
-            if (FAILED(hr)) {
-              m_log->error() << "RenderManagerIntelD3D11::OpenDisplay: Could not present "
-                "swap chain";
-              return withFailure();
-            }
-            vrpn_gettimeofday(&m_earlierPresentTime);
-
-            // If we got 0/0 for the refresh rate above, wait for another presentation
-            // and use the time difference to compute an estimate of the frame
-            // rate.
-            if ((m_displays[display].m_refreshRate.Numerator == 0) &&
-                (m_displays[display].m_refreshRate.Denominator == 0)) {
-              struct timeval previous = m_earlierPresentTime;
-              hr = m_displays[display].m_swapChain->Present(1, 0);
-              if (FAILED(hr)) {
-                m_log->error() << "RenderManagerIntelD3D11::OpenDisplay: Could not present "
-                  "swap chain when determining refresh rate";
-                return withFailure();
-              }
-              vrpn_gettimeofday(&m_earlierPresentTime);
-
-              // It seems like the first couple of times we present and wait for vsync,
-              // the timing is incorrect (too short).  Here, we skip several syncs and
-              // then time the last three together to get a better average.
-              for (size_t i = 0; i < 5; i++) {
-                hr = m_displays[display].m_swapChain->Present(1, 0);
-              }
-              struct timeval before;
-              vrpn_gettimeofday(&before);
-              for (size_t i = 0; i < 3; i++) {
-                hr = m_displays[display].m_swapChain->Present(1, 0);
-              }
-              struct timeval after;
-              vrpn_gettimeofday(&after);
-              m_earlierPresentTime = after;
-
-              double duration = vrpn_TimevalDurationSeconds(after, before) / 3;
-
-              // Convert frame rate to 1000ths of a second (milliseconds) so we have
-              // an accurate estimate
-              double rateMilliHz = (1/duration) * 1e3;
-              m_displays[display].m_refreshRate.Numerator = static_cast<UINT>(rateMilliHz);
-              m_displays[display].m_refreshRate.Denominator = 1000;
-            }
-
             //==================================================================
             // Get the render target view and depth/stencil view and then set
             // them as the render targets.
@@ -321,12 +261,6 @@ namespace renderkit {
             vblanks = 1;
         }
         m_displays[display].m_swapChain->Present(vblanks, 0);
-        if (vblanks) {
-          // If we are waiting on vsync, get the new presentation
-          // time.  If we are not, we have no way to know when vsync
-          // happened so we have to dead reckon.
-          vrpn_gettimeofday(&m_earlierPresentTime);
-        }
 
         return true;
     }
@@ -390,29 +324,72 @@ namespace renderkit {
       // Figure out which display this eye is on and get a reference to it.
       DisplayInfo &display = m_displays[GetDisplayUsedByEye(whichEye)];
 
-      // Convert the m_refreshRate into an interval and store it in the
+      // Get the display timing info.
+      /// @todo See https://stackoverflow.com/questions/18844654/how-to-find-out-real-screen-refresh-rate-not-the-rounded-number
+      /// for info on how to handle the case where we're a full-screen window.
+      DWM_TIMING_INFO dwmInfo = {};
+      dwmInfo.cbSize = sizeof(DWM_TIMING_INFO);
+      HRESULT hr = DwmGetCompositionTimingInfo(nullptr, &dwmInfo);
+      if (FAILED(hr)) {
+        _com_error err(hr);
+        m_log->error() << "RenderManagerD3D11::GetTimingInfo: Could not get "
+          "timing info for display " << GetDisplayUsedByEye(whichEye)
+          << ": " << err.ErrorMessage();
+        return false;
+      }
+
+      // Convert the refresh rate into an interval and store it in the
       // info
-      double rate = static_cast<double>(display.m_refreshRate.Numerator) /
-        display.m_refreshRate.Denominator;
+      double rate = static_cast<double>(dwmInfo.rateRefresh.uiNumerator) /
+        dwmInfo.rateRefresh.uiDenominator;
       double interval = 1.0 / rate;
       info.hardwareDisplayInterval.seconds = static_cast<int>(interval);
       double mod_interval = interval - info.hardwareDisplayInterval.seconds;
       info.hardwareDisplayInterval.microseconds = static_cast<int>(
         1e6 * mod_interval);
 
-      // Figure out how long it has been since the last present event
-      // and store it in the info.  If it has been more than one
-      // whole frame time, store only the modulo since the last frame.
-      struct timeval now;
-      vrpn_gettimeofday(&now);
-      double since = vrpn_TimevalDurationSeconds(now, m_earlierPresentTime);
-      int count = static_cast<int>(since / interval);
-      double modulo = since - count * interval;
-      info.timeSincelastVerticalRetrace.seconds = static_cast<int>(modulo);
-      info.timeSincelastVerticalRetrace.microseconds =
-        static_cast<int>(
-        (modulo - info.timeSincelastVerticalRetrace.seconds) * 1e6
-          );
+      // The qpcFrameDisplayed result that we'd like to use to determine
+      // the time since vsync is unreliable, so we use qpcVBlank (which is
+      // the time until the next vertical sync).  However, this value is
+      // sometimes more than a frame ahead (presumably due to buffering),
+      // so we compute it modulo the frame time and use it to determine the
+      // upcoming vsync.  We then back off one frame interval to determine
+      // when the previous frame vsync started.
+      LARGE_INTEGER qpcNow, qpcFreq;
+      if (QueryPerformanceCounter(&qpcNow) && QueryPerformanceFrequency(&qpcFreq)) {
+        LARGE_INTEGER qpcDelta;
+        qpcDelta.QuadPart = dwmInfo.qpcVBlank - qpcNow.QuadPart;
+        LARGE_INTEGER deltaSeconds;
+        deltaSeconds.QuadPart = qpcDelta.QuadPart / qpcFreq.QuadPart;
+
+        LARGE_INTEGER deltaMicroseconds;
+        // Subtract out the seconds
+        deltaMicroseconds.QuadPart = qpcDelta.QuadPart -
+          (deltaSeconds.QuadPart * qpcFreq.QuadPart);
+        // Convert to microseconds; multiply first to avoid loss of
+        // precision.
+        deltaMicroseconds.QuadPart *= 1000000;
+        deltaMicroseconds.QuadPart /= qpcFreq.QuadPart;
+
+        // While we're longer than a frame, subtract out frames.
+        // This skips buffered frame counts.
+        while (deltaMicroseconds.QuadPart > interval * 1e6) {
+          deltaMicroseconds.QuadPart -= static_cast<LONGLONG>(interval * 1e6);
+        }
+
+        // Subtract this from the interval to find out how long it has been
+        // since the previous vertical retrace
+        deltaMicroseconds.QuadPart = static_cast<LONGLONG>(interval * 1e6) -
+          deltaMicroseconds.QuadPart;
+
+        info.timeSincelastVerticalRetrace.seconds =
+          static_cast<OSVR_TimeValue_Seconds>(deltaSeconds.QuadPart);
+        info.timeSincelastVerticalRetrace.microseconds =
+          static_cast<OSVR_TimeValue_Microseconds>(deltaMicroseconds.QuadPart);
+      } else {
+        OSVR_TimeValue zero = {};
+        info.timeSincelastVerticalRetrace = zero;
+      }
 
       // Fill in the time until the next presentation is required
       // to make the next vsync depending on the state of the

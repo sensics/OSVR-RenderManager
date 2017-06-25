@@ -65,14 +65,6 @@ namespace renderkit {
         std::vector<DisplayInfo> m_displays;
 
         //===================================================================
-        // Member variables and threads needed to do our timing.
-
-        /// Time of the most-recent presentation that we have an accurate
-        /// measurement of.  In some cases, this will be the most-recent
-        /// actual surface present.  In other cases, it may be far in the past.
-        struct timeval m_earlierPresentTime = {};
-
-        //===================================================================
         // Overloaded render functions from the base class.
         bool RenderFrameInitialize() override { return true; }
         bool RenderDisplayInitialize(size_t display) override { return true; }

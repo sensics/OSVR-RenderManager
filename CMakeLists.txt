@@ -421,7 +421,7 @@ if (RM_USE_SENSICS)
 		endif()
 endif()
 if (WIN32)
-	target_link_libraries(osvrRenderManager PRIVATE D3D11)
+	target_link_libraries(osvrRenderManager PRIVATE D3D11 Dwmapi)
 endif()
 
 set(LIBNAME_FULL osvrRenderManager)
