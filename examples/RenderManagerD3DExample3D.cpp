@@ -432,10 +432,12 @@ int main(int argc, char* argv[]) {
             // Sample the render-timing info and report its values as well.
             osvr::renderkit::RenderTimingInfo info;
             render->GetTimingInfo(0, info);
-            std::cout << "Renderer estimates refresh rate at " <<
+            std::cout << "Renderer reports refresh rate at " <<
               1.0e6 / (info.hardwareDisplayInterval.microseconds)
               << " with " << info.timeSincelastVerticalRetrace.microseconds / 1e3
-              << "ms since last render" << std::endl;
+              << "ms since last retrace"
+              << " and " << info.timeUntilNextPresentRequired.microseconds / 1e3
+              << "ms until present is required to hit the next" << std::endl;
         }
         count++;
     }
