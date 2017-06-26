@@ -32,6 +32,7 @@ Russ Taylor <russ@sensics.com>
 #include "osvr_display_configuration.h"
 #include "DirectModeVendors.h"
 #include "CleanPNPIDString.h"
+#include "PoseStateCaching.h"
 
 #ifdef RM_USE_D3D11
 #include "RenderManagerD3D.h"
@@ -64,6 +65,7 @@ Russ Taylor <russ@sensics.com>
 #endif
 
 #include "VendorIdTools.h"
+#include "DeltaQuatDeadReckoning.h"
 
 // OSVR Includes
 #include <osvr/ClientKit/InterfaceStateC.h>
@@ -74,6 +76,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/Common/IntegerByteSwap.h>
 #include <osvr/ClientKit/ParametersC.h>
 #include <osvr/Util/QuatlibInteropC.h>
+#include <osvr/Util/EigenInterop.h>
 #include <osvr/Util/Logger.h>
 
 // Library/third-party includes
@@ -98,6 +101,8 @@ Russ Taylor <russ@sensics.com>
 #include <map>
 #include <algorithm>
 
+/// Abbreviated namespace.
+namespace ei = osvr::util::eigen_interop;
 
 // @todo Consider pulling this function into Core.
 /// @brief Predict a future pose based on initial and velocity.
@@ -127,33 +132,10 @@ static void PredictFuturePose(
 
   // If we have a change in orientation, make it.
   if (vel.angularVelocityValid) {
-
-    // Start out the new orientation at the original one
-    // from OSVR.
-    q_type newOrientation;
-    osvrQuatToQuatlib(newOrientation, &poseIn.rotation);
-
-    // Rotate it by the amount to rotate once for every integral multiple
-    // of the rotation time we've been asked to go.
-    q_type rotationAmount;
-    osvrQuatToQuatlib(rotationAmount,
-      &vel.angularVelocity.incrementalRotation);
-
-    double remaining = predictionIntervalSec;
-    while (remaining > vel.angularVelocity.dt) {
-      q_mult(newOrientation, rotationAmount, newOrientation);
-      remaining -= vel.angularVelocity.dt;
-    }
-
-    // Then rotate it by the remaining fractional amount.
-    double fractionTime = remaining / vel.angularVelocity.dt;
-    q_type identity = { 0, 0, 0, 1 };
-    q_type fractionRotation;
-    q_slerp(fractionRotation, identity, rotationAmount, fractionTime);
-    q_mult(newOrientation, fractionRotation, newOrientation);
-
-    // Then put it back into OSVR format in the output pose.
-    osvrQuatFromQuatlib(&out.rotation, newOrientation);
+      Eigen::Quaterniond newRotation =
+          osvr::util::applyQuatDeadReckoning(ei::map(poseIn.rotation), vel.angularVelocity.dt,
+                                             ei::map(vel.angularVelocity.incrementalRotation), predictionIntervalSec);
+      ei::map(out.rotation) = newRotation;
   }
 
   // If we have a linear velocity, apply it.
@@ -287,6 +269,9 @@ namespace renderkit {
         /// @todo Clone the passed-in context rather than creating our own, when
         // this function is added to Core.
         m_context = osvrClientInit("com.osvr.renderManager");
+
+        /// Start watching for head poses.
+        m_headPoseCache.reset(new PoseStateCaching(m_context, "/me/head", p.m_clientPredictionLocalTimeOverride));
 
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
@@ -889,6 +874,7 @@ namespace renderkit {
                     // Nothing to do here.
                     break;
                 }
+                /// @todo do we want to make this effectively modulo 360?
 
                 /// Pass rotate_pixels_degrees
                 PresentEyeParameters p;
@@ -1167,6 +1153,7 @@ namespace renderkit {
         // Incorporate pitch_tilt (degrees, positive is downwards)
         // We assume that this results in a shearing of the image that leaves
         // the plane of the screen the same.
+        /// @todo in this case how would that differ from a non-0.5 yCOP?
         auto pitchTilt = m_params.m_displayConfiguration->getPitchTilt();
         if (pitchTilt != 0 * util::radians) {
             /// @todo
@@ -1197,10 +1184,8 @@ namespace renderkit {
         }
 
         /// @todo Figure out interactions between the above shifts and
-        /// distortions
-        /// and make sure to do them in the right order, or to adjust as needed
-        /// to
-        /// make them consistent when they are composed.
+        /// distortions and make sure to do them in the right order, or to adjust as needed
+        /// to make them consistent when they are composed.
 
         // Set the values in the projection matrix
         projection.left = left;
@@ -1480,6 +1465,7 @@ namespace renderkit {
         // right eyes.  We further assume that head space is between
         // the two eyes.  If the display descriptor wants us to swap
         // eyes, we do so by inverting the offset for each eye.
+        /// @todo dealing with eye tracking here or mono displays
         q_xyz_quat_type q_headFromRotatedEye;
         makeIdentity(q_headFromRotatedEye);
         if (whichEye % 2 == 0) {
@@ -1506,8 +1492,7 @@ namespace renderkit {
             /// DO NOT update the client here, so that we're using the
             /// same state for all eyes.
             OSVR_TimeValue timestamp;
-            if (osvrGetPoseState(m_roomFromHeadInterface, &timestamp,
-                                 &m_roomFromHead) == OSVR_RETURN_FAILURE) {
+            if (!m_headPoseCache || !m_headPoseCache->getLastReport(timestamp, m_roomFromHead)) {
                 // This it not an error -- they may have put in an invalid
                 // state name for the head; we just ignore that case.
             }
@@ -1525,16 +1510,12 @@ namespace renderkit {
                   (timing.timeUntilNextPresentRequired.microseconds / 1e3f);
               }
 
-              // Adjust the time at which the most-recent tracking info was
-              // set based on whether we're supposed to override it with "now".
-              // If not, find out how long ago it was.
+              // Find out how long ago this tracker info was found.
               float msSinceTrackerReport = 0;
-              if (!m_params.m_clientPredictionLocalTimeOverride) {
-                OSVR_TimeValue now;
-                osvrTimeValueGetNow(&now);
-                msSinceTrackerReport = static_cast<float>(
-                  osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3
-                  );
+              {
+                  OSVR_TimeValue now;
+                  osvrTimeValueGetNow(&now);
+                  msSinceTrackerReport = static_cast<float>(osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3);
               }
 
               // The delay before rendering for each
@@ -1554,10 +1535,11 @@ namespace renderkit {
               OSVR_VelocityState vel;
               vel.linearVelocityValid = false;
               vel.angularVelocityValid = false;
-              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp,
-                  &vel) != OSVR_RETURN_SUCCESS) {
-                // We're okay with failure here, we just use a zero
-                // velocity to predict.
+              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
+                  // We're okay with failure here, we just use a zero
+                  // velocity to predict.
+                  // Using normal get state calls here because we're effectively
+                  // throwing away the returned timestamp for this data.
               }
 
               // Predict the future pose of the head based on the velocity
@@ -1651,8 +1633,7 @@ namespace renderkit {
             // Scale the coordinates in X and Y so that they match the width and
             // height of a window at the specified distance from the origin.
             // We divide by the near clip distance to make the result match that
-            // at
-            // a unit distance and then multiply by the assumed depth.
+            // at a unit distance and then multiply by the assumed depth.
             float xScale = static_cast<float>(
                 (usedRenderInfo[eye].projection.right -
                  usedRenderInfo[eye].projection.left) /
@@ -1664,15 +1645,12 @@ namespace renderkit {
 
             // Compute the translation to use during forward transform.
             // Translate the points so that their center lies in the middle of
-            // the
-            // view frustum pushed out to the specified distance from the
+            // the view frustum pushed out to the specified distance from the
             // origin.
             // We take the mean coordinate of the two edges as the center that
-            // is
-            // to be moved to, and we move the space origin to there.
+            // is to be moved to, and we move the space origin to there.
             // We divide by the near clip distance to make the result match that
-            // at
-            // a unit distance and then multiply by the assumed depth.
+            // at a unit distance and then multiply by the assumed depth.
             // This assumes the default r texture coordinate of 0.
             float xTrans = static_cast<float>(
                 (usedRenderInfo[eye].projection.right +
@@ -1690,73 +1668,30 @@ namespace renderkit {
 
             // Translate the points back to a coordinate system with the
             // center at (0,0);
-            Eigen::Affine3f postTranslation(
+            const Eigen::Isometry3f postTranslation(
                 Eigen::Translation3f(0.5f, 0.5f, 0.0f));
 
             /// Scale the points so that they will fit into the range
             /// (-0.5,-0.5)
-            // to (0.5,0.5) (the inverse of the scale below).
-            Eigen::Affine3f postScale(
+            /// to (0.5,0.5) (the inverse of the scale below).
+            const Eigen::Affine3f postScale(
                 Eigen::Scaling(1.0f / xScale, 1.0f / yScale, 1.0f));
 
             /// Translate the points so that the projection center will lie on
-            // the -Z axis (inverse of the translation below).
-            Eigen::Affine3f postProjectionTranslate(
+            /// the -Z axis (inverse of the translation below).
+            const Eigen::Isometry3f postProjectionTranslate(
                 Eigen::Translation3f(-xTrans, -yTrans, -zTrans));
 
             /// Compute the forward last ModelView matrix.
-            OSVR_PoseState lastModelOSVR = usedRenderInfo[eye].pose;
-            Eigen::Quaternionf lastModelViewRotation(
-                static_cast<float>(osvrQuatGetW(&lastModelOSVR.rotation)),
-                static_cast<float>(osvrQuatGetX(&lastModelOSVR.rotation)),
-                static_cast<float>(osvrQuatGetY(&lastModelOSVR.rotation)),
-                static_cast<float>(osvrQuatGetZ(&lastModelOSVR.rotation)));
-            Eigen::Affine3f lastModelViewTranslation(Eigen::Translation3f(
-                static_cast<float>(osvrVec3GetX(&lastModelOSVR.translation)),
-                static_cast<float>(osvrVec3GetY(&lastModelOSVR.translation)),
-                static_cast<float>(osvrVec3GetZ(&lastModelOSVR.translation))));
-            // Pull the translation out from above and then plop in the rotation
-            // matrix parts by hand.
-            Eigen::Matrix3f lastRot3 = lastModelViewRotation.toRotationMatrix();
-            Eigen::Matrix4f lastModelView = lastModelViewTranslation.matrix();
-            for (size_t i = 0; i < 3; i++) {
-                for (size_t j = 0; j < 3; j++) {
-                    lastModelView(i, j) = lastRot3(i, j);
-                }
-            }
-            Eigen::Projective3f lastModelViewTransform(lastModelView);
+            /// @todo is the a reason util::eigen_interop::map(usedRenderInfo[eye].pose).transform() can't be used instead?
+            const Eigen::Isometry3f lastModelView = ei::map(usedRenderInfo[eye].pose).transform().cast<float>();
+            Eigen::Isometry3f lastModelViewTransform(lastModelView);
 
             /// Compute the inverse of the current ModelView matrix.
-            OSVR_PoseState currentModelOSVR = currentRenderInfo[eye].pose;
-            Eigen::Quaternionf currentModelViewRotation(
-                static_cast<float>(osvrQuatGetW(&currentModelOSVR.rotation)),
-                static_cast<float>(osvrQuatGetX(&currentModelOSVR.rotation)),
-                static_cast<float>(osvrQuatGetY(&currentModelOSVR.rotation)),
-                static_cast<float>(osvrQuatGetZ(&currentModelOSVR.rotation)));
-            Eigen::Affine3f currentModelViewTranslation(Eigen::Translation3f(
-                static_cast<float>(osvrVec3GetX(&currentModelOSVR.translation)),
-                static_cast<float>(osvrVec3GetY(&currentModelOSVR.translation)),
-                static_cast<float>(
-                    osvrVec3GetZ(&currentModelOSVR.translation))));
-            // Pull the translation out from above and then plop in the rotation
-            // matrix parts by hand.
-            // @todo turn this into a transform catenation in the proper order.
-            Eigen::Matrix3f curRot3 =
-                currentModelViewRotation.toRotationMatrix();
-            Eigen::Matrix4f currentModelView =
-                currentModelViewTranslation.matrix();
-            for (size_t i = 0; i < 3; i++) {
-                for (size_t j = 0; j < 3; j++) {
-                    currentModelView(i, j) = curRot3(i, j);
-                }
-            }
-            Eigen::Matrix4f currentModelViewInverse =
-                currentModelView.inverse();
-            Eigen::Projective3f currentModelViewInverseTransform(
-                currentModelViewInverse);
-
+            const Eigen::Isometry3f currentModelViewInverseTransform =
+                ei::map(currentRenderInfo[eye].pose).transform().cast<float>().inverse();
             /// Translate the origin to the center of the projected rectangle
-            Eigen::Affine3f preProjectionTranslate(
+            Eigen::Isometry3f preProjectionTranslate(
                 Eigen::Translation3f(xTrans, yTrans, zTrans));
 
             /// Scale from (-0.5,-0.5)/(0.5,0.5) to the actual frustum size
@@ -1764,28 +1699,26 @@ namespace renderkit {
 
             // Translate the points from a coordinate system that has (0.5,0.5)
             // as the origin to one that has (0,0) as the origin.
-            Eigen::Affine3f preTranslation(
+            Eigen::Isometry3f preTranslation(
                 Eigen::Translation3f(-0.5f, -0.5f, 0.0f));
 
             /// Compute the full matrix by multiplying the parts.
             Eigen::Projective3f full =
                 postTranslation * postScale * postProjectionTranslate *
-                lastModelView * currentModelViewInverse *
+                lastModelViewTransform * currentModelViewInverseTransform *
                 preProjectionTranslate * preScale * preTranslation;
 
             // Store the result.
             matrix16 timeWarp;
-            memcpy(timeWarp.data, full.matrix().data(), sizeof(timeWarp.data));
+            Eigen::Matrix4f::Map(timeWarp.data) = full.matrix();
             m_asynchronousTimeWarps.push_back(timeWarp);
         }
         return true;
     }
 
     bool RenderManager::ComputeDisplayOrientationMatrix(
-        float rotateDegrees //< Rotation in degrees around Z
-        ,
-        bool flipInY //< Flip in Y after rotating?
-        ,
+        float rotateDegrees, //< Rotation in degrees around Z
+        bool flipInY, //< Flip in Y after rotating?
         matrix16& outMatrix //< Matrix to use.
         ) {
         // NOTE: These operations occur from the right to the left, so later
@@ -1793,22 +1726,19 @@ namespace renderkit {
         // post-multiplying.
 
         /// Scale the points to flip the Y axis if that is called for.
-        float yScale = 1;
-        if (flipInY) {
-            yScale = -1;
-        }
-        Eigen::Affine3f preScale(Eigen::Scaling(1.0f, yScale, 1.0f));
+        float yScale = flipInY ? -1 : 1;
+        const Eigen::Affine3f preScale(Eigen::Scaling(1.0f, yScale, 1.0f));
 
         // Rotate by the specified number of degrees.
-        Eigen::Vector3f zAxis(0, 0, 1);
-        float rotateRadians = static_cast<float>(rotateDegrees * M_PI / 180.0);
-        Eigen::Affine3f rotate(Eigen::AngleAxisf(rotateRadians, zAxis));
+
+        const float rotateRadians = static_cast<float>(rotateDegrees * M_PI / 180.0);
+        const Eigen::Isometry3f rotate(Eigen::AngleAxisf(rotateRadians, Eigen::Vector3f::UnitZ()));
 
         /// Compute the full matrix by multiplying the parts.
-        Eigen::Projective3f full = rotate * preScale;
+        const Eigen::Affine3f full = rotate * preScale;
 
         // Store the result.
-        memcpy(outMatrix.data, full.matrix().data(), sizeof(outMatrix.data));
+        Eigen::Matrix4f::Map(outMatrix.data) = full.matrix();
 
         return true;
     }
@@ -1837,6 +1767,20 @@ namespace renderkit {
             Eigen::Projective3f(translate * scale).matrix();
 
         return true;
+    }
+
+    bool RenderManager::hasHeadPose() const {
+        if (!m_headPoseCache) {
+            return false;
+        }
+        return m_headPoseCache->hasReport();
+    }
+
+    bool RenderManager::getLastHeadPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const {
+        if (!m_headPoseCache) {
+            return false;
+        }
+        return m_headPoseCache->getLastReport(tv, pose);
     }
 
     static double pointDistance(double x1, double y1, double x2, double y2) {

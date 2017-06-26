@@ -21,6 +21,10 @@ set(IGNORED_HEADERS
         RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerSensicsDS_D3D11.h
 )
 
+add_library(eigen_interface INTERFACE)
+target_include_directories(eigen_interface INTERFACE ${EIGEN3_INCLUDE_DIR})
+set(LIBRARIES_RenderKit_DeltaQuatDeadReckoning eigen_interface)
+
 # Special cases
 if (NOT OSVRRM_HAVE_D3D11_SUPPORT)
 	list(APPEND IGNORED_HEADERS

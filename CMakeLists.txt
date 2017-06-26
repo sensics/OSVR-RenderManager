@@ -116,6 +116,8 @@ set (RenderManager_SOURCES
 	osvr/RenderKit/ComputeDistortionMesh.h
 	osvr/RenderKit/DistortionMesh.h
 	osvr/RenderKit/Float2.h
+	osvr/RenderKit/PoseStateCaching.h
+	osvr/RenderKit/DeltaQuatDeadReckoning.h
 )
 
 if (WIN32)
@@ -265,7 +267,7 @@ endif()
 if (HAVE_SENSICS_NDA_SUBMODULE)
 	# Sensics is a header-only lib for now
 	find_package(osvrDisplayServerClient)
-	if (osvrDisplayServerClient_FOUND)
+	if (osvrDisplayServerClient_FOUND AND (TARGET sensics::osvrDisplayServerClient OR TARGET sensics::osvrDisplayServerClient_static))
 		message(STATUS " - Sensics support: enabled")
 		set(RM_USE_SENSICS TRUE)
 		include_directories(${SENSICS_SRC_DIR})
@@ -699,3 +701,4 @@ include(CTest)
 enable_testing()
 
 add_subdirectory(tests)
+add_subdirectory(apps)
