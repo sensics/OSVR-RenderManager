@@ -92,7 +92,6 @@ static const char* distortionPixelShader =
 ""
 "float4 triangle_ps(PS_Input input) : SV_Target"
 "{"
-"  /* @todo Look up the distortion correction */"
 "  float4 outColor;"
 "  float gamma = 2.2f;"
 "  outColor.r = pow(shaderTexture.Sample(sampleState, input.texR).r, 1.0f/gamma);"
