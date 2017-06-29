@@ -94,7 +94,7 @@ static const char* distortionPixelShader =
 "{"
 "  /* @todo Look up the distortion correction */"
 "  float4 outColor;"
-"  float gamma = 1.1f;"
+"  float gamma = 2.2f;"
 "  outColor.r = pow(shaderTexture.Sample(sampleState, input.texR).r, 1.0f/gamma);"
 "  outColor.g = pow(shaderTexture.Sample(sampleState, input.texG).g, 1.0f/gamma);"
 "  outColor.b = pow(shaderTexture.Sample(sampleState, input.texB).b, 1.0f/gamma);"
