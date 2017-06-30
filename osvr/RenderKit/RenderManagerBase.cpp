@@ -91,6 +91,8 @@ Russ Taylor <russ@sensics.com>
 #include <vrpn_Shared.h>
 
 // Standard includes
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <thread>
 #include <iostream>
@@ -99,7 +101,6 @@ Russ Taylor <russ@sensics.com>
 #include <exception>
 #include <memory>
 #include <map>
-#include <algorithm>
 
 /// Abbreviated namespace.
 namespace ei = osvr::util::eigen_interop;
@@ -1341,15 +1342,14 @@ namespace renderkit {
         // need to rotate all of them and then test which
         // is the new lower-left corner and what the new width
         // and height are.
-        std::vector<double> LL = {viewport.left, viewport.lower};
-        std::vector<double> UL = {viewport.left + viewport.width,
-                                  viewport.lower};
-        std::vector<double> UU = {viewport.left + viewport.width,
-                                  viewport.lower + viewport.height};
-        std::vector<double> LU = {viewport.left,
-                                  viewport.lower + viewport.height};
+        using Point2d = std::array<double, 2>;
+        Point2d LL = {viewport.left, viewport.lower};
+        Point2d UL = {viewport.left + viewport.width, viewport.lower};
+        Point2d UU = {viewport.left + viewport.width, viewport.lower + viewport.height};
+        Point2d LU = {viewport.left, viewport.lower + viewport.height};
 
-        std::vector<std::vector<double> > verts = {LL, UL, UU, LU};
+        using Corners = std::array<Point2d, 4>;
+        Corners verts = {LL, UL, UU, LU};
 
         // Normalize the vertex coordinates to the range -1..1
         for (auto& vert : verts) {
@@ -1363,7 +1363,7 @@ namespace renderkit {
         //   Y' = X * sin(angle) + Y * cos(angle)
         double cR = cos(radians);
         double sR = sin(radians);
-        std::vector<std::vector<double> > vertsRot = verts;
+        Corners vertsRot = verts;
         for (size_t i = 0; i < verts.size(); i++) {
             vertsRot[i][0] = verts[i][0] * cR - verts[i][1] * sR;
             vertsRot[i][1] = verts[i][0] * sR + verts[i][1] * cR;
