@@ -26,6 +26,8 @@ Sensics, Inc.
 #include "RenderManagerD3D.h"
 #include "GraphicsLibraryD3D11.h"
 #include "RenderManagerSDLInitQuit.h"
+#include <Dwmapi.h>
+#include <comdef.h>
 
 #include <osvr/Util/Logger.h>
 #include "SDL_syswm.h"
@@ -286,6 +288,121 @@ namespace renderkit {
       m_D3D11Context->ClearRenderTargetView(
         m_displays[d].m_renderTargetView,
         colorRGBA);
+
+      return true;
+    }
+
+    bool RenderManagerD3D11::GetTimingInfo(size_t whichEye,
+      RenderTimingInfo& info) {
+      // This method should be thread-safe, so we don't guard with the lock.
+
+      // Make sure we're doing okay.
+      if (!doingOkay()) {
+        m_log->error() << "RenderManagerD3D11::GetTimingInfo(): Display "
+          "not opened.";
+        return false;
+      }
+
+      // Make sure we have enough eyes.
+      if (whichEye >= GetNumEyes()) {
+        m_log->error()
+          << "RenderManagerD3D11::GetTimingInfo(): No such eye: "
+          << whichEye;
+        return false;
+      }
+
+      // If our display is not open, we don't have any useful info.
+      if (!m_displayOpen) {
+        RenderTimingInfo i = {};
+        info = i;
+        m_log->error()
+          << "RenderManagerD3D11::GetTimingInfo(): Display not open for eye: "
+          << whichEye;
+        return false;
+      }
+
+      // Figure out which display this eye is on and get a reference to it.
+      DisplayInfo &display = m_displays[GetDisplayUsedByEye(whichEye)];
+
+      // Get the display timing info.
+      /// @todo See https://stackoverflow.com/questions/18844654/how-to-find-out-real-screen-refresh-rate-not-the-rounded-number
+      /// for info on how to handle the case where we're a full-screen window.
+      DWM_TIMING_INFO dwmInfo = {};
+      dwmInfo.cbSize = sizeof(DWM_TIMING_INFO);
+      HRESULT hr = DwmGetCompositionTimingInfo(nullptr, &dwmInfo);
+      if (FAILED(hr)) {
+        _com_error err(hr);
+        m_log->error() << "RenderManagerD3D11::GetTimingInfo: Could not get "
+          "timing info for display " << GetDisplayUsedByEye(whichEye)
+          << ": " << err.ErrorMessage();
+        return false;
+      }
+
+      // Convert the refresh rate into an interval and store it in the
+      // info
+      double rate = static_cast<double>(dwmInfo.rateRefresh.uiNumerator) /
+        dwmInfo.rateRefresh.uiDenominator;
+      double interval = 1.0 / rate;
+      info.hardwareDisplayInterval.seconds = static_cast<int>(interval);
+      double mod_interval = interval - info.hardwareDisplayInterval.seconds;
+      info.hardwareDisplayInterval.microseconds = static_cast<int>(
+        1e6 * mod_interval);
+
+      // The qpcFrameDisplayed result that we'd like to use to determine
+      // the time since vsync is unreliable, so we use qpcVBlank (which is
+      // the time until the next vertical sync).  However, this value is
+      // sometimes more than a frame ahead (presumably due to buffering),
+      // so we compute it modulo the frame time and use it to determine the
+      // upcoming vsync.  We then back off one frame interval to determine
+      // when the previous frame vsync started.
+      LARGE_INTEGER qpcNow, qpcFreq;
+      if (QueryPerformanceCounter(&qpcNow) && QueryPerformanceFrequency(&qpcFreq)) {
+        LARGE_INTEGER qpcDelta;
+        qpcDelta.QuadPart = dwmInfo.qpcVBlank - qpcNow.QuadPart;
+        LARGE_INTEGER deltaSeconds;
+        deltaSeconds.QuadPart = qpcDelta.QuadPart / qpcFreq.QuadPart;
+
+        LARGE_INTEGER deltaMicroseconds;
+        // Subtract out the seconds
+        deltaMicroseconds.QuadPart = qpcDelta.QuadPart -
+          (deltaSeconds.QuadPart * qpcFreq.QuadPart);
+        // Convert to microseconds; multiply first to avoid loss of
+        // precision.
+        deltaMicroseconds.QuadPart *= 1000000;
+        deltaMicroseconds.QuadPart /= qpcFreq.QuadPart;
+
+        // While we're longer than a frame, subtract out frames.
+        // This skips buffered frame counts.
+        while (deltaMicroseconds.QuadPart > interval * 1e6) {
+          deltaMicroseconds.QuadPart -= static_cast<LONGLONG>(interval * 1e6);
+        }
+
+        // Subtract this from the interval to find out how long it has been
+        // since the previous vertical retrace
+        deltaMicroseconds.QuadPart = static_cast<LONGLONG>(interval * 1e6) -
+          deltaMicroseconds.QuadPart;
+
+        info.timeSincelastVerticalRetrace.seconds =
+          static_cast<OSVR_TimeValue_Seconds>(deltaSeconds.QuadPart);
+        info.timeSincelastVerticalRetrace.microseconds =
+          static_cast<OSVR_TimeValue_Microseconds>(deltaMicroseconds.QuadPart);
+      } else {
+        OSVR_TimeValue zero = {};
+        info.timeSincelastVerticalRetrace = zero;
+      }
+
+      // Fill in the time until the next presentation is required
+      // to make the next vsync depending on the state of the
+      // RenderManager.  For now, we ask for 1ms to do the distortion
+      // correction/time warp during final presentation.
+      // @todo Measure how long this actually takes and update
+      // accordingly.
+      OSVR_TimeValue slackRequired = { 0, 1000 };
+      info.timeUntilNextPresentRequired = info.hardwareDisplayInterval;
+      osvrTimeValueDifference(&info.timeUntilNextPresentRequired,
+        &info.timeSincelastVerticalRetrace);
+      osvrTimeValueDifference(&info.timeUntilNextPresentRequired,
+        &slackRequired);
 
       return true;
     }

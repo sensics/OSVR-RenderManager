@@ -37,6 +37,9 @@ namespace renderkit {
         // Opens the D3D renderer we're going to use.
         OpenResults OpenDisplay() override;
 
+        bool OSVR_RENDERMANAGER_EXPORT
+          GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override;
+
       protected:
         /// Construct a D3D RenderManager.
         RenderManagerD3D11(
