@@ -2,3 +2,4 @@ build
 *.msi
 installer/osvrRenderManager-cache/*
 *.TMP
+.vscode/

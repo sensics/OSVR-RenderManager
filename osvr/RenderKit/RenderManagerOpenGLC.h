@@ -31,6 +31,8 @@
 
 // Library/third-party includes
 #include <osvr/Util/PlatformConfig.h>
+#include <osvr/Util/TimeValueC.h>
+
 #if defined(_WIN32)
 #include <windows.h>
 #endif
@@ -79,6 +81,18 @@ typedef struct OSVR_OpenGLContextParams {
     OSVR_CBool visible;
 } OSVR_OpenGLContextParams;
 
+typedef struct OSVR_RenderTimingInfo {
+        /// Time between refresh of display device
+        OSVR_TimeValue hardwareDisplayInterval;
+
+        /// Time since the last retrace ended (the last presentation)
+        OSVR_TimeValue timeSincelastVerticalRetrace;
+
+        /// How long until the app must send images to RenderManager
+        /// to display before the next frame is presented.
+        OSVR_TimeValue timeUntilNextPresentRequired;
+} OSVR_RenderTimingInfo;
+
 typedef struct OSVR_OpenGLToolkitFunctions {
     // Should be set to sizeof(OSVR_OpenGLToolkitFunctions) to allow the library
     // to detect when the client was compiled against an older version which has
@@ -101,6 +115,7 @@ typedef struct OSVR_OpenGLToolkitFunctions {
     OSVR_CBool (*handleEvents)(void* data);
     OSVR_CBool (*getDisplayFrameBuffer)(void* data, size_t display, GLuint* frameBufferOut);
     OSVR_CBool (*getDisplaySizeOverride)(void* data, size_t display, int* width, int* height);
+    OSVR_CBool (*getRenderTimingInfo)(void* data, size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut);
 } OSVR_OpenGLToolkitFunctions;
 
 typedef struct OSVR_GraphicsLibraryOpenGL {

@@ -112,7 +112,9 @@ class Qt5ToolkitImpl {
     static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height) {
         return ((Qt5ToolkitImpl*)data)->getDisplaySizeOverride(display, width, height);
     }
-
+    static OSVR_CBool getRenderTimingInfoImpl(void* data, size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut) {
+        return ((Qt5ToolkitImpl*)data)->getRenderTimingInfo(display, whichEye, renderTimingInfoOut);
+    }
     QList<QGLWidget*> glwidgets;
     QList<QWidget*> widgets;
 
@@ -131,6 +133,7 @@ class Qt5ToolkitImpl {
         toolkit.setVerticalSync = setVerticalSyncImpl;
         toolkit.handleEvents = handleEventsImpl;
         toolkit.getDisplaySizeOverride = getDisplaySizeOverrideImpl;
+        toolkit.getRenderTimingInfo = getRenderTimingInfoImpl;
     }
 
     ~Qt5ToolkitImpl() {
@@ -207,6 +210,10 @@ class Qt5ToolkitImpl {
     }
     bool getDisplaySizeOverride(size_t display, int* width, int* height) {
         // we don't override the display. Use default behavior.
+        return false;
+    }
+    bool getRenderTimingInfo(size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut) {
+        // @todo implement for Qt? if possible?
         return false;
     }
 };
