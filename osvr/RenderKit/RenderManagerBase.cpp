@@ -1608,6 +1608,17 @@ namespace renderkit {
     bool RenderManager::ComputeAsynchronousTimeWarps(
         std::vector<RenderInfo> usedRenderInfo,
         std::vector<RenderInfo> currentRenderInfo, float assumedDepth) {
+
+        // See if we're using a D3D11 rendering library.  If so, we need
+        // to scale some Y values by -1 and transpose the result. The standard
+        // approach works for OpenGL.
+        float flipYScale = 1.0f;
+        bool doTranspose = false;
+        if (m_params.m_renderLibrary.find("Direct3D") != std::string::npos) {
+          flipYScale = -1.0f;
+          doTranspose = true;
+        }
+
         // Empty out the time warp vector until we fill it again below.
         m_asynchronousTimeWarps.clear();
 
@@ -1671,7 +1682,7 @@ namespace renderkit {
             /// (-0.5,-0.5)
             /// to (0.5,0.5) (the inverse of the scale below).
             const Eigen::Affine3f postScale(
-                Eigen::Scaling(1.0f / xScale, 1.0f / yScale, 1.0f));
+                Eigen::Scaling(1.0f / xScale, flipYScale / yScale, 1.0f));
 
             /// Translate the points so that the projection center will lie on
             /// the -Z axis (inverse of the translation below).
@@ -1686,12 +1697,13 @@ namespace renderkit {
             /// Compute the inverse of the current ModelView matrix.
             const Eigen::Isometry3f currentModelViewInverseTransform =
                 ei::map(currentRenderInfo[eye].pose).transform().cast<float>().inverse();
+
             /// Translate the origin to the center of the projected rectangle
             Eigen::Isometry3f preProjectionTranslate(
                 Eigen::Translation3f(xTrans, yTrans, zTrans));
 
             /// Scale from (-0.5,-0.5)/(0.5,0.5) to the actual frustum size
-            Eigen::Affine3f preScale(Eigen::Scaling(xScale, yScale, 1.0f));
+            Eigen::Affine3f preScale(Eigen::Scaling(xScale, flipYScale * yScale, 1.0f));
 
             // Translate the points from a coordinate system that has (0.5,0.5)
             // as the origin to one that has (0,0) as the origin.
@@ -1704,9 +1716,13 @@ namespace renderkit {
                 lastModelViewTransform * currentModelViewInverseTransform *
                 preProjectionTranslate * preScale * preTranslation;
 
-            // Store the result.
+            // Store the result, transposing if we're using D3D.
             matrix16 timeWarp;
-            Eigen::Matrix4f::Map(timeWarp.data) = full.matrix();
+            if (doTranspose) {
+              Eigen::Matrix4f::Map(timeWarp.data) = full.matrix().transpose();
+            } else {
+              Eigen::Matrix4f::Map(timeWarp.data) = full.matrix();
+            }
             m_asynchronousTimeWarps.push_back(timeWarp);
         }
         return true;
