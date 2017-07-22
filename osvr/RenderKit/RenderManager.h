@@ -612,8 +612,11 @@ namespace renderkit {
                 m_distortionParameters; ///< One set per eye x display
 
             bool m_enableTimeWarp;       ///< Use time warp?
+            bool m_justInTimeWarp;       ///< Use just-in-timewarp?
+                                         ///(requires enable)
+            float m_justInTimeWarpRotation; ///< Rotation in degrees, 0 = top, 90 = right
             bool m_asynchronousTimeWarp; ///< Use Asynchronous time warp?
-                                         //(requires enable)
+                                         ///(requires enable)
 
             /// Render waits until at most this many ms before vsync to do
             /// timewarp (requires enable)
