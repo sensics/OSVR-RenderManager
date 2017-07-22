@@ -842,10 +842,6 @@ namespace renderkit {
                 // Figure out which overall eye this is.
                 size_t eye = eyeInDisplay + display * GetNumEyesPerDisplay();
 
-                /// @todo Consider adding a shear to do with current
-                /// head velocity to the transform.  Probably in
-                /// the RenderParams structure passed in.
-
                 // See if we need to rotate by 90 or 180 degrees about Z.  If
                 // so, do so.
                 // NOTE: This would adjust the distortion center of projection,
