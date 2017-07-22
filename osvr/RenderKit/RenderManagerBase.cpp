@@ -78,6 +78,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/Util/QuatlibInteropC.h>
 #include <osvr/Util/EigenInterop.h>
 #include <osvr/Util/Logger.h>
+#include <osvr/Common/DegreesToRadians.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
@@ -1451,7 +1452,7 @@ namespace renderkit {
         if (whichEye % 2 != 0) {
             rotateEyesApart *= -1;
         }
-        rotateEyesApart = Q_DEG_TO_RAD(rotateEyesApart);
+        rotateEyesApart = osvr::common::degreesToRadians(rotateEyesApart);
         q_from_axis_angle(q_rotatedEyeFromEye.quat, 0, 1, 0, rotateEyesApart);
 
         /// Include the impact of the eyeFromHead matrix.
