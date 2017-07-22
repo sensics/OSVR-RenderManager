@@ -75,6 +75,13 @@ matrix to fix up changes due to motion between the start of rendering and its
 completion.  This warping is geometrically correct for strict rotations around
 the center of projection and is approximated by a 2-meter distance for translations.
 
+* **Just In Time Warp** is provided on all platforms.  This uses shear and
+anisotropic scaling to reduce the impact of head rotation on objects in the
+scene.  Because each scan line in the image appears at a different time, head
+motion causes apparent shearing and stretching of the scene in standard full-
+frame time warp.  Just In Time Warp adjusts the image so that each scan line
+is at the correct location during head rotation about X and Y.
+
 * **Asynchronous Time Warp** is supported under DirectMode configurations.  This
 mode is enabled by a configuration-file setting and does not require code change.
 It produces a separate rendering thread that re-warps and re-renders images at
