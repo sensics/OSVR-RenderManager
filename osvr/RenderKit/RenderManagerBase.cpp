@@ -1726,7 +1726,7 @@ namespace renderkit {
         // post-multiplying.
 
         /// Scale the points to flip the Y axis if that is called for.
-        float yScale = flipInY ? -1 : 1;
+        float yScale = flipInY ? -1.0f : 1.0f;
         const Eigen::Affine3f preScale(Eigen::Scaling(1.0f, yScale, 1.0f));
 
         // Rotate by the specified number of degrees.
