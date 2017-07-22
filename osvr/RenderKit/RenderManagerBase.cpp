@@ -79,6 +79,7 @@ Russ Taylor <russ@sensics.com>
 #include <osvr/Util/EigenInterop.h>
 #include <osvr/Util/Logger.h>
 #include <osvr/Common/DegreesToRadians.h>
+#include <osvr/Common/Transform.h>
 
 // Library/third-party includes
 #include <Eigen/Core>
@@ -1679,6 +1680,29 @@ namespace renderkit {
             const Eigen::Isometry3f postTranslation(
                 Eigen::Translation3f(0.5f, 0.5f, 0.0f));
 
+            // Determine the impact of just-in-timewarp in the coordinate system
+            // with the center of the screen at the origin and unit width and
+            // height.  We only do this if just-in-timewarp is enabled; otherwise,
+            // we set this to the identity matrix.
+            Eigen::Matrix<float, 4, 4> justInTimeWarp;
+            justInTimeWarp.setIdentity();
+            if (m_params.m_justInTimeWarp) {
+              std::array<float, 4> coeffs = ComputeJustInTimeWarp();
+              const float &xScale = coeffs[0];
+              const float &yScale = coeffs[1];
+              const float &xShearWithY = coeffs[2];
+              const float &yShearWithX = coeffs[3];
+              justInTimeWarp(0, 0) = xScale;
+              justInTimeWarp(1, 1) = yScale;
+              if (doTranspose) {
+                justInTimeWarp(0, 1) = xShearWithY;
+                justInTimeWarp(1, 0) = yShearWithX;
+              } else {
+                justInTimeWarp(1, 0) = xShearWithY;
+                justInTimeWarp(0, 1) = yShearWithX;
+              }
+            }
+
             /// Scale the points so that they will fit into the range
             /// (-0.5,-0.5)
             /// to (0.5,0.5) (the inverse of the scale below).
@@ -1713,7 +1737,7 @@ namespace renderkit {
 
             /// Compute the full matrix by multiplying the parts.
             Eigen::Projective3f full =
-                postTranslation * postScale * postProjectionTranslate *
+                postTranslation * justInTimeWarp * postScale * postProjectionTranslate *
                 lastModelViewTransform * currentModelViewInverseTransform *
                 preProjectionTranslate * preScale * preTranslation;
 
@@ -1727,6 +1751,165 @@ namespace renderkit {
             m_asynchronousTimeWarps.push_back(timeWarp);
         }
         return true;
+    }
+
+    std::array<float, 4> RenderManager::ComputeJustInTimeWarp() {
+      // We initialize the values with ones that won't cause any
+      // change.  We will override them as we find reason.
+      std::array<float, 4> ret = { 1, 1, 0, 0 };
+
+      // Figure out which edge of the display scan-out starts at based
+      // on the just-in-time rotation.  This describes which edge will
+      // be rotated to point "up" when the display is rotated about the
+      // +Z axis (out of the screen) and it starts at the canonical orientation
+      // with X to the right and Y up.  The four results are 0 = top, 1 = right,
+      // 2 = bottom, 3 = left.  The code rounds to the nearest one.
+      int edgeUp = static_cast<int>(
+        floor((m_params.m_justInTimeWarpRotation + 44.9999) / 90));
+      if (edgeUp < 0) { edgeUp += 4 * static_cast<int>(1 - edgeUp / 4); }
+      edgeUp = edgeUp % 4;
+
+      // Find out the timing information, which will let us know the
+      // duration of a full-screen scan-out.  If we are scanning out
+      // from left to right or right to left, divide this by the number
+      // of eyes per display to find the per-eye scan-out duration.
+      RenderTimingInfo timing;
+      if (!GetTimingInfo(0, timing)) {
+        // If we have no timing information, then we have nothing to use
+        // to predict so we return the do-nothing result.
+        return ret;
+      }
+      double screenScanTime = (timing.hardwareDisplayInterval.seconds +
+        timing.hardwareDisplayInterval.microseconds / 1e6);
+      if (edgeUp % 2 == 1) {
+        screenScanTime /= GetNumEyesPerDisplay();
+      }
+
+      // Find out the pose velocity information, if available.
+      // Set the valid flags to false so that if to call to get
+      // velocity fails, we will not try and use the info.
+      OSVR_TimeValue timestamp;
+      OSVR_VelocityState vel;
+      vel.linearVelocityValid = false;
+      vel.angularVelocityValid = false;
+      if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
+        // No velocity information available, so we return the do-nothing result.
+        return ret;
+      }
+
+      // Convert the incremental orientation change in world space back
+      // into (local) head space by transforming it by the inverse of the
+      // current head pose.
+      //  Handle a non-Identity room-from-world transform in the OSVR-Core
+      // room-to-world transform (as opposed to the RenderManager one, which is
+      // already handled because we apply that transformation ourselves).  We
+      // do this by getting and applying the room-to-world transform from Core
+      // here.  Again, we can ignore the RenderManager room-to-world that was
+      // passed in as RenderParam because all of our differential transform
+      // work here takes place below it.
+      OSVR_PoseState pose;
+      if (osvrGetPoseState(m_roomFromHeadInterface, &timestamp, &pose) != OSVR_RETURN_SUCCESS) {
+        // No pose information available, so we return the do-nothing result.
+        return ret;
+      }
+      osvr::common::Transform xform(ei::map(pose).matrix(),
+        ei::map(pose).matrix().inverse());
+      xform.transform(m_context->getRoomToWorldTransform());
+      Eigen::Quaterniond localRot = xform.transformDerivative(
+        ei::map(vel.angularVelocity.incrementalRotation));
+
+      // Turn incremental rotation into Euler rotation rates in radians/second.
+      // Do this by converting the Quaternion into Euler and then dividing by the
+      // delta time.  We do this twice, once with the X axis being defined as the
+      // last axis to be rotated around and once with the Y axis as the last. (The
+      // last axis is the first listed in right-to-left multiplication.)  If we
+      // use the same Euler set for more than one angle, sometimes we get flips by
+      // Pi around the axes.
+      const double &dt = vel.angularVelocity.dt;
+      Eigen::Vector3d euler = localRot.toRotationMatrix().eulerAngles(0, 1, 2);
+      if (euler[0] > boost::math::double_constants::pi / 2) {
+        // Rotation around first axis is always positive when returned from eulerAngles; switch
+        // the second quadrant into the fourth so that we get symmetry around 0.
+        euler[0] -= boost::math::double_constants::pi;
+      }
+      double rX = euler[0] / dt;
+      euler = localRot.toRotationMatrix().eulerAngles(1, 2, 0);
+      if (euler[0] > boost::math::double_constants::pi / 2) {
+        // Rotation around first axis is always positive when returned from eulerAngles; switch
+        // the second quadrant into the fourth so that we get symmetry around 0.
+        euler[0] -= boost::math::double_constants::pi;
+      }
+      double rY = euler[0] / dt;
+
+      // Determine the amount of rotation around the X axis in degrees that takes
+      // place during the eye scan-out time.  Do the same for Y.
+      double xRotationDegrees = screenScanTime * osvr::common::radiansToDegrees(rX);
+      double yRotationDegrees = screenScanTime * osvr::common::radiansToDegrees(rY);
+
+      /// Determine the fraction of the display width in angles in X that will be
+      /// covered by this rotation around Y over the course of the frame.  Do the same for
+      /// the fraction of the half height in angles in Y that will be covered by rotation
+      /// about X.  Leave these signed, so that we know whether to rotate in the positive
+      /// or negative direction.
+      /// @todo Remove the factor multipliers here
+      float xRotationNormalized = static_cast<float>(
+        xRotationDegrees /
+          osvr::util::getDegrees(m_params.m_displayConfiguration->getHorizontalFOV())
+        );
+      float yRotationNormalized = static_cast<float>(
+        yRotationDegrees /
+          osvr::util::getDegrees(m_params.m_displayConfiguration->getVerticalFOV())
+        );
+
+      /// @todo Consider adding in effects of translation.
+
+      // Based on the scan-out direction, adjust the relevant output parameters
+      // to indicate the amount of scaling and shearing that will take place over
+      // a half eye scan-out time.
+      switch (edgeUp) {
+      case 0: // Top up.
+        // As the head rotates around +X, we get stretching in Y.
+        // To compensate, we need to scale Y down when rotating in +X.
+        ret[1] = 1 - xRotationNormalized;
+
+        // As the head rotates around +Y, we get shearing in +X with increasing Y.
+        // To compensate, we need to shear in X based on -Y.
+        ret[2] = -yRotationNormalized;
+        break;
+
+      case 1: // Right up
+        // As the head rotates around -Y, we get stretching in X.
+        // To compensate, we need to scale X down when rotating in +Y.
+        ret[0] = 1 + yRotationNormalized;
+
+        // As the head rotates around +X, we get shearing in -Y with increasing X.
+        // To compensate, we need to shear in Y based on X.
+        ret[3] = xRotationNormalized;
+        break;
+
+      case 2: // Bottom up
+        // As the head rotates around +X, we get compression in Y.
+        // To compensate, we need to scale Y up when rotating in +X.
+        ret[1] = 1 + xRotationNormalized;
+
+        // As the head rotates around +Y, we get shearing in -X with increasing Y.
+        // To compensate, we need to shear in X based on Y.
+        ret[2] = yRotationNormalized;
+        //std::cout << "XXX Shear coefficient: " << ret[2] << std::endl;
+        break;
+
+      case 3: // Left up
+        // As the head rotates around Y, we get stretching in X.
+        // To compensate, we need to scale X up when rotating in +Y.
+        ret[0] = 1 - yRotationNormalized;
+
+        // As the head rotates around +X, we get shearing in Y with increasing X.
+        // To compensate, we need to shear in Y based on -X.
+        ret[3] = -xRotationNormalized;
+        break;
+      }
+
+      return ret;
     }
 
     bool RenderManager::ComputeDisplayOrientationMatrix(
