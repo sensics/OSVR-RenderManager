@@ -435,6 +435,10 @@ namespace renderkit {
                                  cb.m_userData);
         }
 
+		// Destroy our head-pose cache object before we shut down our
+		// context to avoid seg fault.
+		m_headPoseCache.reset(nullptr);
+
         // Close our roomFromHeadInterface
         osvrClientFreeInterface(m_context, m_roomFromHeadInterface);
 
