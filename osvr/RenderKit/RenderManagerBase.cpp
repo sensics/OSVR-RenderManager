@@ -1848,7 +1848,7 @@ namespace renderkit {
 
       /// Determine the fraction of the display width in angles in X that will be
       /// covered by this rotation around Y over the course of the frame.  Do the same for
-      /// the fraction of the half height in angles in Y that will be covered by rotation
+      /// the fraction of the height in angles in Y that will be covered by rotation
       /// about X.  Leave these signed, so that we know whether to rotate in the positive
       /// or negative direction.
       float xRotationNormalized = static_cast<float>(
@@ -1864,7 +1864,7 @@ namespace renderkit {
 
       // Based on the scan-out direction, adjust the relevant output parameters
       // to indicate the amount of scaling and shearing that will take place over
-      // a half eye scan-out time.
+      // an eye scan-out time.
       switch (edgeUp) {
       case 0: // Top up.
         // As the head rotates around +X, we get stretching in Y.
