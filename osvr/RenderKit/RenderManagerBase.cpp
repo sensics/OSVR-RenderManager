@@ -1851,7 +1851,6 @@ namespace renderkit {
       /// the fraction of the half height in angles in Y that will be covered by rotation
       /// about X.  Leave these signed, so that we know whether to rotate in the positive
       /// or negative direction.
-      /// @todo Remove the factor multipliers here
       float xRotationNormalized = static_cast<float>(
         xRotationDegrees /
           osvr::util::getDegrees(m_params.m_displayConfiguration->getHorizontalFOV())
