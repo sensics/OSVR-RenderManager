@@ -1894,7 +1894,6 @@ namespace renderkit {
         // As the head rotates around +Y, we get shearing in -X with increasing Y.
         // To compensate, we need to shear in X based on Y.
         ret[2] = yRotationNormalized;
-        //std::cout << "XXX Shear coefficient: " << ret[2] << std::endl;
         break;
 
       case 3: // Left up
