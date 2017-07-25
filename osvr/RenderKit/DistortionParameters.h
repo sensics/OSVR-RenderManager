@@ -95,32 +95,34 @@ namespace renderkit {
     ///   The first coefficient in each polynomial is a constant factor
     /// (multiplied by offset^0, or 1), the second is the linear factor, the
     /// third is quadratic, and so forth.
-    /// @todo Turn COP always into the range 0-1, and have it always use the
-    /// lower-left corner of the display, even for Direct3D.  Do the
-    /// conversions internally.  When this is done, also adjust the flipping
-    /// in the OpenGL to D3D to suit.
+    ///   The COP is always specified in fractions of the screen width and
+    /// height, independently of D.  This is internally scaled to D space.
     ///   For a display 10 pixels wide by 8 pixels high that has square
     /// pixels whose center of projection is in the middle of the image,
     /// we would get:
-    /// D = (10, 8); COP = (4.5, 3.5); parameters specified in pixel-unit
+    /// D = (10, 8); COP = (0.5, 0.5); parameters specified in pixel-unit
     /// offsets.
     ///   For a display that is 6 units wide by 12 units high, but whose
     /// optics stretch the view horizontally to produce a square viewing
     /// image with pixels that are stretched in X, we could have:
-    /// D = (12, 12); COP = (5.5, 5.5); parameters specified in vertical
+    /// D = (12, 12); COP = (0.5, 0.5); parameters specified in vertical
     /// pixel-sized units
     ///   -or-
-    /// D = (6,6); COP = (2.5, 2.5); parameters specified in horizontal
+    /// D = (6,6); COP = (0.5, 0.5); parameters specified in horizontal
     /// pixel-sized units.
     ///   The parameters for each color specify the new radial displacement
     /// from the center of projection as a function of the original
     /// displacement.
     ///   In D-scaled space, this is:
-    ///    Offset = Orig - COP;              // Vector
+    ///    Offset = Orig - COP*D;            // Vector, component-wise mult.
     ///    OffsetMag = sqrt(Offset.length() * Offset.length());  // Scalar
     ///    NormOffset = Offset / OffsetMag;  // Vector
-    ///    Final = COP + (a0 + a1*OffsetMag + a2*OffsetMag*OffsetMag + ...)
+    ///    Final = COP*D + (a0 + a1*OffsetMag + a2*OffsetMag*OffsetMag + ...)
     ///            * NormOffset; // Position
+
+    /// @todo Adjust the effect of flipping Y in the OpenGL to D3D to suit
+    /// (negate COP[y]) for symmetric polynomials, flip Y axis for the
+    /// distortion map for sampled versions.
 
     class DistortionParameters {
     public:
