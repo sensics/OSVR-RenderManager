@@ -370,7 +370,7 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/RenderManager.h
 	osvr/RenderKit/RenderManagerD3DBase.h
 	osvr/RenderKit/RenderManagerC.h
-    osvr/RenderKit/RenderManagerD3D11.h
+    osvr/RenderKit/RenderManagerD3D.h
 	osvr/RenderKit/RenderManagerD3D11C.h
     osvr/RenderKit/RenderManagerOpenGL.h
 	osvr/RenderKit/RenderManagerOpenGLC.h
