@@ -2167,11 +2167,23 @@ namespace renderkit {
                      "(ignore earlier errors that occured while we were "
                      "waiting to connect)";
 
-        // Check the information in the pipeline configuration to determine
+        // Check the information in the display and pipeline configuration to determine
         // what kind of renderer to instantiate.  Also fill in the parameters
         // to pass to the renderer.
         RenderManager::ConstructorParameters p;
         p.m_graphicsLibrary = graphicsLibrary;
+
+        std::string jsonString;
+        try {
+          std::string jsonString =
+            osvrRenderManagerGetString(contextParameter, "/display");
+          p.m_displayConfiguration.reset(new OSVRDisplayConfiguration(jsonString));
+        }
+        catch (std::exception& /*e*/) {
+          m_log->error() << "Could not parse /display string "
+            "from server.";
+          return nullptr;
+        }
 
         osvr::client::RenderManagerConfigPtr pipelineConfig;
         try {
@@ -2256,17 +2268,6 @@ namespace renderkit {
           pipelineConfig->getRightEyeDelayMS());
         p.m_clientPredictionLocalTimeOverride =
           pipelineConfig->getclientPredictionLocalTimeOverride();
-
-        std::string jsonString;
-        try {
-            std::string jsonString =
-              osvrRenderManagerGetString(contextParameter, "/display");
-            p.m_displayConfiguration.reset(new OSVRDisplayConfiguration(jsonString));
-        } catch (std::exception& /*e*/) {
-            m_log->error() << "Could not parse /display string "
-                         "from server.";
-            return nullptr;
-        }
 
         // Determine the appropriate display VendorIds based on the name of the
         // display device.  Don't push any back if we don't recognize the vendor
