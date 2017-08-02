@@ -2253,7 +2253,7 @@ namespace renderkit {
         p.m_bitsPerColor = pipelineConfig->getBitsPerColor();
         p.m_asynchronousTimeWarp = pipelineConfig->getAsynchronousTimeWarp();
         p.m_justInTimeWarp = pipelineConfig->getJustInTimeWarp();
-        p.m_justInTimeWarpRotation = pipelineConfig->getJustInTimeWarpRotation();
+        p.m_justInTimeWarpRotation = p.m_displayConfiguration->getDisplayScanOrientation();
         p.m_enableTimeWarp = pipelineConfig->getEnableTimeWarp();
         p.m_maxMSBeforeVsyncTimeWarp =
             pipelineConfig->getMaxMSBeforeVsyncTimeWarp();
