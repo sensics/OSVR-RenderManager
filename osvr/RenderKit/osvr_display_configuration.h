@@ -92,6 +92,7 @@ class OSVRDisplayConfiguration {
     int OSVR_RENDERMANAGER_EXPORT getDisplayWidth() const;
     int OSVR_RENDERMANAGER_EXPORT getDisplayHeight() const;
     DisplayMode OSVR_RENDERMANAGER_EXPORT getDisplayMode() const;
+    float OSVR_RENDERMANAGER_EXPORT getDisplayScanOrientation() const;
 
     osvr::util::Angle getVerticalFOV() const;
     osvr::util::Angle getHorizontalFOV() const;
@@ -149,6 +150,11 @@ class OSVRDisplayConfiguration {
         int height;
         int video_inputs;
         DisplayMode display_mode;
+        /// 0 is from the top, 90 from the right, 180 bottom, 270 or -90 left.
+        /// This is the orientation of the hardware scan-out with respect to the
+        /// way the display is mounted on the user's head, with up meaning their
+        /// eyes are looking torwards the top of their head.
+        float scan_orientation;
     };
     Resolution const& activeResolution() const {
         return m_resolutions.at(m_activeResolution);

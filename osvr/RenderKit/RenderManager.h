@@ -612,8 +612,11 @@ namespace renderkit {
                 m_distortionParameters; ///< One set per eye x display
 
             bool m_enableTimeWarp;       ///< Use time warp?
+            bool m_justInTimeWarp;       ///< Use just-in-timewarp?
+                                         ///(requires enable)
+            float m_justInTimeWarpRotation; ///< Rotation in degrees, 0 = top, 90 = right
             bool m_asynchronousTimeWarp; ///< Use Asynchronous time warp?
-                                         //(requires enable)
+                                         ///(requires enable)
 
             /// Render waits until at most this many ms before vsync to do
             /// timewarp (requires enable)
@@ -855,13 +858,8 @@ namespace renderkit {
         double timePresentFrameFinalize = 0;
 
         /// NOTE: The base-class implementation constructs a texture matrix
-        /// that is apropriate for use in OpenGL.  Other rendering libraries
-        /// that
-        /// use different coordinates (such as Direct3D) should override this
-        /// method.  There is not a simple change that can be made to the
-        /// resulting
-        /// transform to deal with the differences in both viewport coordinates
-        /// and matrix storage order.
+        /// that is apropriate for use in OpenGL or D3D (it checks internally
+        /// for the type and produces the appropriate warps.
         ///   Assumes that it is starting in a texture-coordinate space that has
         /// (0,0) at the lower left corner of the image and (1,1) at the
         /// upper-right corner of the image, with Z pointing out of the image.
@@ -876,6 +874,9 @@ namespace renderkit {
         ///  In then reverses the process, using the ModelView matrix from the
         /// "current" location (all other matrices are the same) to bring the
         /// points back into texture space.
+        ///  If just-in-time-warp is enabled, it further adds an anisotropic scale
+        /// and/or shear transformation to handle motion within the frame caused
+        /// by the user's head motion.
         ///  It is up to the caller to bring the texture coordinates to and from
         /// the space described above.
         ///  @param [in] usedRenderInfo Rendering info used to construct the
@@ -896,6 +897,25 @@ namespace renderkit {
         ComputeAsynchronousTimeWarps(std::vector<RenderInfo> usedRenderInfo,
                                      std::vector<RenderInfo> currentRenderInfo,
                                      float assumedDepth = 2.0f);
+
+        /// @brief Computes the four components of just-in-timewarp
+        ///
+        /// This function computes the coefficients of nonuniform scaling
+        /// and shearing required to implement just-in-timewarp in a space
+        /// where (0,0) is the center of the screen and the screen width and
+        /// height are both 1 (dimensions go from -0.5 to 0.5 in each axis).
+        /// It first computes the velocity, then based on that and the rotation
+        /// of the scan-out with respect to the image produces the four values.
+        /// It does not check to see whether just-in-timewarp is enabled.
+        /// @return Four doubles, indicating: 0th = the scaling
+        ///         of the image in the X direction, 1st = the scaling
+        ///         of the image in the Y direction, 2nd = the shear in
+        ///         X coordinate as Y varies, 3rd = the shear in the Y
+        ///         coordinate as X varies.  At most one of the scalings and
+        ///         at most one of the shear transformations will be active
+        ///         at a time; which ones are active depends on the orientation.
+        virtual std::array<float,4> OSVR_RENDERMANAGER_EXPORT
+        ComputeJustInTimeWarp();
 
         /// Asynchronous time warp matrices suitable for use in OpenGL,
         /// taking (-0.5,-0.5) to (0.5,0.5) coordinates into the appropriate new

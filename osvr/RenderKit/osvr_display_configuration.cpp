@@ -402,6 +402,8 @@ parseResolution(Json::Value const& resolution) {
     OSVRDisplayConfiguration::Resolution res;
     res.video_inputs = resolution.get("video_inputs", 1).asInt();
 
+    res.scan_orientation = resolution.get("scan_orientation", 0.0f).asFloat();
+
     // Window bounds
     res.width = resolution["width"].asInt();
     res.height = resolution["height"].asInt();
@@ -708,6 +710,11 @@ OSVRDisplayConfiguration::DisplayMode
 OSVRDisplayConfiguration::getDisplayMode() const {
     return activeResolution().display_mode;
 }
+
+float OSVRDisplayConfiguration::getDisplayScanOrientation() const {
+  return activeResolution().scan_orientation;
+}
+
 
 osvr::util::Angle OSVRDisplayConfiguration::getVerticalFOV() const {
     return m_monocularVerticalFOV;

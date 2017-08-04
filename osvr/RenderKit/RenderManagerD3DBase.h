@@ -172,13 +172,6 @@ namespace renderkit {
             DirectX::XMMATRIX texture;
         };
 
-        /// We can't use an OpenGL-compliant texture warp matrix, so need to
-        /// override it here.
-        bool OSVR_RENDERMANAGER_EXPORT
-        ComputeAsynchronousTimeWarps(std::vector<RenderInfo> usedRenderInfo,
-                                     std::vector<RenderInfo> currentRenderInfo,
-                                     float assumedDepth = 2.0f) override;
-
         /// @brief Wait for rendering completion on our D3D11 context and device.
         ///
         /// This function is used to avoid tearing caused by the presentation
