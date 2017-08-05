@@ -1620,7 +1620,7 @@ namespace renderkit {
         // approach works for OpenGL.
         float flipYScale = 1.0f;
         bool doTranspose = false;
-        if (dynamic_cast<RenderManagerD3D11Base*>(this)) {
+        if (m_params.m_renderLibrary.find("Direct3D") != std::string::npos) {
           flipYScale = -1.0f;
           doTranspose = true;
         }
