@@ -28,11 +28,11 @@ Russ Taylor <russ@sensics.com>
 #include <GL/glew.h>
 
 // Internal Includes
-#include <osvr/ClientKit/Context.h>
-#include <osvr/ClientKit/Interface.h>
+#include <osvr/ClientKit/ContextC.h>
+#include <osvr/ClientKit/InterfaceC.h>
+#include <osvr/ClientKit/InterfaceCallbackC.h>
 #include <osvr/RenderKit/RenderManagerC.h>
 #include <osvr/RenderKit/RenderManagerOpenGLC.h>
-#include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 
 // Library/third-party includes
 #ifdef _WIN32
@@ -48,12 +48,13 @@ Russ Taylor <russ@sensics.com>
 // Standard includes
 #include <iostream>
 #include <string>
+#include <vector>
 #include <stdlib.h> // For exit()
 
 // @todo There shouldn't be two OSVR_ProjectionMatrix types in the API.
-inline osvr::renderkit::OSVR_ProjectionMatrix ConvertProjectionMatrix(::OSVR_ProjectionMatrix matrix)
+inline OSVR_ProjectionMatrix ConvertProjectionMatrix(OSVR_ProjectionMatrix matrix)
 {
-    osvr::renderkit::OSVR_ProjectionMatrix ret = { 0 };
+    OSVR_ProjectionMatrix ret = { 0 };
     ret.bottom = matrix.bottom;
     ret.top = matrix.top;
     ret.left = matrix.left;
@@ -121,7 +122,7 @@ void RenderView(
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
     // Set color and depth buffers for the frame buffer
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorBuffer, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
         GL_RENDERBUFFER, depthBuffer);
 
@@ -141,10 +142,9 @@ void RenderView(
 
     // Set the OpenGL projection matrix
     GLdouble projection[16];
-    osvr::renderkit::OSVR_ProjectionMatrix temp;
+    OSVR_ProjectionMatrix temp;
     temp.bottom = renderInfo.projection.bottom;
-    osvr::renderkit::OSVR_Projection_to_OpenGL(projection,
-        ConvertProjectionMatrix(renderInfo.projection));
+    OSVR_Projection_to_OpenGL(projection, ConvertProjectionMatrix(renderInfo.projection));
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -152,7 +152,7 @@ void RenderView(
 
     /// Put the transform into the OpenGL ModelView matrix
     GLdouble modelView[16];
-    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, renderInfo.pose);
+    OSVR_PoseState_to_OpenGL(modelView, renderInfo.pose);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMultMatrixd(modelView);
@@ -174,20 +174,19 @@ void RenderView(
 int main(int argc, char* argv[]) {
     // Get an OSVR client context to use to access the devices
     // that we need.
-    osvr::clientkit::ClientContext context(
-        "com.osvr.renderManager.openGLExample");
+    OSVR_ClientContext context = osvrClientInit("com.osvr.renderManager.openGLExample");
 
     // Construct button devices and connect them to a callback
     // that will set the "quit" variable to true when it is
     // pressed.  Use button "1" on the left-hand or
     // right-hand controller.
-    osvr::clientkit::Interface leftButton1 =
-        context.getInterface("/controller/left/1");
-    leftButton1.registerCallback(&myButtonCallback, &quit);
+    OSVR_ClientInterface leftButton1;
+    osvrClientGetInterface(context, "/controller/left/1", &leftButton1);
+    osvrRegisterButtonCallback(leftButton1, &myButtonCallback, &quit);
 
-    osvr::clientkit::Interface rightButton1 =
-        context.getInterface("/controller/right/1");
-    rightButton1.registerCallback(&myButtonCallback, &quit);
+    OSVR_ClientInterface rightButton1;
+    osvrClientGetInterface(context, "/controller/right/1", &rightButton1);
+    osvrRegisterButtonCallback(rightButton1, &myButtonCallback, &quit);
 
     // Open OpenGL and set up the context for rendering to
     // an HMD.  Do this using the OSVR RenderManager interface,
@@ -198,7 +197,7 @@ int main(int argc, char* argv[]) {
     OSVR_RenderManager render;
     OSVR_RenderManagerOpenGL renderOGL;
     if (OSVR_RETURN_SUCCESS != osvrCreateRenderManagerOpenGL(
-        context.get(), "OpenGL", library, &render, &renderOGL)) {
+        context, "OpenGL", library, &render, &renderOGL)) {
         std::cerr << "Could not create the RenderManager" << std::endl;
         return 1;
     }
@@ -227,7 +226,7 @@ int main(int argc, char* argv[]) {
 
     // Do a call to get the information we need to construct our
     // color and depth render-to-texture buffers.
-    context.update();
+    osvrClientUpdate(context);
 
     OSVR_RenderParams renderParams;
     osvrRenderManagerGetDefaultRenderParams(&renderParams);
@@ -331,7 +330,7 @@ int main(int argc, char* argv[]) {
 
         // Update the context so we get our callbacks called and
         // update tracker state.
-        context.update();
+        osvrClientUpdate(context);
 
         //renderInfo = render->GetRenderInfo();
 
@@ -394,8 +393,13 @@ int main(int argc, char* argv[]) {
         glDeleteRenderbuffers(1, &depthBuffers[i]);
     }
 
+    osvrClientFreeInterface(context, leftButton1);
+    osvrClientFreeInterface(context, rightButton1);
+
     // Close the Renderer interface cleanly.
     osvrDestroyRenderManager(render);
+
+    osvrClientShutdown(context);
 
     return 0;
 }
