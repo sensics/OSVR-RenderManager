@@ -2311,7 +2311,6 @@ namespace renderkit {
         // @todo Remove once we get a general polynomial from Core.
         for (size_t i = 0; i < p.m_displayConfiguration->getEyes().size(); i++) {
           DistortionParameters distortion(*p.m_displayConfiguration, i);
-          distortion.m_desiredTriangles = 200 * 64;
           p.m_distortionParameters.push_back(distortion);
         }
 
