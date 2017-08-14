@@ -109,6 +109,9 @@ class OSVRDisplayConfiguration {
 #endif
     osvr::util::Angle getPitchTilt() const;
 
+    double OSVR_RENDERMANAGER_EXPORT getNearClipMeters() const;
+    double OSVR_RENDERMANAGER_EXPORT getFarClipMeters() const;
+
     double OSVR_RENDERMANAGER_EXPORT getIPDMeters() const;
     bool OSVR_RENDERMANAGER_EXPORT getSwapEyes() const;
 
@@ -180,6 +183,8 @@ class OSVRDisplayConfiguration {
 
     std::vector<Resolution> m_resolutions;
 
+    double m_nearClipMeters = 0.1;
+    double m_farClipMeters = 100.0;
     double m_IPDMeters = 0.065; // 65 mm;
     bool m_swapEyes = false;
 

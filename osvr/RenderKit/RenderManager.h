@@ -334,14 +334,28 @@ namespace renderkit {
         /// room transform, but will have the room appended.
         class RenderParams {
           public:
-            RenderParams(){};
+            /// @brief Default constructor reads things from a display configuration.
+            /// @param [in] dc OSVRDisplayConfiguration to read values from.  If none
+            ///                is specified, it defaults to the default configuration.
+            RenderParams(OSVRDisplayConfiguration const &dc = OSVRDisplayConfiguration()) {
+              nearClipDistanceMeters = dc.getNearClipMeters();
+              farClipDistanceMeters = dc.getFarClipMeters();
+              IPDMeters = dc.getIPDMeters();
+            };
+
             const OSVR_PoseState* worldFromRoomAppend =
                 nullptr; ///< Room space to insert
             const OSVR_PoseState* roomFromHeadReplace =
                 nullptr; ///< Overrides head space
-            double nearClipDistanceMeters = 0.1;
-            double farClipDistanceMeters = 100.0;
-            double IPDMeters = 0.063; ///< Inter-puppilary distance of the viewer
+
+            /// Gets the near and far clipping distances from the display configuration
+            /// in the default constructor.  Can be overridden.
+            double nearClipDistanceMeters;
+            double farClipDistanceMeters;
+
+            /// Gets the default IPD from the display configuration in the
+            /// default constructor.  Can be overridden.
+            double IPDMeters;
         };
 
         /// @brief Render the scene with minimum latency.

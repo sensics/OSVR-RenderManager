@@ -754,6 +754,13 @@ osvr::util::Angle OSVRDisplayConfiguration::getPitchTilt() const {
     return m_pitchTilt;
 }
 
+double OSVRDisplayConfiguration::getNearClipMeters() const {
+    return m_nearClipMeters;
+}
+double OSVRDisplayConfiguration::getFarClipMeters() const {
+    return m_farClipMeters;
+}
+
 double OSVRDisplayConfiguration::getIPDMeters() const { return m_IPDMeters; }
 
 bool OSVRDisplayConfiguration::getSwapEyes() const { return m_swapEyes; }
