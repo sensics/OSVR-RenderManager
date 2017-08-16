@@ -277,6 +277,15 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND)
 		target_link_libraries(RenderManagerOpenGLHighPolyTest PRIVATE vendored-vrpn osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLHighPolyTest PRIVATE cxx_range_for)
 	endif()
+
+        #-----------------------------------------------------------------------------
+	# OpenGL test program using the OpenGL Core profile that tests raw OpenGL vs. OSVR speeds
+	if(TARGET vendored-vrpn AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/RenderManagerOpenGLSpeedTest.cpp")
+		list(APPEND BUILT_EXAMPLES RenderManagerOpenGLSpeedTest)
+		add_executable(RenderManagerOpenGLSpeedTest RenderManagerOpenGLSpeedTest.cpp)
+		target_link_libraries(RenderManagerOpenGLSpeedTest PRIVATE vendored-vrpn osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
+		target_compile_features(RenderManagerOpenGLSpeedTest PRIVATE cxx_range_for)
+	endif()
 endif()
 
 if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND AND NOT APPLE)
