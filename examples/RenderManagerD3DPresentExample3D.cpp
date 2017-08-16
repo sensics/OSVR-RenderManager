@@ -93,13 +93,6 @@ void RenderView(
     ,
     ID3D11RenderTargetView* renderTargetView,
     ID3D11DepthStencilView* depthStencilView) {
-    // Make sure our pointers are filled in correctly.
-    if (renderInfo.library.D3D11 == nullptr) {
-        std::cerr
-            << "SetupDisplay: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
 
     auto context = renderInfo.library.D3D11->context;
     auto device = renderInfo.library.D3D11->device;

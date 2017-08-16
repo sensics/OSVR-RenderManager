@@ -180,19 +180,6 @@ void SetupDisplay(
     ,
     osvr::renderkit::RenderBuffer buffers //< Buffers to use
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (library.D3D11 == nullptr) {
-        std::cerr
-            << "SetupDisplay: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.D3D11 == nullptr) {
-        std::cerr
-            << "SetupDisplay: No D3D11 RenderBuffer, this should not happen"
-            << std::endl;
-        return;
-    }
 
     ID3D11DeviceContext* context = library.D3D11->context;
     ID3D11RenderTargetView* renderTargetView = buffers.D3D11->colorBufferView;
@@ -224,18 +211,6 @@ void DrawWorld(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (library.D3D11 == nullptr) {
-        std::cerr
-            << "DrawWorld: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.D3D11 == nullptr) {
-        std::cerr << "DrawWorld: No D3D11 RenderBuffer, this should not happen"
-                  << std::endl;
-        return;
-    }
 
     ID3D11DeviceContext* context = library.D3D11->context;
     ID3D11RenderTargetView* renderTargetView = buffers.D3D11->colorBufferView;

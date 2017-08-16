@@ -146,18 +146,6 @@ void SetupEye(
     ,
     size_t whichEye //< Which eye are we setting up for?
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (library.D3D11 == nullptr) {
-        std::cerr
-            << "SetupEye: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.D3D11 == nullptr) {
-        std::cerr << "SetupEye: No D3D11 RenderBuffer, this should not happen"
-                  << std::endl;
-        return;
-    }
 
     // RenderManager will have already set our viewport, so we don't need to
     // do anything here.
@@ -182,18 +170,6 @@ void DrawWorld(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (library.D3D11 == nullptr) {
-        std::cerr
-            << "DrawWorld: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.D3D11 == nullptr) {
-        std::cerr << "DrawWorld: No D3D11 RenderBuffer, this should not happen"
-                  << std::endl;
-        return;
-    }
 
     auto context = library.D3D11->context;
     auto device = library.D3D11->device;
@@ -228,19 +204,6 @@ void DrawLeftHand(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (library.D3D11 == nullptr) {
-        std::cerr
-            << "DrawLeftHand: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.D3D11 == nullptr) {
-        std::cerr
-            << "DrawLeftHand: No D3D11 RenderBuffer, this should not happen"
-            << std::endl;
-        return;
-    }
 
     auto context = library.D3D11->context;
     auto device = library.D3D11->device;
@@ -276,19 +239,6 @@ void DrawRightHand(
     ,
     OSVR_TimeValue deadline //< When the frame should be sent to the screen
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (library.D3D11 == nullptr) {
-        std::cerr
-            << "DrawRightHand: No D3D11 GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
-    if (buffers.D3D11 == nullptr) {
-        std::cerr
-            << "DrawRightHand: No D3D11 RenderBuffer, this should not happen"
-            << std::endl;
-        return;
-    }
 
     auto context = library.D3D11->context;
     auto device = library.D3D11->device;

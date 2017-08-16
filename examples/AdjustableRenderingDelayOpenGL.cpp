@@ -114,13 +114,6 @@ void RenderView(
     GLuint colorBuffer, //< Color buffer to render into
     GLuint depthBuffer  //< Depth buffer to render into
     ) {
-    // Make sure our pointers are filled in correctly.
-    if (renderInfo.library.OpenGL == nullptr) {
-        std::cerr
-            << "RenderView: No OpenGL GraphicsLibrary, this should not happen"
-            << std::endl;
-        return;
-    }
 
     // Render to our framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);

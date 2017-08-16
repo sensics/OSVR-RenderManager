@@ -411,16 +411,6 @@ void SetupDisplay(void* userData,                           //< Passed into SetD
                   osvr::renderkit::GraphicsLibrary library, //< Graphics library context to use
                   osvr::renderkit::RenderBuffer buffers     //< Buffers to use
                   ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr << "SetupDisplay: No OpenGL GraphicsLibrary, this should not happen" << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr << "SetupDisplay: No OpenGL RenderBuffer, this should not happen" << std::endl;
-        return;
-    }
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
 
@@ -437,16 +427,6 @@ void SetupEye(void* userData,                                     //< Passed int
               osvr::renderkit::OSVR_ProjectionMatrix projection,  //< Projection matrix set by RenderManager
               size_t whichEye                                     //< Which eye are we setting up for?
               ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr << "SetupEye: No OpenGL GraphicsLibrary, this should not happen" << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr << "SetupEye: No OpenGL RenderBuffer, this should not happen" << std::endl;
-        return;
-    }
 
     // Set the viewport
     glViewport(static_cast<GLint>(viewport.left), static_cast<GLint>(viewport.lower),
@@ -462,16 +442,6 @@ void DrawWorld(void* userData, //< Passed into AddRenderCallback
               osvr::renderkit::OSVR_ProjectionMatrix projection,  //< Projection matrix set by RenderManager
               OSVR_TimeValue deadline                             //< When the frame should be sent to the screen
               ) {
-    // Make sure our pointers are filled in correctly.  The config file selects
-    // the graphics library to use, and may not match our needs.
-    if (library.OpenGL == nullptr) {
-        std::cerr << "DrawWorld: No OpenGL GraphicsLibrary, this should not happen" << std::endl;
-        return;
-    }
-    if (buffers.OpenGL == nullptr) {
-        std::cerr << "DrawWorld: No OpenGL RenderBuffer, this should not happen" << std::endl;
-        return;
-    }
 
     osvr::renderkit::GraphicsLibraryOpenGL* glLibrary = library.OpenGL;
 
