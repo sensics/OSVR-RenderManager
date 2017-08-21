@@ -4,6 +4,11 @@ project(osvrRenderManager)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  # Needed for including Boost system header file on Ubuntu.
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fext-numeric-literals)
+endif()
+
 #-----------------------------------------------------------------------------
 # Local CMake Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
