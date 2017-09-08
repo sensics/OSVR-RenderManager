@@ -55,7 +55,7 @@ namespace renderkit {
 
         // Harnesses a D3D DirectMode renderer to do timing.
         bool OSVR_RENDERMANAGER_EXPORT
-        GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override {
+        GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) override {
             return m_D3D11Renderer->GetTimingInfo(whichEye, info);
         }
 

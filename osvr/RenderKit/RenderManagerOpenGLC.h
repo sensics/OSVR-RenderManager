@@ -81,18 +81,6 @@ typedef struct OSVR_OpenGLContextParams {
     OSVR_CBool visible;
 } OSVR_OpenGLContextParams;
 
-typedef struct OSVR_RenderTimingInfo {
-        /// Time between refresh of display device
-        OSVR_TimeValue hardwareDisplayInterval;
-
-        /// Time since the last retrace ended (the last presentation)
-        OSVR_TimeValue timeSincelastVerticalRetrace;
-
-        /// How long until the app must send images to RenderManager
-        /// to display before the next frame is presented.
-        OSVR_TimeValue timeUntilNextPresentRequired;
-} OSVR_RenderTimingInfo;
-
 typedef struct OSVR_OpenGLToolkitFunctions {
     // Should be set to sizeof(OSVR_OpenGLToolkitFunctions) to allow the library
     // to detect when the client was compiled against an older version which has

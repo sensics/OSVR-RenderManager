@@ -37,6 +37,7 @@
 #include <osvr/Util/ClientReportTypesC.h>
 #include <osvr/Util/ClientOpaqueTypesC.h>
 #include <osvr/Util/BoolC.h>
+#include <osvr/Util/TimeValueC.h>
 
 /* Library/third-party includes */
 /* none */
@@ -99,7 +100,22 @@ typedef enum {
     OSVR_OPEN_STATUS_COMPLETE
 } OSVR_OpenStatus;
 
-// @todo OSVR_RenderTimingInfo
+    /// @brief Timing information about the rendering system
+    ///
+    /// Structure that holds timing information about the system.
+    /// Each of these times will have the value (0,0) if they are
+    /// not available from a particular RenderManager.
+typedef struct OSVR_RenderTimingInfo {
+    /// Time between refresh of display device
+    OSVR_TimeValue hardwareDisplayInterval;
+
+    /// Time since the last retrace ended (the last presentation)
+    OSVR_TimeValue timeSincelastVerticalRetrace;
+
+    /// How long until the app must send images to RenderManager
+    /// to display before the next frame is presented.
+    OSVR_TimeValue timeUntilNextPresentRequired;
+} OSVR_RenderTimingInfo;
 
 OSVR_RENDERMANAGER_EXPORT OSVR_ReturnCode
 osvrDestroyRenderManager(OSVR_RenderManager renderManager);

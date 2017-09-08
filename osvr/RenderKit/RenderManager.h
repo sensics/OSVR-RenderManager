@@ -26,6 +26,7 @@ Russ Taylor <russ@sensics.com>
 
 // Internal Includes
 #include <osvr/RenderKit/Export.h>
+#include <osvr/RenderKit/RenderManagerC.h>
 #include "osvr_display_configuration.h"
 #include "RenderKitGraphicsTransforms.h"
 #include "DistortionParameters.h"
@@ -112,23 +113,6 @@ namespace renderkit {
         RenderBufferOpenGL*
             OpenGL; ///< #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
     };
-
-    /// @brief Timing information about the rendering system
-    ///
-    /// Structure that holds timing information about the system.
-    /// Each of these times will have the value (0,0) if they are
-    /// not available from a particular RenderManager.
-    typedef struct {
-        /// Time between refresh of display device
-        OSVR_TimeValue hardwareDisplayInterval;
-
-        /// Time since the last retrace ended (the last presentation)
-        OSVR_TimeValue timeSincelastVerticalRetrace;
-
-        /// How long until the app must send images to RenderManager
-        /// to display before the next frame is presented.
-        OSVR_TimeValue timeUntilNextPresentRequired;
-    } RenderTimingInfo;
 
     /// @brief Simple structure for representing a float based RGB color
     typedef struct {
@@ -508,7 +492,7 @@ namespace renderkit {
         virtual bool OSVR_RENDERMANAGER_EXPORT GetTimingInfo(
                 // @todo Each display has a potentially different timing
                 size_t whichEye, //!< Each eye has a potentially different timing
-                RenderTimingInfo& info //!< Info that is returned
+                OSVR_RenderTimingInfo& info //!< Info that is returned
             ) {
                 return false;
         }

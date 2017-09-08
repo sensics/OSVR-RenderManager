@@ -466,16 +466,17 @@ namespace renderkit {
         delete m_library.OpenGL;
     }
 
-    bool RenderManagerOpenGL::GetTimingInfo(size_t whichEye, RenderTimingInfo& info) {
-      if(m_toolkit.getRenderTimingInfo) {
-        OSVR_RenderTimingInfo renderTimingInfo;
-        bool ret = m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &renderTimingInfo);
-        info.hardwareDisplayInterval = renderTimingInfo.hardwareDisplayInterval;
-        info.timeSincelastVerticalRetrace = renderTimingInfo.timeSincelastVerticalRetrace;
-        info.timeUntilNextPresentRequired = renderTimingInfo.timeUntilNextPresentRequired;
-        return ret;
+    bool RenderManagerOpenGL::GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) {
+      if(!m_toolkit.getRenderTimingInfo) {
+        return false;
       }
-      return false;
+      OSVR_RenderTimingInfo renderTimingInfo = {0};
+      if(!m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &renderTimingInfo)) {
+        return false; // don't modify info if toolkit returns false
+      }
+      info.hardwareDisplayInterval = renderTimingInfo.hardwareDisplayInterval;
+      info.timeSincelastVerticalRetrace = renderTimingInfo.timeSincelastVerticalRetrace;
+      info.timeUntilNextPresentRequired = renderTimingInfo.timeUntilNextPresentRequired;
     }
 
     bool RenderManagerOpenGL::RenderPathSetup() {
