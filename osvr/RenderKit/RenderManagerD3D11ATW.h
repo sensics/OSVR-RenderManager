@@ -162,7 +162,7 @@ namespace osvr {
             // entries will not be as useful, given that ATW is being used to
             // interpolate, but they are also returned.
             bool OSVR_RENDERMANAGER_EXPORT
-              GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override {
+              GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) override {
                 return mRenderManager->GetTimingInfo(whichEye, info);
               };
 
@@ -312,7 +312,7 @@ namespace osvr {
                     // that are not gen-locked.
                     // @todo Consider making a function that both the RenderManagerBase.cpp
                     // and this code calls to check if we're within range.
-                    osvr::renderkit::RenderTimingInfo timing;
+                    OSVR_RenderTimingInfo timing;
                     double expectedFrameInterval = -1;
                     if (mRenderManager->GetTimingInfo(0, timing)) {
 

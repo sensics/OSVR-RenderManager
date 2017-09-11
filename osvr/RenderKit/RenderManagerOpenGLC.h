@@ -31,6 +31,8 @@
 
 // Library/third-party includes
 #include <osvr/Util/PlatformConfig.h>
+#include <osvr/Util/TimeValueC.h>
+
 #if defined(_WIN32)
 #include <windows.h>
 #endif
@@ -101,6 +103,7 @@ typedef struct OSVR_OpenGLToolkitFunctions {
     OSVR_CBool (*handleEvents)(void* data);
     OSVR_CBool (*getDisplayFrameBuffer)(void* data, size_t display, GLuint* frameBufferOut);
     OSVR_CBool (*getDisplaySizeOverride)(void* data, size_t display, int* width, int* height);
+    OSVR_CBool (*getRenderTimingInfo)(void* data, size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut);
 } OSVR_OpenGLToolkitFunctions;
 
 typedef struct OSVR_GraphicsLibraryOpenGL {

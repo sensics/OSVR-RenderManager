@@ -85,6 +85,9 @@ class SDLToolkitImpl {
   static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height) {
       return ((SDLToolkitImpl*)data)->getDisplaySizeOverride(display, width, height);
   }
+  static OSVR_CBool getRenderTimingInfoImpl(void* data, size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut) {
+      return ((SDLToolkitImpl*)data)->getRenderTimingInfo(display, whichEye, renderTImingInfoOut);
+  }
 
   // Classes and structures needed to do our rendering.
   class DisplayInfo {
@@ -115,6 +118,7 @@ public:
     toolkit.handleEvents = handleEventsImpl;
     toolkit.getDisplayFrameBuffer = getDisplayFrameBufferImpl;
     toolkit.getDisplaySizeOverride = getDisplaySizeOverrideImpl;
+    toolkit.getRenderTimingInfo = getRenderTimingInfoImpl;
   }
 
   ~SDLToolkitImpl() {
@@ -258,6 +262,11 @@ public:
 
   bool getDisplaySizeOverride(size_t display, int* width, int* height) {
       // we don't override the display. Use default behavior.
+      return false;
+  }
+
+  bool getRenderTimingInfo(size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut) {
+      // @todo get render timing info from SDL?
       return false;
   }
 };
@@ -455,6 +464,13 @@ namespace renderkit {
         }
         delete m_buffers.OpenGL;
         delete m_library.OpenGL;
+    }
+
+    bool RenderManagerOpenGL::GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) {
+      if(!m_toolkit.getRenderTimingInfo) {
+        return false;
+      }
+      return m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &info);
     }
 
     bool RenderManagerOpenGL::RenderPathSetup() {

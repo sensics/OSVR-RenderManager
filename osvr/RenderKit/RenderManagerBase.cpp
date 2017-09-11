@@ -792,7 +792,7 @@ namespace renderkit {
                 // We use the first eye in the system and assume that all of the
                 // others are synchronized to it.
                 // @todo Consider what happens for non-genlocked displays
-                RenderTimingInfo info;
+                OSVR_RenderTimingInfo info;
                 if (GetTimingInfo(0, info)) {
                     OSVR_TimeValue nextRetrace = info.hardwareDisplayInterval;
                     osvrTimeValueDifference(&nextRetrace,
@@ -1511,7 +1511,7 @@ namespace renderkit {
               // Get information about how long we have until the next present.
               // If we can't get timing info, we just set its offset to 0.
               float msUntilPresent = 0;
-              RenderTimingInfo timing;
+              OSVR_RenderTimingInfo timing;
               if (GetTimingInfo(whichEye, timing)) {
                 msUntilPresent +=
                   (timing.timeUntilNextPresentRequired.seconds * 1e3f) +
