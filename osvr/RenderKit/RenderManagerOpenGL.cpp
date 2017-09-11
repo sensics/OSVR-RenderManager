@@ -470,13 +470,7 @@ namespace renderkit {
       if(!m_toolkit.getRenderTimingInfo) {
         return false;
       }
-      OSVR_RenderTimingInfo renderTimingInfo = {0};
-      if(!m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &renderTimingInfo)) {
-        return false; // don't modify info if toolkit returns false
-      }
-      info.hardwareDisplayInterval = renderTimingInfo.hardwareDisplayInterval;
-      info.timeSincelastVerticalRetrace = renderTimingInfo.timeSincelastVerticalRetrace;
-      info.timeUntilNextPresentRequired = renderTimingInfo.timeUntilNextPresentRequired;
+      return m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &info);
     }
 
     bool RenderManagerOpenGL::RenderPathSetup() {
