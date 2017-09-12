@@ -293,7 +293,7 @@ namespace renderkit {
     }
 
     bool RenderManagerD3D11::GetTimingInfo(size_t whichEye,
-      RenderTimingInfo& info) {
+      OSVR_RenderTimingInfo& info) {
       // This method should be thread-safe, so we don't guard with the lock.
 
       // Make sure we're doing okay.
@@ -313,7 +313,7 @@ namespace renderkit {
 
       // If our display is not open, we don't have any useful info.
       if (!m_displayOpen) {
-        RenderTimingInfo i = {};
+        OSVR_RenderTimingInfo i = {};
         info = i;
         m_log->error()
           << "RenderManagerD3D11::GetTimingInfo(): Display not open for eye: "
