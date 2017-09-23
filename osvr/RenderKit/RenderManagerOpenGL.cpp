@@ -470,7 +470,7 @@ namespace renderkit {
       if(!m_toolkit.getRenderTimingInfo) {
         return false;
       }
-      return m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &info);
+      return (m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &info) == OSVR_TRUE);
     }
 
     bool RenderManagerOpenGL::RenderPathSetup() {
