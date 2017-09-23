@@ -38,7 +38,7 @@ namespace renderkit {
         OpenResults OpenDisplay() override;
 
         bool OSVR_RENDERMANAGER_EXPORT
-          GetTimingInfo(size_t whichEye, RenderTimingInfo& info) override;
+          GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) override;
 
       protected:
         /// Construct a D3D RenderManager.
