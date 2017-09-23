@@ -86,7 +86,7 @@ class SDLToolkitImpl {
       return ((SDLToolkitImpl*)data)->getDisplaySizeOverride(display, width, height);
   }
   static OSVR_CBool getRenderTimingInfoImpl(void* data, size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut) {
-      return ((SDLToolkitImpl*)data)->getRenderTimingInfo(display, whichEye, renderTImingInfoOut);
+      return ((SDLToolkitImpl*)data)->getRenderTimingInfo(display, whichEye, renderTimingInfoOut);
   }
 
   // Classes and structures needed to do our rendering.
