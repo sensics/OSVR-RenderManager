@@ -238,7 +238,8 @@ namespace renderkit {
             Vendor{"VRG", "VRGate"},
             Vendor{"TSB", "VRGate"},
             Vendor{"VRV", "Vrvana"},
-            Vendor{"TVR", "TotalVision"},
+            Vendor{"TVR", "TotalVision", "Some TotalVision LDT HMD's  with early firmware/EDID data"},
+            Vendor{"TVL", "TotalVision", "TotalVision LDT HMD units"},
             Vendor{"FOV", "FOVE"},
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
