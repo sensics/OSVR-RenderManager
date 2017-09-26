@@ -86,7 +86,7 @@ class SDLToolkitImpl {
       return ((SDLToolkitImpl*)data)->getDisplaySizeOverride(display, width, height);
   }
   static OSVR_CBool getRenderTimingInfoImpl(void* data, size_t display, size_t whichEye, OSVR_RenderTimingInfo* renderTimingInfoOut) {
-      return ((SDLToolkitImpl*)data)->getRenderTimingInfo(display, whichEye, renderTImingInfoOut);
+      return ((SDLToolkitImpl*)data)->getRenderTimingInfo(display, whichEye, renderTimingInfoOut);
   }
 
   // Classes and structures needed to do our rendering.
@@ -470,7 +470,7 @@ namespace renderkit {
       if(!m_toolkit.getRenderTimingInfo) {
         return false;
       }
-      return m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &info);
+      return (m_toolkit.getRenderTimingInfo(m_toolkit.data, 0, whichEye, &info) == OSVR_TRUE);
     }
 
     bool RenderManagerOpenGL::RenderPathSetup() {

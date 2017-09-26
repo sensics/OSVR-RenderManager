@@ -1783,7 +1783,7 @@ namespace renderkit {
       // duration of a full-screen scan-out.  If we are scanning out
       // from left to right or right to left, divide this by the number
       // of eyes per display to find the per-eye scan-out duration.
-      RenderTimingInfo timing;
+      OSVR_RenderTimingInfo timing;
       if (!GetTimingInfo(0, timing)) {
         // If we have no timing information, then we have nothing to use
         // to predict so we return the do-nothing result.
