@@ -238,7 +238,7 @@ namespace renderkit {
             Vendor{"VRG", "VRGate"},
             Vendor{"TSB", "VRGate"},
             Vendor{"VRV", "Vrvana"},
-            Vendor{"TVR", "TotalVision"},
+            Vendor{"TVL", "TotalVision"},
             Vendor{"FOV", "FOVE"},
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
