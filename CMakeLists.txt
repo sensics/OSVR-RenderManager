@@ -4,6 +4,12 @@ project(osvrRenderManager)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-fext-numeric-literals SUPPORTS_EXT_NUMERIC_LITERALS)
+if(SUPPORTS_EXT_NUMERIC_LITERALS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fext-numeric-literals")
+endif()
+
 #-----------------------------------------------------------------------------
 # Local CMake Modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -494,7 +500,6 @@ target_link_libraries(osvrRenderManager
 	osvr::osvrClientKitCpp
 	PRIVATE
 	JsonCpp::JsonCpp
-	osvr::osvrClient
 	osvr::osvrUtil
         osvr::osvrCommon
 	vendored-vrpn
