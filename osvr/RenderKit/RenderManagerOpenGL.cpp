@@ -302,7 +302,7 @@ static const GLchar* distortionVertexShader =
 
 static const GLchar* distortionFragmentShader =
 "#version 100\n"
-"precision highp float;\n"
+"precision mediump float;\n"
 "uniform sampler2D tex;\n"
 "varying vec2 warpedCoordinateR;\n"
 "varying vec2 warpedCoordinateG;\n"
