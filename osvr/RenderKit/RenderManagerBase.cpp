@@ -281,6 +281,10 @@ namespace renderkit {
         /// Start watching for head poses.
         m_headPoseCache.reset(new PoseStateCaching(m_context, "/me/head", p.m_clientPredictionLocalTimeOverride));
 
+		// Start watching for eye poses.
+		m_leftEyePoseCache.reset(new PoseStateCaching(m_context, "/me/eyes/left", p.m_clientPredictionLocalTimeOverride));
+		m_rightEyePoseCache.reset(new PoseStateCaching(m_context, "/me/eyes/right", p.m_clientPredictionLocalTimeOverride));
+
         // Initialize all of the variables that don't have to be done in the
         // list above, so we don't get warnings about out-of-order
         // initialization if they are re-ordered in the header file.
@@ -305,16 +309,37 @@ namespace renderkit {
             headSpaceName = p.m_roomFromHeadName;
         }
 
+		std::string leftEyeSpaceName = "/me/eyes/left";
+		if (p.m_roomFromLeftEyeName.size() > 0) {
+			leftEyeSpaceName = p.m_roomFromLeftEyeName;
+		}
+		std::string rightEyeSpaceName = "/me/eyes/right";
+		if (p.m_roomFromRightEyeName.size() > 0) {
+			rightEyeSpaceName = p.m_roomFromRightEyeName;
+		}
+
         m_displayWidth = m_params.m_displayConfiguration->getDisplayWidth();
         m_displayHeight = m_params.m_displayConfiguration->getDisplayHeight();
 
-        if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
-                                   &m_roomFromHeadInterface) ==
-              OSVR_RETURN_FAILURE) {
-            m_log->error() << "RenderManager::RenderManager(): Can't get interface " << headSpaceName;
-            setDoingOkay(false);
-        }
-        osvrPose3SetIdentity(&m_roomFromHead);
+		if (osvrClientGetInterface(m_context, headSpaceName.c_str(),
+			&m_roomFromHeadInterface) ==
+			OSVR_RETURN_FAILURE) {
+			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << headSpaceName;
+			setDoingOkay(false);
+		}
+		osvrPose3SetIdentity(&m_roomFromHead);
+		if (osvrClientGetInterface(m_context, leftEyeSpaceName.c_str(),
+			&m_roomFromLeftEyeInterface) ==
+			OSVR_RETURN_FAILURE) {
+			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << leftEyeSpaceName;
+		}
+		osvrPose3SetIdentity(&m_roomFromLeftEye);
+		if (osvrClientGetInterface(m_context, rightEyeSpaceName.c_str(),
+			&m_roomFromRightEyeInterface) ==
+			OSVR_RETURN_FAILURE) {
+			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << rightEyeSpaceName;
+		}
+		osvrPose3SetIdentity(&m_roomFromRightEye);
 
         // We haven't yet registered our render buffers, so can't present them
         m_renderBuffersRegistered = false;
@@ -446,9 +471,14 @@ namespace renderkit {
         // Destroy our head-pose cache object before we shut down our
         // context to avoid seg fault.
         m_headPoseCache.reset();
+		m_leftEyePoseCache.reset();
+		m_rightEyePoseCache.reset();
 
         // Close our roomFromHeadInterface
         osvrClientFreeInterface(m_context, m_roomFromHeadInterface);
+		osvrClientFreeInterface(m_context, m_roomFromLeftEyeInterface);
+		osvrClientFreeInterface(m_context, m_roomFromRightEyeInterface);
+
 
         // We're done with our context.
         osvrClientShutdown(m_context);
@@ -1433,188 +1463,407 @@ namespace renderkit {
         /// @todo Replace all of the quatlib math with Eigen math below,
         /// or with direct calls to the core library.
 
-        /// We need to determine the transformation that takes points
-        /// in the space we're going to render in and moves them into
-        /// the space described by the projection matrix.  That space
-        /// is eye space, which has the eye at the origin, X to the
-        /// right, Y up, and Z pointing into the camera (opposite to
-        /// the viewing direction).
+		// If eye poses are present, use them instead of head +- IPD
+		bool hasEyes = hasLeftEyePose() && hasRightEyePose();
+		if (!hasEyes)
+		{
+			/// We need to determine the transformation that takes points
+			/// in the space we're going to render in and moves them into
+			/// the space described by the projection matrix.  That space
+			/// is eye space, which has the eye at the origin, X to the
+			/// right, Y up, and Z pointing into the camera (opposite to
+			/// the viewing direction).
 
-        /// Include the impact of rotating the screen around the
-        // eye location for HMDs who have this feature.  This is
-        // computed in terms of the percent overlap of the screen.
-        // We rotate each eye away from the other by half of the
-        // amount they should not overlap.  NOTE: This assumes
-        // that both eyes are at the same location w.r.t. the
-        // overlap percent.
-        // @todo Verify this assumption.
-        q_xyz_quat_type q_rotatedEyeFromEye;
-        makeIdentity(q_rotatedEyeFromEye);
-        double rotateEyesApart = 0;
-        double overlapFrac =
-            m_params.m_displayConfiguration->getOverlapPercent();
-        if (overlapFrac < 1.) {
-            const auto hfov =
-                m_params.m_displayConfiguration->getHorizontalFOV();
-            const auto angularOverlap = hfov * overlapFrac;
-            rotateEyesApart = util::getDegrees((hfov - angularOverlap) / 2.);
-        }
-        // Right eyes should rotate the other way.
-        if (whichEye % 2 != 0) {
-            rotateEyesApart *= -1;
-        }
-        rotateEyesApart = osvr::common::degreesToRadians(rotateEyesApart);
-        q_from_axis_angle(q_rotatedEyeFromEye.quat, 0, 1, 0, rotateEyesApart);
+			/// Include the impact of rotating the screen around the
+			// eye location for HMDs who have this feature.  This is
+			// computed in terms of the percent overlap of the screen.
+			// We rotate each eye away from the other by half of the
+			// amount they should not overlap.  NOTE: This assumes
+			// that both eyes are at the same location w.r.t. the
+			// overlap percent.
+			// @todo Verify this assumption.
+			// @todo should we be doing this transformation when we have eye poses, or would that be included in the pose?
+			q_xyz_quat_type q_rotatedEyeFromEye;
+			makeIdentity(q_rotatedEyeFromEye);
+			double rotateEyesApart = 0;
+			double overlapFrac =
+				m_params.m_displayConfiguration->getOverlapPercent();
+			if (overlapFrac < 1.) {
+				const auto hfov =
+					m_params.m_displayConfiguration->getHorizontalFOV();
+				const auto angularOverlap = hfov * overlapFrac;
+				rotateEyesApart = util::getDegrees((hfov - angularOverlap) / 2.);
+			}
+			// Right eyes should rotate the other way.
+			if (whichEye % 2 != 0) {
+				rotateEyesApart *= -1;
+			}
+			rotateEyesApart = osvr::common::degreesToRadians(rotateEyesApart);
+			q_from_axis_angle(q_rotatedEyeFromEye.quat, 0, 1, 0, rotateEyesApart);
 
-        /// Include the impact of the eyeFromHead matrix.
-        // This is a translation along the X axis in head space by
-        // the IPD, or its negation, depending on the eye.
-        // We assume that even eyes are left eyes and odd eyes are
-        // right eyes.  We further assume that head space is between
-        // the two eyes.  If the display descriptor wants us to swap
-        // eyes, we do so by inverting the offset for each eye.
-        /// @todo dealing with eye tracking here or mono displays
-        q_xyz_quat_type q_headFromRotatedEye;
-        makeIdentity(q_headFromRotatedEye);
-        if (whichEye % 2 == 0) {
-            // Left eye
-            q_headFromRotatedEye.xyz[Q_X] -= params.IPDMeters / 2;
-        } else {
-            // Right eye
-            q_headFromRotatedEye.xyz[Q_X] += params.IPDMeters / 2;
-        }
-        q_xyz_quat_type q_headFromEye;
-        q_xyz_quat_compose(&q_headFromEye, &q_headFromRotatedEye,
-                           &q_rotatedEyeFromEye);
+			/// Include the impact of the eyeFromHead matrix.
+			// This is a translation along the X axis in head space by
+			// the IPD, or its negation, depending on the eye.
+			// We assume that even eyes are left eyes and odd eyes are
+			// right eyes.  We further assume that head space is between
+			// the two eyes.  If the display descriptor wants us to swap
+			// eyes, we do so by inverting the offset for each eye.
+			/// @todo dealing with eye tracking here or mono displays
+			q_xyz_quat_type q_headFromRotatedEye;
+			makeIdentity(q_headFromRotatedEye);
+			if (whichEye % 2 == 0) {
+				// Left eye
+				q_headFromRotatedEye.xyz[Q_X] -= params.IPDMeters / 2;
+			}
+			else {
+				// Right eye
+				q_headFromRotatedEye.xyz[Q_X] += params.IPDMeters / 2;
+			}
+			q_xyz_quat_type q_headFromEye;
+			q_xyz_quat_compose(&q_headFromEye, &q_headFromRotatedEye,
+				&q_rotatedEyeFromEye);
 
-        /// Include the impact of RenderParams.headFromRoom
-        /// (which will override m_headFromRoom) or of m_headFromRoom.
-        q_xyz_quat_type q_roomFromHead;
-        if (params.roomFromHeadReplace != nullptr) {
-            /// Use the params.m_headFromRoom as our transform
-            q_from_OSVR(q_roomFromHead, *params.roomFromHeadReplace);
-        } else {
-            /// Use the state interface to read the most-recent
-            /// location of the head.  It will have been updated
-            /// by the most-recent call to update() on the context.
-            /// DO NOT update the client here, so that we're using the
-            /// same state for all eyes.
-            OSVR_TimeValue timestamp;
-            if (!m_headPoseCache || !m_headPoseCache->getLastReport(timestamp, m_roomFromHead)) {
-                // This it not an error -- they may have put in an invalid
-                // state name for the head; we just ignore that case.
-            }
+			/// Include the impact of RenderParams.headFromRoom
+			/// (which will override m_headFromRoom) or of m_headFromRoom.
+			q_xyz_quat_type q_roomFromHead;
+			if (params.roomFromHeadReplace != nullptr) {
+				/// Use the params.m_headFromRoom as our transform
+				q_from_OSVR(q_roomFromHead, *params.roomFromHeadReplace);
+			}
+			else {
+				/// Use the state interface to read the most-recent
+				/// location of the head.  It will have been updated
+				/// by the most-recent call to update() on the context.
+				/// DO NOT update the client here, so that we're using the
+				/// same state for all eyes.
+				OSVR_TimeValue timestamp;
+				if (!m_headPoseCache || !m_headPoseCache->getLastReport(timestamp, m_roomFromHead)) {
+					// This it not an error -- they may have put in an invalid
+					// state name for the head; we just ignore that case.
+				}
 
-            // Do prediction of where this eye will be when it is presented
-            // if client-side prediction is enabled.
-            if (m_params.m_clientPredictionEnabled) {
-              // Get information about how long we have until the next present.
-              // If we can't get timing info, we just set its offset to 0.
-              float msUntilPresent = 0;
-              OSVR_RenderTimingInfo timing;
-              if (GetTimingInfo(whichEye, timing)) {
-                msUntilPresent +=
-                  (timing.timeUntilNextPresentRequired.seconds * 1e3f) +
-                  (timing.timeUntilNextPresentRequired.microseconds / 1e3f);
-              }
+				// Do prediction of where this eye will be when it is presented
+				// if client-side prediction is enabled.
+				if (m_params.m_clientPredictionEnabled) {
+					// Get information about how long we have until the next present.
+					// If we can't get timing info, we just set its offset to 0.
+					float msUntilPresent = 0;
+					OSVR_RenderTimingInfo timing;
+					if (GetTimingInfo(whichEye, timing)) {
+						msUntilPresent +=
+							(timing.timeUntilNextPresentRequired.seconds * 1e3f) +
+							(timing.timeUntilNextPresentRequired.microseconds / 1e3f);
+					}
 
-              // Find out how long ago this tracker info was found.
-              float msSinceTrackerReport = 0;
-              {
-                  OSVR_TimeValue now;
-                  osvrTimeValueGetNow(&now);
-                  msSinceTrackerReport = static_cast<float>(osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3);
-              }
+					// Find out how long ago this tracker info was found.
+					float msSinceTrackerReport = 0;
+					{
+						OSVR_TimeValue now;
+						osvrTimeValueGetNow(&now);
+						msSinceTrackerReport = static_cast<float>(osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3);
+					}
 
-              // The delay before rendering for each
-              // eye will be different because they are at different delays past
-              // the next vsync.  The static delay common to both eyes has
-              // already been added into their offset.
-              float predictionIntervalms = msSinceTrackerReport +
-                msUntilPresent;
-              if (whichEye < m_params.m_eyeDelaysMS.size()) {
-                predictionIntervalms += m_params.m_eyeDelaysMS[whichEye];
-              }
-              float predictionIntervalSec = predictionIntervalms / 1e3f;
+					// The delay before rendering for each
+					// eye will be different because they are at different delays past
+					// the next vsync.  The static delay common to both eyes has
+					// already been added into their offset.
+					float predictionIntervalms = msSinceTrackerReport +
+						msUntilPresent;
+					if (whichEye < m_params.m_eyeDelaysMS.size()) {
+						predictionIntervalms += m_params.m_eyeDelaysMS[whichEye];
+					}
+					float predictionIntervalSec = predictionIntervalms / 1e3f;
 
-              // Find out the pose velocity information, if available.
-              // Set the valid flags to false so that if to call to get
-              // velocity fails, we will not try and use the info.
-              OSVR_VelocityState vel;
-              vel.linearVelocityValid = false;
-              vel.angularVelocityValid = false;
-              if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
-                  // We're okay with failure here, we just use a zero
-                  // velocity to predict.
-                  // Using normal get state calls here because we're effectively
-                  // throwing away the returned timestamp for this data.
-              }
+					// Find out the pose velocity information, if available.
+					// Set the valid flags to false so that if to call to get
+					// velocity fails, we will not try and use the info.
+					OSVR_VelocityState vel;
+					vel.linearVelocityValid = false;
+					vel.angularVelocityValid = false;
+					if (osvrGetVelocityState(m_roomFromHeadInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
+						// We're okay with failure here, we just use a zero
+						// velocity to predict.
+						// Using normal get state calls here because we're effectively
+						// throwing away the returned timestamp for this data.
+					}
 
-              // Predict the future pose of the head based on the velocity
-              // information and how long we should predict.  Check the
-              // linear and angular velocity terms to see if we should be
-              // using each.  Replace the pose with the predicted pose.
-              PredictFuturePose(m_roomFromHead, vel,
-                predictionIntervalSec, m_roomFromHead);
-            }
+					// Predict the future pose of the head based on the velocity
+					// information and how long we should predict.  Check the
+					// linear and angular velocity terms to see if we should be
+					// using each.  Replace the pose with the predicted pose.
+					PredictFuturePose(m_roomFromHead, vel,
+						predictionIntervalSec, m_roomFromHead);
+				}
 
-            // Bring the pose into quatlib world.
-            q_from_OSVR(q_roomFromHead, m_roomFromHead);
-        }
-        q_xyz_quat_type q_roomFromEye;
-        q_xyz_quat_compose(&q_roomFromEye, &q_roomFromHead, &q_headFromEye);
+				// Bring the pose into quatlib world.
+				q_from_OSVR(q_roomFromHead, m_roomFromHead);
 
-        // See if we are making a transform for world space.
-        // If don't have a callback defined for this space, we're in
-        // world space.  This is used by GetRenderInfo() and
-        // PresentRenderBuffers() to get its world-space matrix.
-        // If we have a NULL interface pointer, we are
-        // in world space.
-        bool inWorldSpace = (whichSpace >= m_callbacks.size()) ||
-                            (m_callbacks[whichSpace].m_interface == nullptr);
+			}
+			q_xyz_quat_type q_roomFromEye;
+			q_xyz_quat_compose(&q_roomFromEye, &q_roomFromHead, &q_headFromEye);
+			// See if we are making a transform for world space.
+			// If don't have a callback defined for this space, we're in
+			// world space.  This is used by GetRenderInfo() and
+			// PresentRenderBuffers() to get its world-space matrix.
+			// If we have a NULL interface pointer, we are
+			// in world space.
+			bool inWorldSpace = (whichSpace >= m_callbacks.size()) ||
+				(m_callbacks[whichSpace].m_interface == nullptr);
 
-        /// Include the impact of roomFromWorld, if it is specified.
-        /// If we are not going into world space, but rather into one
-        /// of the other OSVR spaces, then just leave this as the identity
-        /// transform so we don't need to undo it again on the way
-        /// back from room space.
-        q_xyz_quat_type q_worldFromRoom;
-        makeIdentity(q_worldFromRoom);
-        if (inWorldSpace && (params.worldFromRoomAppend != nullptr)) {
-            q_from_OSVR(q_worldFromRoom, *params.worldFromRoomAppend);
-        }
-        q_xyz_quat_type q_worldFromEye;
-        q_xyz_quat_compose(&q_worldFromEye, &q_worldFromRoom, &q_roomFromEye);
+			/// Include the impact of roomFromWorld, if it is specified.
+			/// If we are not going into world space, but rather into one
+			/// of the other OSVR spaces, then just leave this as the identity
+			/// transform so we don't need to undo it again on the way
+			/// back from room space.
+			q_xyz_quat_type q_worldFromRoom;
+			makeIdentity(q_worldFromRoom);
+			if (inWorldSpace && (params.worldFromRoomAppend != nullptr)) {
+				q_from_OSVR(q_worldFromRoom, *params.worldFromRoomAppend);
+			}
+			q_xyz_quat_type q_worldFromEye;
+			q_xyz_quat_compose(&q_worldFromEye, &q_worldFromRoom, &q_roomFromEye);
 
-        /// Invert the above matrices, to produce eyeFromWorld.
-        q_xyz_quat_type q_eyeFromWorld;
-        q_xyz_quat_invert(&q_eyeFromWorld, &q_worldFromEye);
+			/// Invert the above matrices, to produce eyeFromWorld.
+			q_xyz_quat_type q_eyeFromWorld;
+			q_xyz_quat_invert(&q_eyeFromWorld, &q_worldFromEye);
 
-        /// Include the impact of the space we're rendering to.
-        /// This is spaceFromRoom; put on the right and multiply it on
-        /// the left by the above inverted matrix.  (If we are going
-        /// into one of these spaces, worldFromRoom will be the
-        /// identity so we don't need to invert and reapply it.)
-        q_xyz_quat_type q_worldFromSpace;
-        if (inWorldSpace) {
-            makeIdentity(q_worldFromSpace);
-        } else {
-            OSVR_TimeValue timestamp;
-            if (osvrGetPoseState(
-                    m_callbacks[whichSpace].m_interface, &timestamp,
-                    &m_callbacks[whichSpace].m_state) == OSVR_RETURN_FAILURE) {
-                // They asked for a space that does not exist.  Return false to
-                // let them know we didn't get the one they wanted.
-                return false;
-            }
-            q_from_OSVR(q_worldFromSpace, m_callbacks[whichSpace].m_state);
-        }
-        q_xyz_quat_type q_eyeFromSpace;
-        q_xyz_quat_compose(&q_eyeFromSpace, &q_eyeFromWorld, &q_worldFromSpace);
+			/// Include the impact of the space we're rendering to.
+			/// This is spaceFromRoom; put on the right and multiply it on
+			/// the left by the above inverted matrix.  (If we are going
+			/// into one of these spaces, worldFromRoom will be the
+			/// identity so we don't need to invert and reapply it.)
+			q_xyz_quat_type q_worldFromSpace;
+			if (inWorldSpace) {
+				makeIdentity(q_worldFromSpace);
+			}
+			else {
+				OSVR_TimeValue timestamp;
+				if (osvrGetPoseState(
+					m_callbacks[whichSpace].m_interface, &timestamp,
+					&m_callbacks[whichSpace].m_state) == OSVR_RETURN_FAILURE) {
+					// They asked for a space that does not exist.  Return false to
+					// let them know we didn't get the one they wanted.
+					return false;
+				}
+				q_from_OSVR(q_worldFromSpace, m_callbacks[whichSpace].m_state);
+			}
+			q_xyz_quat_type q_eyeFromSpace;
+			q_xyz_quat_compose(&q_eyeFromSpace, &q_eyeFromWorld, &q_worldFromSpace);
 
-        /// Store the result into the output pose
-        OSVR_from_q(eyeFromSpace, q_eyeFromSpace);
-        return true;
+			/// Store the result into the output pose
+			OSVR_from_q(eyeFromSpace, q_eyeFromSpace);
+			return true;
+
+		}
+		else //use left and right eye poses instead of offsets from the head
+		{
+			q_xyz_quat_type q_roomFromEye;
+			if (whichEye % 2 == 0) { //left eye
+
+				if (params.roomFromLeftEyeReplace != nullptr) {
+					q_from_OSVR(q_roomFromEye, *params.roomFromLeftEyeReplace);
+				}
+				else
+				{
+					/// Use the state interface to read the most-recent
+					/// location of the left eye.  It will have been updated
+					/// by the most-recent call to update() on the context.
+					/// DO NOT update the client here, so that we're using the
+					/// same state for all eyes.
+					OSVR_TimeValue timestamp;
+					if (!m_leftEyePoseCache || !m_leftEyePoseCache->getLastReport(timestamp, m_roomFromLeftEye)) {
+						// This it not an error -- they may have put in an invalid
+						// state name for the left eye; we just ignore that case.
+					}
+
+					// Do prediction of where this eye will be when it is presented
+					// if client-side prediction is enabled.
+					if (m_params.m_clientPredictionEnabled) {
+						// Get information about how long we have until the next present.
+						// If we can't get timing info, we just set its offset to 0.
+						float msUntilPresent = 0;
+						OSVR_RenderTimingInfo timing;
+						if (GetTimingInfo(whichEye, timing)) {
+							msUntilPresent +=
+								(timing.timeUntilNextPresentRequired.seconds * 1e3f) +
+								(timing.timeUntilNextPresentRequired.microseconds / 1e3f);
+						}
+
+						// Find out how long ago this tracker info was found.
+						float msSinceTrackerReport = 0;
+						{
+							OSVR_TimeValue now;
+							osvrTimeValueGetNow(&now);
+							msSinceTrackerReport = static_cast<float>(osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3);
+						}
+
+						// The delay before rendering for each
+						// eye will be different because they are at different delays past
+						// the next vsync.  The static delay common to both eyes has
+						// already been added into their offset.
+						float predictionIntervalms = msSinceTrackerReport +
+							msUntilPresent;
+						if (whichEye < m_params.m_eyeDelaysMS.size()) {
+							predictionIntervalms += m_params.m_eyeDelaysMS[whichEye];
+						}
+						float predictionIntervalSec = predictionIntervalms / 1e3f;
+
+						// Find out the pose velocity information, if available.
+						// Set the valid flags to false so that if to call to get
+						// velocity fails, we will not try and use the info.
+						OSVR_VelocityState vel;
+						vel.linearVelocityValid = false;
+						vel.angularVelocityValid = false;
+						if (osvrGetVelocityState(m_roomFromLeftEyeInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
+							// We're okay with failure here, we just use a zero
+							// velocity to predict.
+							// Using normal get state calls here because we're effectively
+							// throwing away the returned timestamp for this data.
+						}
+
+						// Predict the future pose of the head based on the velocity
+						// information and how long we should predict.  Check the
+						// linear and angular velocity terms to see if we should be
+						// using each.  Replace the pose with the predicted pose.
+						PredictFuturePose(m_roomFromLeftEye, vel,
+							predictionIntervalSec, m_roomFromLeftEye);
+					}
+
+					// Bring the pose into quatlib world.
+					q_from_OSVR(q_roomFromEye, m_roomFromLeftEye);
+				}
+
+			}
+			else { //right eye
+				if (params.roomFromRightEyeReplace != nullptr) {
+					/// Use the params.m_headFromRoom as our transform
+					q_from_OSVR(q_roomFromEye, *params.roomFromRightEyeReplace);
+				}
+				else
+				{
+					/// Use the state interface to read the most-recent
+					/// location of the right eye.  It will have been updated
+					/// by the most-recent call to update() on the context.
+					/// DO NOT update the client here, so that we're using the
+					/// same state for all eyes.
+					OSVR_TimeValue timestamp;
+					if (!m_rightEyePoseCache || !m_rightEyePoseCache->getLastReport(timestamp, m_roomFromRightEye)) {
+						// This it not an error -- they may have put in an invalid
+						// state name for the right eye; we just ignore that case.
+					}
+
+					// Do prediction of where this eye will be when it is presented
+					// if client-side prediction is enabled.
+					if (m_params.m_clientPredictionEnabled) {
+						// Get information about how long we have until the next present.
+						// If we can't get timing info, we just set its offset to 0.
+						float msUntilPresent = 0;
+						OSVR_RenderTimingInfo timing;
+						if (GetTimingInfo(whichEye, timing)) {
+							msUntilPresent +=
+								(timing.timeUntilNextPresentRequired.seconds * 1e3f) +
+								(timing.timeUntilNextPresentRequired.microseconds / 1e3f);
+						}
+
+						// Find out how long ago this tracker info was found.
+						float msSinceTrackerReport = 0;
+						{
+							OSVR_TimeValue now;
+							osvrTimeValueGetNow(&now);
+							msSinceTrackerReport = static_cast<float>(osvrTimeValueDurationSeconds(&now, &timestamp) * 1e3);
+						}
+
+						// The delay before rendering for each
+						// eye will be different because they are at different delays past
+						// the next vsync.  The static delay common to both eyes has
+						// already been added into their offset.
+						float predictionIntervalms = msSinceTrackerReport +
+							msUntilPresent;
+						if (whichEye < m_params.m_eyeDelaysMS.size()) {
+							predictionIntervalms += m_params.m_eyeDelaysMS[whichEye];
+						}
+						float predictionIntervalSec = predictionIntervalms / 1e3f;
+
+						// Find out the pose velocity information, if available.
+						// Set the valid flags to false so that if to call to get
+						// velocity fails, we will not try and use the info.
+						OSVR_VelocityState vel;
+						vel.linearVelocityValid = false;
+						vel.angularVelocityValid = false;
+						if (osvrGetVelocityState(m_roomFromRightEyeInterface, &timestamp, &vel) != OSVR_RETURN_SUCCESS) {
+							// We're okay with failure here, we just use a zero
+							// velocity to predict.
+							// Using normal get state calls here because we're effectively
+							// throwing away the returned timestamp for this data.
+						}
+
+						// Predict the future pose of the head based on the velocity
+						// information and how long we should predict.  Check the
+						// linear and angular velocity terms to see if we should be
+						// using each.  Replace the pose with the predicted pose.
+						PredictFuturePose(m_roomFromRightEye, vel,
+							predictionIntervalSec, m_roomFromRightEye);
+					}
+
+					// Bring the pose into quatlib world.
+					q_from_OSVR(q_roomFromEye, m_roomFromRightEye);
+				}
+
+			}
+
+			// See if we are making a transform for world space.
+			// If don't have a callback defined for this space, we're in
+			// world space.  This is used by GetRenderInfo() and
+			// PresentRenderBuffers() to get its world-space matrix.
+			// If we have a NULL interface pointer, we are
+			// in world space.
+			bool inWorldSpace = (whichSpace >= m_callbacks.size()) ||
+				(m_callbacks[whichSpace].m_interface == nullptr);
+
+			/// Include the impact of roomFromWorld, if it is specified.
+			/// If we are not going into world space, but rather into one
+			/// of the other OSVR spaces, then just leave this as the identity
+			/// transform so we don't need to undo it again on the way
+			/// back from room space.
+			q_xyz_quat_type q_worldFromRoom;
+			makeIdentity(q_worldFromRoom);
+			if (inWorldSpace && (params.worldFromRoomAppend != nullptr)) {
+				q_from_OSVR(q_worldFromRoom, *params.worldFromRoomAppend);
+			}
+			q_xyz_quat_type q_worldFromEye;
+			q_xyz_quat_compose(&q_worldFromEye, &q_worldFromRoom, &q_roomFromEye);
+
+			/// Invert the above matrices, to produce eyeFromWorld.
+			q_xyz_quat_type q_eyeFromWorld;
+			q_xyz_quat_invert(&q_eyeFromWorld, &q_worldFromEye);
+
+			/// Include the impact of the space we're rendering to.
+			/// This is spaceFromRoom; put on the right and multiply it on
+			/// the left by the above inverted matrix.  (If we are going
+			/// into one of these spaces, worldFromRoom will be the
+			/// identity so we don't need to invert and reapply it.)
+			q_xyz_quat_type q_worldFromSpace;
+			if (inWorldSpace) {
+				makeIdentity(q_worldFromSpace);
+			}
+			else {
+				OSVR_TimeValue timestamp;
+				if (osvrGetPoseState(
+					m_callbacks[whichSpace].m_interface, &timestamp,
+					&m_callbacks[whichSpace].m_state) == OSVR_RETURN_FAILURE) {
+					// They asked for a space that does not exist.  Return false to
+					// let them know we didn't get the one they wanted.
+					return false;
+				}
+				q_from_OSVR(q_worldFromSpace, m_callbacks[whichSpace].m_state);
+			}
+			q_xyz_quat_type q_eyeFromSpace;
+			q_xyz_quat_compose(&q_eyeFromSpace, &q_eyeFromWorld, &q_worldFromSpace);
+
+			/// Store the result into the output pose
+			OSVR_from_q(eyeFromSpace, q_eyeFromSpace);
+			return true;
+		}      
     }
 
     bool RenderManager::ComputeAsynchronousTimeWarps(
@@ -1986,6 +2235,35 @@ namespace renderkit {
         }
         return m_headPoseCache->getLastReport(tv, pose);
     }
+
+	bool RenderManager::hasLeftEyePose() const {
+		if (!m_leftEyePoseCache) {
+			return false;
+		}
+		return m_leftEyePoseCache->hasReport();
+	}
+
+	bool RenderManager::hasRightEyePose() const {
+		if (!m_rightEyePoseCache) {
+			return false;
+		}
+		return m_rightEyePoseCache->hasReport();
+	}
+
+	bool RenderManager::getLastLeftEyePose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const {
+		if (!m_leftEyePoseCache) {
+			return false;
+		}
+		return m_leftEyePoseCache->getLastReport(tv, pose);
+	}
+
+	bool RenderManager::getLastRightEyePose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const {
+		if (!m_rightEyePoseCache) {
+			return false;
+		}
+		return m_rightEyePoseCache->getLastReport(tv, pose);
+	}
+
 
     static double pointDistance(double x1, double y1, double x2, double y2) {
         return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
