@@ -23,8 +23,7 @@ Those who don't have access to the NDA repositories get using:
 ```
 git clone https://github.com/sensics/OSVR-RenderManager.git
 cd OSVR-RenderManager
-git submodule init vendor/vrpn
-git submodule update
+git submodule update --init --recursive vendor/vrpn
 ```
 
 Sensics internal users, who have access to the NDA repos, get using:
