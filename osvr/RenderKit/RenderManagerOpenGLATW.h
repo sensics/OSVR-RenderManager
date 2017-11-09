@@ -65,29 +65,29 @@ namespace renderkit {
         const static GLuint EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_ = 0x0001;
         const static GLuint EGL_TIMEOUT_EXPIRED_KHR_ = 0x30F5;
         const static GLuint EGL_SYNC_FENCE_KHR_ = 0x30F9;
-        
+
         typedef void* EGLSyncKHR_;
         typedef uint64_t EGLTimeKHR_;
         const static EGLTimeKHR_ EGL_FOREVER_KHR_ = 0xFFFFFFFFFFFFFFFFull;
-        
+
         typedef EGLSyncKHR_ (*eglCreateSyncKHRFunc)(
             EGLDisplay dpy,
             EGLenum type,
             const EGLint *attrib_list);
             eglCreateSyncKHRFunc eglCreateSyncKHR_;
-            
+
         typedef EGLBoolean (*eglDestroySyncKHRFunc)(
             EGLDisplay dpy,
             EGLSyncKHR_ sync);
             eglDestroySyncKHRFunc eglDestroySyncKHR_;
-                
+
         typedef EGLint (*eglClientWaitSyncKHRFunc)(
             EGLDisplay dpy,
             EGLSyncKHR_ sync,
             EGLint flags,
             EGLTimeKHR_ timeout);
             eglClientWaitSyncKHRFunc eglClientWaitSyncKHR_;
-                    
+
         constexpr static EGLSyncKHR_ EGL_NO_SYNC_KHR_ = ((EGLSyncKHR_)0);
 
         bool mEGLFenceExtensionAvailable = false;
@@ -146,7 +146,7 @@ namespace renderkit {
                     eglCreateSyncKHR_ &&
                     eglDestroySyncKHR_ &&
                     eglClientWaitSyncKHR_;
-                
+
                 if(mEGLFenceExtensionAvailable) {
                     m_log->info() << "RenderManagerOpenGLATW::LoadEGLExtensions: fence extension supported and procs loaded successfully!";
                 } else {
@@ -383,7 +383,7 @@ namespace renderkit {
         bool RenderFrameInitialize() override { return true; }
         bool RenderDisplayInitialize(size_t display) override { return true; }
         bool RenderEyeInitialize(size_t eye) override { return true; }
-        
+
         bool PresentDisplayInitialize(size_t display) override { return true; }
 
       protected:
@@ -407,9 +407,15 @@ namespace renderkit {
             // @todo Enable overlapped rendering on one frame while presentation
             // of the previous by doing this waiting on another thread.
             // WaitForRenderCompletion();
+            glFinish();
 
-            // if(this->mEGLFenceExtensionAvailable) {
+            // This code is disabled because of a potential bug in the Tegra drivers with eglClientWaitSync
+            // crashing. For now, using a glFinish()
+
+            // if(this->mEGLFenceExtensionAvailable && eglGetCurrentContext() != EGL_NO_CONTEXT) {
+            //     std::lock_guard<std::mutex> lock(mMutex);
             //     if(mFenceSync) {
+            //         m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglDestroySyncKHR";
             //         if(eglDestroySyncKHR_ && eglDestroySyncKHR_(mDisplay, mFenceSync) == EGL_FALSE) {
             //             m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglDestroySyncKHR return EGL_FALSE. "
             //                 << "Maybe something is wrong with the extension support on this platform?";
@@ -421,8 +427,9 @@ namespace renderkit {
             //         }
             //         mFenceSync = nullptr;
             //     }
-                
+
             //     if(eglCreateSyncKHR_) {
+            //         m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR";
             //         mFenceSync = eglCreateSyncKHR_(mDisplay, EGL_SYNC_FENCE_KHR_, nullptr);
             //         if(mFenceSync == EGL_NO_SYNC_KHR_) {
             //             m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR returned EGL_NO_SYNC_KHR. "
@@ -437,21 +444,22 @@ namespace renderkit {
             //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR not initialized.";
             //     }
 
-            //     if(eglClientWaitSyncKHR_) {
-            //         //const EGLTimeKHR_ tenMs = 1e+7;
-            //         EGLint waitResult = eglClientWaitSyncKHR_(mDisplay, mFenceSync, 
-            //             EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_, EGL_FOREVER_KHR_);
+                // if(eglClientWaitSyncKHR_) {
+                //     m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR";
+                //     //const EGLTimeKHR_ tenMs = 1e+7;
+                //     EGLint waitResult = eglClientWaitSyncKHR_(mDisplay, mFenceSync,
+                //         EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_, EGL_FOREVER_KHR_);
 
-            //         if(waitResult == EGL_TIMEOUT_EXPIRED_KHR_) {
-            //             m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_TIMEOUT_EXPIRED_KHR when waiting for the sync fence.";
-            //         } else if(waitResult == EGL_FALSE) {
-            //             m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_FALSE returned from eglClientWaitSyncKHR. Something might be wrong.";
-            //         } else {
-            //             m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: successfully waited on mFenceSync";
-            //         }
-            //     } else {
-            //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR_ not initialized";
-            //     }
+                //     if(waitResult == EGL_TIMEOUT_EXPIRED_KHR_) {
+                //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_TIMEOUT_EXPIRED_KHR when waiting for the sync fence.";
+                //     } else if(waitResult == EGL_FALSE) {
+                //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_FALSE returned from eglClientWaitSyncKHR. Something might be wrong.";
+                //     } else {
+                //         m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: successfully waited on mFenceSync";
+                //     }
+                // } else {
+                //     m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR_ not initialized";
+                // }
             // }
 
             { // Adding block to scope the lock_guard.
@@ -578,7 +586,7 @@ namespace renderkit {
 
                 m_log->info() << "RenderManagerOpenGLATW::threadFunc: Registering render buffers to the harnessed "
                                  "RenderManagerOpenGL";
-                
+
                 if (!mRenderManager->RegisterRenderBuffers(
                     mRegisteredRenderBuffers, mAppWillNotOverwriteBeforeNewPresent)) {
                     m_log->error() << "RenderManagerOpenGLATW::"
@@ -652,15 +660,23 @@ namespace renderkit {
                 }
 
                 if (timeToPresent) {
-                    // if(mFenceSync) {
-                    //     EGLint waitResult = eglClientWaitSyncKHR_(mDisplay, mFenceSync, 
-                    //         EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_, EGL_FOREVER_KHR_);
 
-                    //     if(waitResult == EGL_TIMEOUT_EXPIRED_KHR_) {
-                    //         m_log->info() << "RenderManagerOpenGLATW::threadFunc: got an EGL_TIMEOUT_EXPIRED_KHR when waiting for the sync fence.";
-                    //     }
-                    //     if(waitResult == EGL_FALSE) {
-                    //         m_log->info() << "RenderManagerOpenGLATW::threadFunc: got an EGL_FALSE returned from eglClientWaitSyncKHR. Something might be wrong.";
+                    // eglClientWaitSyncKHR is broken on Tegra, causes a signal 7,
+                    // disable this for now and do a glFlush instead.
+                    glFlush();
+                    // {
+                    //     std::lock_guard<std::mutex> lock(mMutex);
+                    //     if(mFenceSync && eglGetCurrentContext() != EGL_NO_CONTEXT) {
+                    //         m_log->info() << "RenderManagerOpenGLATW::threadFunc: eglClientWaitSyncKHR";
+                    //         EGLint waitResult = eglClientWaitSyncKHR_(mDisplay, mFenceSync,
+                    //             EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_, EGL_FOREVER_KHR_);
+
+                    //         if(waitResult == EGL_TIMEOUT_EXPIRED_KHR_) {
+                    //             m_log->info() << "RenderManagerOpenGLATW::threadFunc: got an EGL_TIMEOUT_EXPIRED_KHR when waiting for the sync fence.";
+                    //         }
+                    //         if(waitResult == EGL_FALSE) {
+                    //             m_log->info() << "RenderManagerOpenGLATW::threadFunc: got an EGL_FALSE returned from eglClientWaitSyncKHR. Something might be wrong.";
+                    //         }
                     //     }
                     // }
                     {
@@ -703,19 +719,6 @@ namespace renderkit {
 
                             struct timeval now;
                             vrpn_gettimeofday(&now, nullptr);
-                            // static double totalPresentTime = 0.0;
-                            // static long frameNumber = 0;
-                            // double currentTime = mRenderManager->timePresentRenderBuffers * 1e3;
-                            // //m_log->info() << "RenderManagerOpenGLATW::threadFunc(): current present time is " << currentTime;
-                            // totalPresentTime += currentTime;
-                            // if(frameNumber >= 90) {
-                            //     totalPresentTime = totalPresentTime / 90;
-                            //     m_log->info() << "RenderManagerOpenGLATW::threadFunc(): average present time is " << totalPresentTime;
-                            //     totalPresentTime = 0.0;
-                            //     frameNumber = 0;
-                            // } else {
-                            //     frameNumber++;
-                            // }
                             if (expectedFrameInterval >= 0 && lastFrameTime.tv_sec != 0) {
                                 double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
                                 if (frameInterval > expectedFrameInterval * 1.9) {
@@ -739,13 +742,6 @@ namespace renderkit {
                             iteration++;
 
                             mNextFrameAvailable = false;
-
-                            //m_log->info() << "RenderManagerOpenGLATW::threadFunc: Finished presenting frame to internal backend.";// Calling eglSwapBuffers.";
-                            // if(eglSwapBuffers(mDisplay, mSurface) == EGL_FALSE) {
-                            //     m_log->error() << "RenderManagerOpenGLATW::threadFunc: eglSwapBuffers call failed.";
-                            // } else {
-                            //     m_log->info() << "RenderManagerOpenGLATW::threadFunc: eglSwapBuffers call succeeded.";
-                            // }
                         }
                     }
                     mPresentFinishedCV.notify_all();
@@ -813,143 +809,6 @@ namespace renderkit {
 
             mRegisteredRenderBuffers = buffers;
             mAppWillNotOverwriteBeforeNewPresent = appWillNotOverwriteBeforeNewPresent;
-
-            // std::vector<osvr::renderkit::RenderInfo> renderInfo = mRenderManager->GetRenderInfo();
-            // std::vector<osvr::renderkit::RenderBuffer> renderBuffers;
-            // size_t numRenderInfos = renderInfo.size();
-
-            // for (size_t i = 0; i < buffers.size(); i++) {
-            //     RenderBufferATWInfo newInfo;
-            //     newInfo.textureCopy = nullptr; // We don't yet have a place to copy the texture.
-
-            //     // OK, now we need to open the shared resource on the ATW thread's ID3D11Device.
-            //     // We assume that the buffers for the eyes repeat, so that we modulo the number
-            //     // of buffers to find the correct index.
-            //     // @todo Specify this requirement in the API
-            //     {
-            //         // auto atwDevice = renderInfo[i % numRenderInfos].library.O->device;
-
-            //         if (!appWillNotOverwriteBeforeNewPresent) {
-            //             // The application is not maintaining two sets of buffers, so we'll
-            //             // need to make a copy of this texture when it is presented.  Here
-            //             // we allocate a place to put it.  We have to allocate a shared
-            //             // resource, so it can be used by both threads.  It is allocated on
-            //             // the render thread's device.  We need to introspect the texture
-            //             // to find its size and we need to make sure that we don't make
-            //             // two copies of the same buffer.
-
-            //             // If we already have a mapping for this buffer (from an earlier
-            //             // registration or because they registered the same buffer more than
-            //             // once), delete the earlier mapping.
-            //             //   auto existing = mBufferMap.find(buffers[i].D3D11->colorBuffer);
-            //             //   if ((existing != mBufferMap.end() &&
-            //             //       (mBufferMap[buffers[i].D3D11->colorBuffer].textureCopy !=
-            //             //        nullptr)) ) {
-            //             //     mBufferMap[buffers[i].D3D11->colorBuffer].textureCopy->Release();
-            //             //   }
-
-            //             //   // Construct the new texture that is to be used for the copy.
-            //             //   D3D11_TEXTURE2D_DESC info;
-            //             //   buffers[i].D3D11->colorBuffer->GetDesc(&info);
-
-            //             //   D3D11_TEXTURE2D_DESC textureDesc = {};
-            //             //   textureDesc.Width = info.Width;
-            //             //   textureDesc.Height = info.Height;
-            //             //   textureDesc.MipLevels = 1;
-            //             //   textureDesc.ArraySize = 1;
-            //             //   textureDesc.Format = info.Format;
-            //             //   textureDesc.SampleDesc.Count = 1;
-            //             //   textureDesc.SampleDesc.Quality = 0;
-            //             //   textureDesc.Usage = D3D11_USAGE_DEFAULT;
-            //             //   // We need it to be both a render target and a shader resource
-            //             //   textureDesc.BindFlags =
-            //             //     D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            //             //   textureDesc.CPUAccessFlags = 0;
-            //             //   textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
-            //             //   ID3D11Texture2D* textureCopy = nullptr;
-            //             //   hr = m_D3D11device->CreateTexture2D(&textureDesc, nullptr, &textureCopy);
-            //             //   if (FAILED(hr)) {
-            //             //       m_log->error() << "RenderManagerOpenGLATW::"
-            //             //                      << "RegisterRenderBuffersInternal: - Can't create copy texture for
-            //             //                      buffer "
-            //             //                      << i;
-            //             //       setDoingOkay(false);
-            //             //       return false;
-            //             //   }
-
-            //             // Record the place to copy incoming textures to.
-            //             // newInfo.textureCopy = textureCopy;
-            //             // m_log->error() << "RenderManagerOpenGLATW::RegisterRenderBuffersInternal: single buffered
-            //             // rendering not supported.";
-            //         }
-
-                    // If we made a new texture, we get our info from it.  Otherwise,
-                    // from the original texture.
-                    // GLuint textureToMap = buffers[i].OpenGL->colorBuffer;
-                    // if (newInfo.textureCopy) {
-                    //     textureToMap = newInfo.textureCopy;
-                    // }
-
-                    // we need to get the shared resource HANDLE for the ID3D11Texture2D, but in order to
-                    // get that, we need to get the IDXGIResource* first.
-                    // ID3D11Texture2D *texture2D = nullptr;
-                    // IDXGIResource* dxgiResource = nullptr;
-                    // hr = textureToMap->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&dxgiResource);
-                    // if (FAILED(hr)) {
-                    //   m_log->error()
-                    //     << "RenderManagerOpenGLATW::"
-                    //     << "RegisterRenderBuffersInternal: Can't get the IDXGIResource for the texture resource.";
-                    //   setDoingOkay(false);
-                    //   return false;
-                    // }
-
-                    // // now get the shared HANDLE
-                    // hr = dxgiResource->GetSharedHandle(&newInfo.sharedResourceHandle);
-                    // if (FAILED(hr)) {
-                    //   m_log->error()
-                    //     << "RenderManagerOpenGLATW::"
-                    //     << "RegisterRenderBuffersInternal: Can't get the shared handle from the dxgiResource.";
-                    //   setDoingOkay(false);
-                    //   return false;
-                    // }
-                    // dxgiResource->Release(); // we don't need this anymore
-
-                    //                          // Get a pointer on our device to the texture we're getting
-                    //                          // from the caller's device.
-                    // hr = atwDevice->OpenSharedResource(newInfo.sharedResourceHandle, __uuidof(ID3D11Texture2D),
-                    //   (LPVOID*)&texture2D);
-                    // if (FAILED(hr)) {
-                    //   m_log->error() << "RenderManagerOpenGLATW::"
-                    //     << "RegisterRenderBuffersInternal: - failed to open shared resource "
-                    //     << "for buffer " << i;
-                    //   setDoingOkay(false);
-                    //   return false;
-                    // }
-
-                    // We do not need a render target view for the ATW thread -- it will
-                    // only be reading from the buffer, not rendering into it.  Our base
-                    // class will create our RenderTargetView the first time the app calls
-                    // Render().
-                //     newInfo.atwBuffer.OpenGL = new osvr::renderkit::RenderBufferOpenGL();
-                //     newInfo.atwBuffer.OpenGL->colorBufferName = textureToMap;
-                //     newInfo.atwBuffer.OpenGL->depthStencilBufferName = 0; // We don't need this.
-                //     renderBuffers.push_back(newInfo.atwBuffer);
-                // }
-                // { // Adding block to scope the lock_guard.
-                //     // Lock our mutex so that we're not rendering while new buffers are
-                //     // being added or old ones modified.
-                //     std::lock_guard<std::mutex> lock(mMutex);
-                //     mBufferMap[buffers[i].OpenGL->colorBufferName] = newInfo;
-                // }
-            //}
-
-            // if (!mRenderManager->RegisterRenderBuffers(renderBuffers, appWillNotOverwriteBeforeNewPresent)) {
-            //     m_log->error() << "RenderManagerOpenGLATW::"
-            //                    << "RegisterRenderBuffersInternal: Could not Register render"
-            //                    << " buffers on harnessed RenderManager";
-            //     setDoingOkay(false);
-            //     return false;
-            // }
 
             // We're done -- call the base-class function to notify that we've
             // registered our buffers
