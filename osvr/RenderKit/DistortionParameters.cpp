@@ -35,6 +35,7 @@ namespace osvr {
     OSVR_RENDERMANAGER_EXPORT DistortionParameters::DistortionParameters(
       OSVRDisplayConfiguration& osvrParams,
       size_t eye) : DistortionParameters() {
+      m_desiredTriangles = osvrParams.getDesiredDistortionTriangleCount();
       if (osvrParams.getDistortionType() ==
         OSVRDisplayConfiguration::RGB_SYMMETRIC_POLYNOMIALS) {
         m_type = rgb_symmetric_polynomials;
