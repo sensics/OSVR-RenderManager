@@ -182,7 +182,10 @@ endif()
 #-----------------------------------------------------------------------------
 # OpenGL library as a stand-alone renderer not wrapping D3D
 if ( ( (OPENGL_FOUND AND GLEW_FOUND) OR OPENGLES2_FOUND ) AND (SDL2_FOUND OR ANDROID))
-	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLATW.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerOpenGL.cpp osvr/RenderKit/RenderManagerOpenGL.h osvr/RenderKit/RenderManagerOpenGLC.cpp)
+	if (ANDROID)
+		list(APPEND RenderManager_Sources osvr/RenderKit/RenderManagerOpenGLATW.h)
+	endif()
 	message(STATUS " - OpenGL support: enabled")
 	set(RM_USE_OPENGL TRUE)
 	set(OSVRRM_HAVE_OPENGL_SUPPORT ON)
@@ -373,7 +376,6 @@ set (RenderManager_PUBLIC_HEADERS
     osvr/RenderKit/RenderManagerD3D.h
 	osvr/RenderKit/RenderManagerD3D11C.h
 	osvr/RenderKit/RenderManagerOpenGL.h
-	osvr/RenderKit/RenderManagerOpenGLATW.h
 	osvr/RenderKit/RenderManagerOpenGLC.h
 	osvr/RenderKit/RenderManagerOpenGLVersion.h
     osvr/RenderKit/RenderManagerD3DOpenGL.h
