@@ -269,6 +269,8 @@ namespace renderkit {
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
                             GraphicsLibrary graphicsLibrary);
+        
+        friend class RenderManagerOpenGLATW;
     };
 
 } // namespace renderkit
