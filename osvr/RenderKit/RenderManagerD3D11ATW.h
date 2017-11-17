@@ -190,7 +190,7 @@ namespace osvr {
                 // rendering will get moving right away.
                 // @todo Enable overlapped rendering on one frame while presentation
                 // of the previous by doing this waiting on another thread.
-                WaitForRenderCompletion();
+                //WaitForRenderCompletion();
 
                 { // Adding block to scope the lock_guard.
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
@@ -254,14 +254,14 @@ namespace osvr {
                   mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
                   mFirstFramePresented = true;
 				  mNextFrameAvailable = true;
+				  //m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Queued next frame info, waiting for it to be presented...";
                 }
 
-				//m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Queued next frame info, waiting for it to be presented...";
 				{
 					std::unique_lock<std::mutex> lock(mMutex);
 					mPresentFinishedCV.wait(lock, [this] { return !mNextFrameAvailable; });
+					//m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Finished waiting for the frame to be presented.";
 				}
-				//m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Finished waiting for the frame to be presented.";
 
                 return true;
             }
@@ -347,86 +347,87 @@ namespace osvr {
                     }
 
                     if (timeToPresent) {
-                        // Lock our mutex so that we're not rendering while new buffers are
-                        // being presented.
-                        std::lock_guard<std::mutex> lock(mMutex);
-                        if (mFirstFramePresented) {
-                            // Update the context so we get our callbacks called and
-                            // update tracker state, which will be read during the
-                            // time-warp calculation in our harnessed RenderManager.
-                            osvrClientUpdate(mRenderManager->m_context);
+						{
+							// Lock our mutex so that we're not rendering while new buffers are
+							// being presented.
+							std::lock_guard<std::mutex> lock(mMutex);
+							if (mFirstFramePresented) {
+								// Update the context so we get our callbacks called and
+								// update tracker state, which will be read during the
+								// time-warp calculation in our harnessed RenderManager.
+								osvrClientUpdate(mRenderManager->m_context);
 
-                            // make a new RenderBuffers array with the atw thread's buffers
-                            std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
-                            for (size_t i = 0; i < mNextFrameInfo.colorBuffers.size(); i++) {
-                                auto key = mNextFrameInfo.colorBuffers[i];
-                                auto bufferInfoItr = mBufferMap.find(key);
-                                if (bufferInfoItr == mBufferMap.end()) {
-                                    m_log->error() << "No buffer info for key " << (size_t)key;
-                                    setDoingOkay(false);
-                                    mQuit = true;
-                                    break;
-                                }
+								// make a new RenderBuffers array with the atw thread's buffers
+								std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
+								for (size_t i = 0; i < mNextFrameInfo.colorBuffers.size(); i++) {
+									auto key = mNextFrameInfo.colorBuffers[i];
+									auto bufferInfoItr = mBufferMap.find(key);
+									if (bufferInfoItr == mBufferMap.end()) {
+										m_log->error() << "No buffer info for key " << (size_t)key;
+										setDoingOkay(false);
+										mQuit = true;
+										break;
+									}
 
-                                atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
-                            }
+									atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
+								}
 
-							//m_log->info() << "RenderManagerD3D11ATW::threadFunc: presenting frame to internal backend.";
+								//m_log->info() << "RenderManagerD3D11ATW::threadFunc: presenting frame to internal backend.";
 
-                            // Send the rendered results to the screen, using the
-                            // RenderInfo that was handed to us by the client the last
-                            // time they gave us some images.
-                            if (!mRenderManager->PresentRenderBuffers(
-                                atwRenderBuffers,
-                                mNextFrameInfo.renderInfo,
-                                mNextFrameInfo.renderParams,
-                                mNextFrameInfo.normalizedCroppingViewports,
-                                mNextFrameInfo.flipInY)) {
-                                    /// @todo if this might be intentional (expected) - shouldn't be an error...
-                                    m_log->error()
-                                        << "PresentRenderBuffers() returned false, maybe because it was asked to quit";
-                                    setDoingOkay(false);
-                                    mQuit = true;
-                            }
+								// Send the rendered results to the screen, using the
+								// RenderInfo that was handed to us by the client the last
+								// time they gave us some images.
+								if (!mRenderManager->PresentRenderBuffers(
+									atwRenderBuffers,
+									mNextFrameInfo.renderInfo,
+									mNextFrameInfo.renderParams,
+									mNextFrameInfo.normalizedCroppingViewports,
+									mNextFrameInfo.flipInY)) {
+									/// @todo if this might be intentional (expected) - shouldn't be an error...
+									m_log->error()
+										<< "PresentRenderBuffers() returned false, maybe because it was asked to quit";
+									setDoingOkay(false);
+									mQuit = true;
+								}
 
-							//m_log->info() << "RenderManagerD3D11ATW::threadFunc: finished presenting frame to internal backend.";
+								//m_log->info() << "RenderManagerD3D11ATW::threadFunc: finished presenting frame to internal backend.";
 
-                            struct timeval now;
-                            vrpn_gettimeofday(&now, nullptr);
-                            if (expectedFrameInterval >= 0 && lastFrameTime.tv_sec != 0) {
-                                double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
-                                if (frameInterval > expectedFrameInterval * 1.9) {
-                                    m_log->info() << "RenderManagerThread::threadFunc(): Missed"
-                                        " 1+ frame at " << iteration <<
-                                        ", expected interval " << expectedFrameInterval * 1e3
-                                        << "ms but got " << frameInterval * 1e3;
-                                    m_log->info() << "  (PresentRenderBuffers took "
-                                        << mRenderManager->timePresentRenderBuffers * 1e3
-                                        << "ms)";
-                                    m_log->info() << "  (FrameInit "
-                                        << mRenderManager->timePresentFrameInitialize * 1e3
-                                        << ", WaitForSync "
-                                        << mRenderManager->timeWaitForSync * 1e3
-                                        << ", DisplayInit "
-                                        << mRenderManager->timePresentDisplayInitialize * 1e3
-                                        << ", PresentEye "
-                                        << mRenderManager->timePresentEye * 1e3
-                                        << ", DisplayFinal "
-                                        << mRenderManager->timePresentDisplayFinalize * 1e3
-                                        << ", FrameFinal "
-                                        << mRenderManager->timePresentFrameFinalize * 1e3
-                                        << ")";
-                                }
-                            }
-                            lastFrameTime = now;
+								struct timeval now;
+								vrpn_gettimeofday(&now, nullptr);
+								if (expectedFrameInterval >= 0 && lastFrameTime.tv_sec != 0) {
+									double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
+									if (frameInterval > expectedFrameInterval * 1.9) {
+										m_log->info() << "RenderManagerThread::threadFunc(): Missed"
+											" 1+ frame at " << iteration <<
+											", expected interval " << expectedFrameInterval * 1e3
+											<< "ms but got " << frameInterval * 1e3;
+										m_log->info() << "  (PresentRenderBuffers took "
+											<< mRenderManager->timePresentRenderBuffers * 1e3
+											<< "ms)";
+										m_log->info() << "  (FrameInit "
+											<< mRenderManager->timePresentFrameInitialize * 1e3
+											<< ", WaitForSync "
+											<< mRenderManager->timeWaitForSync * 1e3
+											<< ", DisplayInit "
+											<< mRenderManager->timePresentDisplayInitialize * 1e3
+											<< ", PresentEye "
+											<< mRenderManager->timePresentEye * 1e3
+											<< ", DisplayFinal "
+											<< mRenderManager->timePresentDisplayFinalize * 1e3
+											<< ", FrameFinal "
+											<< mRenderManager->timePresentFrameFinalize * 1e3
+											<< ")";
+									}
+								}
+								lastFrameTime = now;
 
-                            iteration++;
+								iteration++;
 
-							mNextFrameAvailable = false;
-                        }
+								mNextFrameAvailable = false;
+							}
+						}
 						mPresentFinishedCV.notify_all();
                     }
-
                     quit = mQuit;
                 }
             }

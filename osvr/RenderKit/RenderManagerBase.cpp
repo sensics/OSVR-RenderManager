@@ -2335,7 +2335,7 @@ namespace renderkit {
                     // DirectMode interface as well.
                     if (p.m_asynchronousTimeWarp) {
                         RenderManager::ConstructorParameters pTemp = p;
-						pTemp.m_verticalSync = false;
+						pTemp.m_verticalSync = true;
 						pTemp.m_verticalSyncBlocksRendering = false;
 						pTemp.m_maxMSBeforeVsyncTimeWarp = 0;
 						pTemp.m_enableTimeWarp = true;
