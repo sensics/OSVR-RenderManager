@@ -128,7 +128,6 @@ void Usage(std::string name) {
 }
 
 int main(int argc, char* argv[]) {
-	SetThreadName((DWORD)-1, "RenderThread");
 	std::cout << "Render thread id: " << std::this_thread::get_id();
     // Parse the command line
     int realParams = 0;
@@ -276,8 +275,8 @@ int main(int argc, char* argv[]) {
 
         // Initialize a new render target texture description.
         D3D11_TEXTURE2D_DESC textureDesc = {};
-        textureDesc.Width = width;
-        textureDesc.Height = height;
+		textureDesc.Width = static_cast<UINT>(width);
+        textureDesc.Height = static_cast<UINT>(height);
         textureDesc.MipLevels = 1;
         textureDesc.ArraySize = 1;
         textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -333,8 +332,8 @@ int main(int argc, char* argv[]) {
         textureDescription.SampleDesc.Quality = 0;
         textureDescription.Usage = D3D11_USAGE_DEFAULT;
         textureDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-        textureDescription.Width = width;
-        textureDescription.Height = height;
+        textureDescription.Width = static_cast<UINT>(width);
+        textureDescription.Height = static_cast<UINT>(height);
         textureDescription.MipLevels = 1;
         textureDescription.ArraySize = 1;
         textureDescription.CPUAccessFlags = 0;

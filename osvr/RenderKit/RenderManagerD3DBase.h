@@ -93,6 +93,12 @@ namespace renderkit {
 
         bool m_displayOpen; ///< Has our display been opened?
 
+		/// Block until vsync after a framebuffer or direct mode present, even if
+		/// parameters say not to. This is used by the ATW wrapper to do a more
+		/// fine-grained blocking (no blocking before present, but yes blocking after)
+		/// TODO: Could this be added as a new parameter? Might be a breaking change if so.
+		bool m_vsyncBlockAfterFrameBufferPresent = false;
+
         /// The adapter, if and only if explicitly set.
         Microsoft::WRL::ComPtr<IDXGIAdapter> m_adapter;
 
@@ -208,6 +214,12 @@ namespace renderkit {
         friend class RenderManagerD3D11OpenGL;
         friend class RenderManagerD3D11ATW;
         friend class ::sensics::compositor::DisplayServerInterfaceD3D11Singleton;
+
+		// needed to access m_vsyncBlockAfterFrameBufferPresent from createRenderManager
+		// TODO: if this is added as a parameter (breaking change), then this isn't needed anymore and should be removed.
+		friend RenderManager* createRenderManager(OSVR_ClientContext contextParameter,
+			const std::string& renderLibraryName,
+			GraphicsLibrary graphicsLibrary);
     };
 
 } // namespace renderkit

@@ -118,7 +118,9 @@ void RenderView(
 
     // draw room
     simpleShader.use(device, context, xm_projectionD3D, xm_viewD3D, identity);
-    roomCube.draw(device, context);
+	//for (size_t i = 0; i < 10000; i++) {
+		roomCube.draw(device, context);
+	//}
 }
 
 void Usage(std::string name) {
@@ -136,10 +138,10 @@ struct FrameInfo {
 };
 
 int main(int argc, char* argv[]) {
-	std::cout << "Render thread id: " << std::this_thread::get_id();
+	std::cout << "Render thread id: " << std::this_thread::get_id() << std::endl;
 
     // Parse the command line
-    int delayMilliSeconds = 500;
+    int delayMilliSeconds = 0;
     int realParams = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {

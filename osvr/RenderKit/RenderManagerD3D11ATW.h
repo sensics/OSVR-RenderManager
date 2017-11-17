@@ -298,6 +298,7 @@ namespace osvr {
 
             void threadFunc() {
                 // Used to make sure we don't take too long to render
+				m_log->info() << "RenderManagerD3D11ATW::threadFunc thread id: " << std::this_thread::get_id() << std::endl;
                 struct timeval lastFrameTime = {};
                 bool quit = getQuit();
                 size_t iteration = 0;
@@ -370,6 +371,8 @@ namespace osvr {
                                 atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
                             }
 
+							//m_log->info() << "RenderManagerD3D11ATW::threadFunc: presenting frame to internal backend.";
+
                             // Send the rendered results to the screen, using the
                             // RenderInfo that was handed to us by the client the last
                             // time they gave us some images.
@@ -385,6 +388,8 @@ namespace osvr {
                                     setDoingOkay(false);
                                     mQuit = true;
                             }
+
+							//m_log->info() << "RenderManagerD3D11ATW::threadFunc: finished presenting frame to internal backend.";
 
                             struct timeval now;
                             vrpn_gettimeofday(&now, nullptr);
