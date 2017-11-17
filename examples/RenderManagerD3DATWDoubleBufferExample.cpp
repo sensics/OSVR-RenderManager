@@ -40,6 +40,7 @@ Russ Taylor <russ@sensics.com>
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <thread>
 #include <stdlib.h> // For exit()
 
 using namespace DirectX;
@@ -135,6 +136,8 @@ struct FrameInfo {
 };
 
 int main(int argc, char* argv[]) {
+	std::cout << "Render thread id: " << std::this_thread::get_id();
+
     // Parse the command line
     int delayMilliSeconds = 500;
     int realParams = 0;

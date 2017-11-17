@@ -36,6 +36,7 @@ Sensics, Inc.
 #include <string>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <functional>
 #include <map>
 #include <set>
@@ -58,12 +59,13 @@ namespace osvr {
             } RenderBufferATWInfo;
             std::map<ID3D11Texture2D*, RenderBufferATWInfo> mBufferMap;
 
-            std::mutex mLock;
+            std::mutex mMutex;
+			std::condition_variable mPresentFinishedCV;
             std::shared_ptr<std::thread> mThread = nullptr;
 
             /// Holds information about the buffers to be used by the next rendering
             /// pass.  This is filled in by PresentRenderBuffersInternal() and used
-            /// by the ATW thread.  Access should be guarded using the mLock to prevent
+            /// by the ATW thread.  Access should be guarded using the mMutex to prevent
             /// simultaneous use in both threads.
             struct {
                 std::vector<ID3D11Texture2D*> colorBuffers;
@@ -72,6 +74,7 @@ namespace osvr {
                 RenderParams renderParams;
                 bool flipInY;
             } mNextFrameInfo;
+			bool mNextFrameAvailable = false;
 
             bool mQuit = false;
             bool mStarted = false;
@@ -106,7 +109,7 @@ namespace osvr {
             }
 
             OpenResults OpenDisplay() override {
-                std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mMutex);
 
                 OpenResults ret;
 
@@ -192,7 +195,7 @@ namespace osvr {
                 { // Adding block to scope the lock_guard.
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
                   // This lock is automatically released when we're done with this function.
-                  std::lock_guard<std::mutex> lock(mLock);
+                  std::lock_guard<std::mutex> lock(mMutex);
                   HRESULT hr;
 
                   mNextFrameInfo.colorBuffers.clear();
@@ -250,7 +253,16 @@ namespace osvr {
                   mNextFrameInfo.renderParams = renderParams;
                   mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
                   mFirstFramePresented = true;
+				  mNextFrameAvailable = true;
                 }
+
+				//m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Queued next frame info, waiting for it to be presented...";
+				{
+					std::unique_lock<std::mutex> lock(mMutex);
+					mPresentFinishedCV.wait(lock, [this] { return !mNextFrameAvailable; });
+				}
+				//m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Finished waiting for the frame to be presented.";
+
                 return true;
             }
 
@@ -272,7 +284,7 @@ namespace osvr {
             }
 
             void stop() {
-                std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mMutex);
                 if (!mStarted) {
                     m_log->error() << "RenderManagerThread::stop() - thread loop not already started.";
                 }
@@ -280,7 +292,7 @@ namespace osvr {
             }
 
             bool getQuit() {
-                std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mMutex);
                 return mQuit;
             }
 
@@ -336,7 +348,7 @@ namespace osvr {
                     if (timeToPresent) {
                         // Lock our mutex so that we're not rendering while new buffers are
                         // being presented.
-                        std::lock_guard<std::mutex> lock(mLock);
+                        std::lock_guard<std::mutex> lock(mMutex);
                         if (mFirstFramePresented) {
                             // Update the context so we get our callbacks called and
                             // update tracker state, which will be read during the
@@ -404,7 +416,10 @@ namespace osvr {
                             lastFrameTime = now;
 
                             iteration++;
+
+							mNextFrameAvailable = false;
                         }
+						mPresentFinishedCV.notify_all();
                     }
 
                     quit = mQuit;
@@ -425,7 +440,7 @@ namespace osvr {
             bool PresentFrameFinalize() override { return true; }
 
             bool SolidColorEye(size_t eye, const RGBColorf &color) override {
-              std::lock_guard<std::mutex> lock(mLock);
+              std::lock_guard<std::mutex> lock(mMutex);
               // Stop the rendering thread from overwriting with warped
               // versions of the most recently presented buffers.
               mFirstFramePresented = false;
@@ -577,7 +592,7 @@ namespace osvr {
                   { // Adding block to scope the lock_guard.
                     // Lock our mutex so that we're not rendering while new buffers are
                     // being added or old ones modified.
-                    std::lock_guard<std::mutex> lock(mLock);
+                    std::lock_guard<std::mutex> lock(mMutex);
                     mBufferMap[buffers[i].D3D11->colorBuffer] = newInfo;
                   }
                 }

@@ -42,6 +42,7 @@
 #include <string>
 #include <stdlib.h> // For exit()
 #include <chrono>
+#include <thread>
 
 using namespace DirectX;
 
@@ -88,8 +89,8 @@ void myButtonCallback(void* userdata, const OSVR_TimeValue* /*timestamp*/,
 // Callbacks to draw things in world space, left-hand space, and right-hand
 // space.
 void RenderView(
-    const OSVR_RenderInfoD3D11& renderInfo //< Info needed to render
-    ,
+    size_t eye,
+	const OSVR_RenderInfoD3D11& renderInfo, //< Info needed to render
     ID3D11RenderTargetView* renderTargetView,
     ID3D11DepthStencilView* depthStencilView) {
 
@@ -103,17 +104,12 @@ void RenderView(
     context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 
     // Set up the viewport we're going to draw into.
-    CD3D11_VIEWPORT viewport(static_cast<float>(renderInfo.viewport.left),
-                             static_cast<float>(renderInfo.viewport.lower),
-                             static_cast<float>(renderInfo.viewport.width),
-                             static_cast<float>(renderInfo.viewport.height));
-    context->RSSetViewports(1, &viewport);
+	CD3D11_VIEWPORT viewport(static_cast<float>(eye == 0 ? 0 : renderInfo.viewport.width),
+							 static_cast<float>(renderInfo.viewport.lower),
+							 static_cast<float>(renderInfo.viewport.width),
+		                     static_cast<float>(renderInfo.viewport.height));
 
-    // Make a grey background
-    FLOAT colorRgba[4] = {0.3f, 0.3f, 0.3f, 1.0f};
-    context->ClearRenderTargetView(renderTargetView, colorRgba);
-    context->ClearDepthStencilView(
-        depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    context->RSSetViewports(1, &viewport);
 
     OSVR_PoseState_to_D3D(viewD3D, renderInfo.pose);
     OSVR_Projection_to_D3D(projectionD3D,
@@ -132,6 +128,8 @@ void Usage(std::string name) {
 }
 
 int main(int argc, char* argv[]) {
+	SetThreadName((DWORD)-1, "RenderThread");
+	std::cout << "Render thread id: " << std::this_thread::get_id();
     // Parse the command line
     int realParams = 0;
     for (int i = 1; i < argc; i++) {
@@ -152,6 +150,23 @@ int main(int argc, char* argv[]) {
     // that we need.
     osvr::clientkit::ClientContext context(
         "osvr.RenderManager.D3DPresentExample3D");
+
+	// Wait for good status on context
+	{
+		auto ctxInitStart = std::chrono::system_clock::now();
+		bool timeout = false;
+		do {
+			context.update();
+			auto ctxInitEnd = std::chrono::system_clock::now();
+			std::chrono::duration<double> elapsedSec = ctxInitEnd - ctxInitStart;
+			int secs = static_cast<int>(elapsedSec.count());
+			timeout = secs >= 2;
+		} while (!context.checkStatus() && !timeout);
+		if (timeout) {
+			std::cerr << "Timed out waiting for the ClientContext to connect to the OSVR server.";
+			return 1;
+		}
+	}
 
     // Construct button devices and connect them to a callback
     // that will set the "quit" variable to true when it is
@@ -246,8 +261,11 @@ int main(int argc, char* argv[]) {
     std::vector<ID3D11Texture2D*> depthStencilTextures;
     std::vector<ID3D11DepthStencilView*> depthStencilViews;
 
+	double width = renderInfo[0].viewport.width + renderInfo[1].viewport.width;
+	double height = renderInfo[0].viewport.height;
+
     HRESULT hr;
-    for (size_t i = 0; i < numRenderInfo; i++) {
+    for (size_t i = 0; i < 2; i++) {
 
         // The color buffer for this eye.  We need to put this into
         // a generic structure for the Present function, but we only need
@@ -255,8 +273,6 @@ int main(int argc, char* argv[]) {
         //  Note that this texture format must be RGBA and unsigned byte,
         // so that we can present it to Direct3D for DirectMode.
         ID3D11Texture2D* D3DTexture = nullptr;
-        unsigned width = static_cast<int>(renderInfo[i].viewport.width);
-        unsigned height = static_cast<int>(renderInfo[i].viewport.height);
 
         // Initialize a new render target texture description.
         D3D11_TEXTURE2D_DESC textureDesc = {};
@@ -370,8 +386,7 @@ int main(int argc, char* argv[]) {
 
     // Front-facing stencil operations
     depthStencilDescription.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    depthStencilDescription.FrontFace.StencilDepthFailOp =
-        D3D11_STENCIL_OP_INCR;
+    depthStencilDescription.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
     depthStencilDescription.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
     depthStencilDescription.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
@@ -399,7 +414,7 @@ int main(int argc, char* argv[]) {
 	      osvrDestroyRenderManager(render);
 	      return -4;
     }
-    for (size_t i = 0; i < numRenderInfo; i++) {
+    for (size_t i = 0; i < renderBuffers.size(); i++) {
       if ((OSVR_RETURN_SUCCESS != osvrRenderManagerRegisterRenderBufferD3D11(
           registerBufferState, renderBuffers[i]))) {
         std::cerr << "Could not register render buffer " << i << std::endl;
@@ -408,7 +423,7 @@ int main(int argc, char* argv[]) {
       }
     }
     if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishRegisterRenderBuffers(
-      render, registerBufferState, false))) {
+      render, registerBufferState, true))) {
       std::cerr << "Could not start finish registering render buffers" << std::endl;
 	    osvrDestroyRenderManager(render);
 	    return -6;
@@ -416,99 +431,121 @@ int main(int argc, char* argv[]) {
 
     // Timing of frame rates
     size_t count = 0;
+	size_t frameIndex = 0;
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
 
     // Continue rendering until it is time to quit.
-    while (!quit) {
-        // Update the context so we get our callbacks called and
-        // update tracker state.
-        context.update();
+	while (!quit) {
+		size_t renderBufferIndex = frameIndex % 2;
+		frameIndex++;
 
-        if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
-          render, renderParams, &renderInfoCollection))) {
-          std::cerr << "Could not get render info" << std::endl;
-          osvrDestroyRenderManager(render);
-          return 105;
-        }
-        osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+		// Update the context so we get our callbacks called and
+		// update tracker state.
+		context.update();
+
+		if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoCollection(
+			render, renderParams, &renderInfoCollection))) {
+			std::cerr << "Could not get render info" << std::endl;
+			osvrDestroyRenderManager(render);
+			return 105;
+		}
+		osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
 
 
-        renderInfo.clear();
-        for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
-          OSVR_RenderInfoD3D11 info;
-          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionD3D11(
-            renderInfoCollection, i, &info))) {
-            std::cerr << "Could not get render info " << i
-              << std::endl;
-            osvrDestroyRenderManager(render);
-            return 106;
-          }
-          renderInfo.push_back(info);
-        }
-        osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
+		renderInfo.clear();
+		for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++) {
+			OSVR_RenderInfoD3D11 info;
+			if ((OSVR_RETURN_SUCCESS != osvrRenderManagerGetRenderInfoFromCollectionD3D11(
+				renderInfoCollection, i, &info))) {
+				std::cerr << "Could not get render info " << i
+					<< std::endl;
+				osvrDestroyRenderManager(render);
+				return 106;
+			}
+			renderInfo.push_back(info);
+		}
+		osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
 
-        // Render into each buffer using the specified information.
-        for (size_t i = 0; i < renderInfo.size(); i++) {
-            renderInfo[i].library.context->OMSetDepthStencilState(
-                depthStencilState, 1);
-            RenderView(renderInfo[i], renderBuffers[i].colorBufferView,
-                       depthStencilViews[i]);
-        }
+		// Set up to render to the textures for this eye
+		auto renderTargetView = renderBuffers[renderBufferIndex].colorBufferView;
+		auto depthStencilView = depthStencilViews[renderBufferIndex];
+		auto context = renderInfo[0].library.context;
+		context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 
-        // Every other second, we show a black screen to test how
-        // a game engine might blank it between scenes.  Every even
-        // second, we display the video.
-        end = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_sec = end - start;
-        int secs = static_cast<int>(elapsed_sec.count());
+		// Set up the viewport we're going to draw into.
+		//CD3D11_VIEWPORT viewport(static_cast<float>(renderInfo.viewport.left),
+		//                         static_cast<float>(renderInfo.viewport.lower),
+		//                         static_cast<float>(renderInfo.viewport.width),
+		//                         static_cast<float>(renderInfo.viewport.height));
+		CD3D11_VIEWPORT viewport(
+			0.0f,
+			0.0f,
+			static_cast<float>(width),
+			static_cast<float>(height));
 
-        if (secs % 2 == 0) {
-          // Send the rendered results to the screen
-          OSVR_RenderManagerPresentState presentState;
-          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(
-            &presentState))) {
-            std::cerr << "Could not start presenting render buffers" << std::endl;
-			      osvrDestroyRenderManager(render);
-			      return 201;
-          }
-          OSVR_ViewportDescription fullView;
-          fullView.left = fullView.lower = 0;
-          fullView.width = fullView.height = 1;
-          for (size_t i = 0; i < numRenderInfo; i++) {
-            if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
-              presentState, renderBuffers[i], renderInfo[i], fullView))) {
-              std::cerr << "Could not present render buffer " << i << std::endl;
-			        osvrDestroyRenderManager(render);
-			        return 202;
-            }
-          }
-          if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
-            render, presentState, renderParams, false))) {
-            std::cerr << "Could not finish presenting render buffers" << std::endl;
-			      osvrDestroyRenderManager(render);
-			      return 203;
-          }
-        } else {
-          // send a black screen.
-          OSVR_RGB_FLOAT black;
-          black.r = black.g = black.b = 0;
-          osvrRenderManagerPresentSolidColorf(render, black);
-        }
+		context->RSSetViewports(1, &viewport);
 
-        // Timing information
-        if (elapsed_sec.count() >= 2) {
-            std::chrono::duration<double, std::micro> elapsed_usec =
-                end - start;
-            double usec = elapsed_usec.count();
-            std::cout << "Rendering at " << count / (usec * 1e-6) << " fps"
-                      << std::endl;
-            start = end;
-            count = 0;
-        }
-        count++;
-    }
+		// Make a grey background
+		FLOAT colorRgba[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
+		context->ClearRenderTargetView(renderTargetView, colorRgba);
+		context->ClearDepthStencilView(
+			depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+		// Render into each buffer using the specified information.
+		for (size_t i = 0; i < renderInfo.size(); i++) {
+			renderInfo[i].library.context->OMSetDepthStencilState(
+				depthStencilState, 1);
+			RenderView(i, renderInfo[i], renderTargetView, depthStencilView);
+		}
+
+		// Every other second, we show a black screen to test how
+		// a game engine might blank it between scenes.  Every even
+		// second, we display the video.
+		end = std::chrono::system_clock::now();
+		std::chrono::duration<double> elapsed_sec = end - start;
+		int secs = static_cast<int>(elapsed_sec.count());
+
+		// Send the rendered results to the screen
+		OSVR_RenderManagerPresentState presentState;
+		if ((OSVR_RETURN_SUCCESS != osvrRenderManagerStartPresentRenderBuffers(&presentState))) {
+			std::cerr << "Could not start presenting render buffers" << std::endl;
+			osvrDestroyRenderManager(render);
+			return 201;
+		}
+
+		for (size_t i = 0; i < numRenderInfo; i++) {
+			OSVR_ViewportDescription normalizedViewport;
+			normalizedViewport.left = i == 0 ? 0 : 0.5;
+			normalizedViewport.lower = 0;
+			normalizedViewport.width = 0.5;
+			normalizedViewport.height = 1.0;
+
+			if ((OSVR_RETURN_SUCCESS != osvrRenderManagerPresentRenderBufferD3D11(
+				presentState, renderBuffers[renderBufferIndex], renderInfo[i], normalizedViewport))) {
+				std::cerr << "Could not present render buffer " << i << std::endl;
+				osvrDestroyRenderManager(render);
+				return 202;
+			}
+		}
+		if ((OSVR_RETURN_SUCCESS != osvrRenderManagerFinishPresentRenderBuffers(
+			render, presentState, renderParams, false))) {
+			std::cerr << "Could not finish presenting render buffers" << std::endl;
+			osvrDestroyRenderManager(render);
+			return 203;
+		}
+
+		// Timing information
+		if (elapsed_sec.count() >= 2) {
+			std::chrono::duration<double, std::micro> elapsed_usec = end - start;
+			double usec = elapsed_usec.count();
+			std::cout << "Rendering at " << count / (usec * 1e-6) << " fps"
+				<< std::endl;
+			start = end;
+			count = 0;
+		}
+		count++;
+	}
     // Clean up after ourselves.
 	// @todo
 
