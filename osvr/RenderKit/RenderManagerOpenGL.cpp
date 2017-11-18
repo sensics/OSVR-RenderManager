@@ -1434,7 +1434,7 @@ namespace renderkit {
 #endif
 
         GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
-        glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, numElements, GL_UNSIGNED_SHORT, 0);
         if (checkForGLError(
             "RenderManagerOpenGL::PresentEye after glDrawElements")) {
             //return false;
