@@ -118,9 +118,7 @@ void RenderView(
 
     // draw room
     simpleShader.use(device, context, xm_projectionD3D, xm_viewD3D, identity);
-	//for (size_t i = 0; i < 10000; i++) {
-		roomCube.draw(device, context);
-	//}
+	roomCube.draw(device, context);
 }
 
 void Usage(std::string name) {

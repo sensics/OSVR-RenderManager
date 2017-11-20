@@ -190,7 +190,7 @@ namespace osvr {
                 // rendering will get moving right away.
                 // @todo Enable overlapped rendering on one frame while presentation
                 // of the previous by doing this waiting on another thread.
-                //WaitForRenderCompletion();
+                WaitForRenderCompletion();
 
                 { // Adding block to scope the lock_guard.
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
