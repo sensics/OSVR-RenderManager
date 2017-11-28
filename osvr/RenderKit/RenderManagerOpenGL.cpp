@@ -876,8 +876,6 @@ namespace renderkit {
         // Put the frame buffer back to the default one.
 #ifdef STORE_STATE
         glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
-#else
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
@@ -1291,17 +1289,19 @@ namespace renderkit {
         });
 #endif
 
-        // Turn off blending and stencil test, in case the application has
-        // turned them on.
-        glDisable(GL_BLEND);
-        glDisable(GL_STENCIL_TEST);
+        /// Switch to our vertex/shader programs if this is the first eye
+		if (params.m_index == 0) {
+			glUseProgram(m_programId);
+			if (checkForGLError(
+				"RenderManagerOpenGL::PresentEye after use program")) {
+				return false;
+			}
 
-        /// Switch to our vertex/shader programs
-        glUseProgram(m_programId);
-        if (checkForGLError(
-          "RenderManagerOpenGL::PresentEye after use program")) {
-          return false;
-        }
+			// Turn off blending and stencil test, in case the application has
+			// turned them on.
+			glDisable(GL_BLEND);
+			glDisable(GL_STENCIL_TEST);
+		}
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1386,7 +1386,10 @@ namespace renderkit {
             !m_toolkit.getDisplayFrameBuffer(m_toolkit.data, GetDisplayUsedByEye(params.m_index), &displayFrameBuffer)) {
             displayFrameBuffer = 0;
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
+
+		// Only bind buffer if first eye or the eyes use different displays
+		if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1))
+			glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
 
         // Bind the texture that we're going to use to render into the
         // frame buffer.
@@ -1453,7 +1456,9 @@ namespace renderkit {
             return false;
         }
 
-		glUseProgram(0);
+		// If this was last eye unbind shader program
+		if(params.m_index >= GetNumEyes() - 1)
+			glUseProgram(0);
 
         return true;
     }
