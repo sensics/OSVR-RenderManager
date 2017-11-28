@@ -359,6 +359,9 @@ namespace renderkit {
 
     /// @todo Make this compile to no-op when debugging is off.
     bool RenderManagerOpenGL::checkForGLError(const std::string& message) {
+#ifndef _DEBUG
+		return false;
+#else
         GLenum err;
         bool ret = false;
         while((err = glGetError()) != GL_NO_ERROR) {
@@ -391,6 +394,7 @@ namespace renderkit {
             ret = true;
         }
         return ret;
+#endif
     }
 
     RenderManagerOpenGL::RenderManagerOpenGL(OSVR_ClientContext context, ConstructorParameters p)
