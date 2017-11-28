@@ -433,7 +433,7 @@ namespace renderkit {
 
     RenderManagerOpenGL::~RenderManagerOpenGL() {
         if (m_displayOpen) {
-            for (size_t i = 0; i < m_frameBuffers.size(); i++) {
+            for (size_t i = 0; i < GetNumDisplays(); i++) {
                 if (!m_toolkit.makeCurrent ||
                     !m_toolkit.makeCurrent(m_toolkit.data, i)) {
                     // If makeCurrent() fails give up on destroying OpenGL objects
@@ -441,7 +441,6 @@ namespace renderkit {
                     delete m_library.OpenGL;
                     return;
                 }
-                glDeleteFramebuffers(1, &m_frameBuffers[i]);
             }
 
             deleteProgram();
@@ -452,6 +451,7 @@ namespace renderkit {
                 glDeleteTextures(1, &m_colorBuffers[i].OpenGL->colorBufferName);
                 delete m_colorBuffers[i].OpenGL;
                 glDeleteRenderbuffers(1, &m_depthBuffers[i]);
+				glDeleteFramebuffers(1, &m_frameBuffers[i]);
             }
 
             m_distortionMeshBuffer.clear();
@@ -508,9 +508,6 @@ namespace renderkit {
                 !m_toolkit.makeCurrent(m_toolkit.data, i)) {
                 return false;
             }
-            GLuint frameBuffer = 0;
-            glGenFramebuffers(1, &frameBuffer);
-            m_frameBuffers.push_back(frameBuffer);
         }
 
         //======================================================
@@ -524,6 +521,10 @@ namespace renderkit {
                 !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
                 return false;
             }
+
+			GLuint frameBuffer = 0;
+			glGenFramebuffers(1, &frameBuffer);
+			m_frameBuffers.push_back(frameBuffer);
 
             // The color buffer for this eye
             GLuint colorBufferName = 0;
@@ -555,6 +556,31 @@ namespace renderkit {
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width,
                                   height);
             m_depthBuffers.push_back(depthrenderbuffer);
+
+			// Attach color and depth buffers to framebuffer
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(i));
+			if (checkForGLError(
+				"RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
+				return false;
+			}
+
+			// Set color and depth buffers for the frame buffer
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+				m_colorBuffers[i].OpenGL->colorBufferName, 0);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+				GL_RENDERBUFFER, m_depthBuffers[i]);
+			if (checkForGLError(
+				"RenderManagerOpenGL::RenderEyeInitialize Setting textures")) {
+				return false;
+			}
+
+			// Check that our framebuffer is ok
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+				GL_FRAMEBUFFER_COMPLETE) {
+				m_log->error() << "RenderManagerOpenGL::RenderEyeInitialize: Incomplete "
+					"Framebuffer";
+				return false;
+			}
         }
 
         // Register the render buffers we're going to use to present
@@ -814,27 +840,9 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(GetDisplayUsedByEye(eye)));
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(eye));
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
-            return false;
-        }
-
-        // Set color and depth buffers for the frame buffer
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                             m_colorBuffers[eye].OpenGL->colorBufferName, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                  GL_RENDERBUFFER, m_depthBuffers[eye]);
-        if (checkForGLError(
-                "RenderManagerOpenGL::RenderEyeInitialize Setting textures")) {
-            return false;
-        }
-
-        // Always check that our framebuffer is ok
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
-            GL_FRAMEBUFFER_COMPLETE) {
-            m_log->error() << "RenderManagerOpenGL::RenderEyeInitialize: Incomplete "
-                              "Framebuffer";
             return false;
         }
 
