@@ -1129,7 +1129,7 @@ namespace renderkit {
 
         // Set primitive topology
         m_D3D11Context->IASetPrimitiveTopology(
-            D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
         m_D3D11Context->IASetInputLayout(m_vertexLayout);
 
         m_D3D11Context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
