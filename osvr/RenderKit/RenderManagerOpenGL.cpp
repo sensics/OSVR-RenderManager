@@ -801,9 +801,11 @@ namespace renderkit {
 
 		// Store the frame buffer that was active before we started rendering,
 		// so we can put it back when we finalize.
+#ifdef STORE_STATE
 		GLint fb;
 		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
 		m_initialFrameBuffer = static_cast<GLuint>(fb);
+#endif
 
 		return true;
     }
@@ -854,7 +856,11 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeFinalize starting");
 
         // Put the frame buffer back to the default one.
+#ifdef STORE_STATE
         glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
+#else
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
             return false;
