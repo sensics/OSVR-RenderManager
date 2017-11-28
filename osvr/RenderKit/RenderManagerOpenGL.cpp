@@ -549,6 +549,16 @@ namespace renderkit {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
                          GL_UNSIGNED_BYTE, 0);
 
+			// Bilinear filtering and clamp to the edge of the texture.
+			const GLfloat border[] = { 0, 0, 0, 0 };
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#ifndef OSVR_RM_USE_OPENGLES20
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+#endif
+
             // The depth buffer
             GLuint depthrenderbuffer;
             glGenRenderbuffers(1, &depthrenderbuffer);
@@ -1383,15 +1393,6 @@ namespace renderkit {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, params.m_buffer.OpenGL->colorBufferName);
 
-        // Bilinear filtering and clamp to the edge of the texture.
-        const GLfloat border[] = { 0, 0, 0, 0 };
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-#ifndef OSVR_RM_USE_OPENGLES20
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-#endif
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after texture bind")) {
           return false;
