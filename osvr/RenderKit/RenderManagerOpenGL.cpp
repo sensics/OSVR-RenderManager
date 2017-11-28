@@ -1388,8 +1388,10 @@ namespace renderkit {
         }
 
 		// Only bind buffer if first eye or the eyes use different displays
-		if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1))
+		if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1)) {
 			glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}
 
         // Bind the texture that we're going to use to render into the
         // frame buffer.
@@ -1401,10 +1403,6 @@ namespace renderkit {
           return false;
         }
 
-        // NOTE: No need to clear the buffer in color or depth; we're
-        // always overwriting the whole thing.  We do need to store the
-        // value of the depth-test bit and restore it, turning it off for
-        // our use here.
         // Disable depth testing.
         // Enable 2D texturing.
         // Disable face culling (in case client switched
