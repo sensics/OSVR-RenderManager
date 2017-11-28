@@ -1187,6 +1187,7 @@ namespace renderkit {
 
         /// Store the user program so we can put it back again before
         /// returning.
+#ifdef STORE_STATE
         GLint userProgram;
         glGetIntegerv(GL_CURRENT_PROGRAM, &userProgram);
         auto resetProgram = util::finally([&]{
@@ -1270,6 +1271,7 @@ namespace renderkit {
             glDisable(GL_STENCIL_TEST);
           }
         });
+#endif
 
         // Turn off blending and stencil test, in case the application has
         // turned them on.
@@ -1441,6 +1443,8 @@ namespace renderkit {
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;
         }
+
+		glUseProgram(0);
 
         return true;
     }
