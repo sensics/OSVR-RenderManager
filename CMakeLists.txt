@@ -351,25 +351,6 @@ foreach(POTENTIAL_MODULE ${POTENTIAL_SUBMODULES})
 	message(STATUS "")
 endforeach()
 
-# if (HAVE_INTEL_NDA_SUBMODULE)
-# 	# Usage dependencies
-# 	add_library(osvrRM-intel-requirements INTERFACE)
-# 	target_include_directories(osvrRM-intel-requirements INTERFACE "${INTEL_SRC_DIR}")
-# 	# Intel NDA files - object library so we can specify different debug compile flags.
-# 	osvrrm_no_symbols_in_debug()
-# 	add_library(osvrRenderManager-Intel OBJECT
-# 		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp"
-# 		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.h")
-# 	target_include_directories(osvrRenderManager-Intel PRIVATE "${INTEL_SRC_DIR}" "${Boost_INCLUDE_DIR}")
-# 	osvrrm_setup_nda_object_target(osvrRenderManager-Intel)
-# 	osvrrm_restore_symbols_in_debug()
-
-# 	set(RM_USE_INTEL_DIRECT_D3D11 TRUE)
-# 	message(STATUS " - Intel direct D3D11 support: enabled (found Intel NDA submodule)")
-# else()
-# 	message(STATUS " - Intel direct support: disabled (need Intel NDA submodule)")
-# endif()
-
 # if (HAVE_SENSICS_NDA_SUBMODULE)
 # 	# Sensics is a header-only lib for now
 # 	find_package(osvrDisplayServerClient)
@@ -380,11 +361,6 @@ endforeach()
 # 	endif()
 # endif()
 
-# if (RM_USE_INTEL_DIRECT_D3D11)
-# 	target_link_libraries(osvrRenderManager
-# 		PRIVATE
-# 		osvrRM-intel-requirements)
-# endif()
 # if (RM_USE_SENSICS)
 # 		if(TARGET sensics::osvrDisplayServerClient_static)
 # 			target_link_libraries(osvrRenderManager
