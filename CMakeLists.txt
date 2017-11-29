@@ -351,28 +351,6 @@ foreach(POTENTIAL_MODULE ${POTENTIAL_SUBMODULES})
 	message(STATUS "")
 endforeach()
 
-# if (HAVE_SENSICS_NDA_SUBMODULE)
-# 	# Sensics is a header-only lib for now
-# 	find_package(osvrDisplayServerClient)
-# 	if (osvrDisplayServerClient_FOUND AND (TARGET sensics::osvrDisplayServerClient OR TARGET sensics::osvrDisplayServerClient_static))
-# 		message(STATUS " - Sensics support: enabled")
-# 		set(RM_USE_SENSICS TRUE)
-# 		include_directories(${SENSICS_SRC_DIR})
-# 	endif()
-# endif()
-
-# if (RM_USE_SENSICS)
-# 		if(TARGET sensics::osvrDisplayServerClient_static)
-# 			target_link_libraries(osvrRenderManager
-# 				PRIVATE
-# 				sensics::osvrDisplayServerClient_static)
-# 		else()
-# 			target_link_libraries(osvrRenderManager
-# 				PRIVATE
-# 				sensics::osvrDisplayServerClient)
-# 		endif()
-# endif()
-
 # If we are using dynamic GLEW on Windows, let's copy it.
 if(GLEW_FOUND AND WIN32 AND NOT GLEW_LIBRARY MATCHES ".*s.lib")
 	osvrrm_copy_deps(GLEW::GLEW)
