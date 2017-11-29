@@ -42,11 +42,6 @@ osvr_unstash_common_map_config()
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
-
-# Add one of these libraries for each vendor that we've got a driver
-# for and add a No driver that tells that it is unavailable when we
-# don't find the driver library.
-find_package(liquidvr)
 find_package(OpenGL)
 find_package(OpenGLES2)
 find_package(GLEW)
@@ -356,27 +351,6 @@ foreach(POTENTIAL_MODULE ${POTENTIAL_SUBMODULES})
 	message(STATUS "")
 endforeach()
 
-# if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
-# 	# Usage dependencies
-# 	add_library(osvrRM-amd-requirements INTERFACE)
-# 	target_link_libraries(osvrRM-amd-requirements INTERFACE liquidvr)
-# 	target_include_directories(osvrRM-amd-requirements INTERFACE "${AMD_SRC_DIR}")
-
-# 	# AMD NDA files - object library so we can specify different debug compile flags.
-# 	osvrrm_no_symbols_in_debug()
-# 	add_library(osvrRenderManager-AMD OBJECT
-# 		"${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp"
-# 		"${AMD_SRC_DIR}/RenderManagerAMDD3D.h")
-# 	target_include_directories(osvrRenderManager-AMD PRIVATE "${LIQUIDVR_INCLUDE_DIR}" "${Boost_INCLUDE_DIR}")
-# 	osvrrm_setup_nda_object_target(osvrRenderManager-AMD)
-# 	osvrrm_restore_symbols_in_debug()
-
-# 	set(RM_USE_AMD_DIRECT_D3D11 TRUE)
-# 	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR and AMD NDA submodule)")
-# else()
-# 	message(STATUS " - AMD direct support: disabled (need LIQUIDVR and AMD NDA submodule)")
-# endif()
-
 # if (HAVE_INTEL_NDA_SUBMODULE)
 # 	# Usage dependencies
 # 	add_library(osvrRM-intel-requirements INTERFACE)
@@ -406,12 +380,6 @@ endforeach()
 # 	endif()
 # endif()
 
-
-# if (RM_USE_AMD_DIRECT_D3D11)
-# 	target_link_libraries(osvrRenderManager
-# 		PRIVATE
-# 		osvrRM-amd-requirements)
-# endif()
 # if (RM_USE_INTEL_DIRECT_D3D11)
 # 	target_link_libraries(osvrRenderManager
 # 		PRIVATE
@@ -523,29 +491,6 @@ install(TARGETS
 	INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 	PUBLIC_HEADER DESTINATION include/osvr/RenderKit
 )
-
-# if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
-
-# 	osvrrm_no_symbols_in_debug()
-# 	#-----------------------------------------------------------------------------
-# 	# Enable DirectMode on attached OSVR HDKs
-# 	add_executable(EnableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
-# 	target_link_libraries(EnableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
-
-# 	#-----------------------------------------------------------------------------
-# 	# Disable DirectMode on attached OSVR HDKs
-# 	add_executable(DisableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
-# 	target_link_libraries(DisableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
-# 	osvrrm_restore_symbols_in_debug()
-
-# 	install(TARGETS
-# 		EnableOSVRDirectModeAMD
-# 		DisableOSVRDirectModeAMD
-# 		EXPORT osvrRenderManagerTargets
-# 		RUNTIME
-# 		DESTINATION ${CMAKE_INSTALL_BINDIR}
-# 		CONFIGURATIONS ${TOOL_CONFIGURATIONS})
-# endif()
 
 ###
 # Set Up Package for External Usage
