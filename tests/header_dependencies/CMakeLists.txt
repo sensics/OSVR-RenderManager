@@ -67,9 +67,11 @@ foreach(HEADER ${headers})
 		#message(STATUS "${HEADER}: '${symbolname}'")
 
 		set(extensions cpp)
+		set(includes ${Boost_INCLUDE_DIR})
 		if (${HEADER} MATCHES "C.h$")
 			# Header required to be C-safe, enforce it!
 			list(APPEND extensions c)
+			set(includes)
 		endif()
 
 		foreach(extension ${extensions})
@@ -84,7 +86,8 @@ foreach(HEADER ${headers})
 			target_include_directories(${test_name}
 				PRIVATE
 				${BUILDTREE_HEADER_BASE}
-				${HEADER_BASE})
+				${HEADER_BASE}
+				${includes})
 
 			set_target_properties(${test_name} PROPERTIES
 				FOLDER "Header dependency tests")
