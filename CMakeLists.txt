@@ -42,36 +42,10 @@ osvr_unstash_common_map_config()
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
 
-# Check for the NDA submodules
-set(HAVE_NVIDIA_NDA_SUBMODULE FALSE)
-set(HAVE_AMD_NDA_SUBMODULE FALSE)
-set(HAVE_SENSICS_NDA_SUBMODULE FALSE)
-if(WIN32)
-	set(NVIDIA_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA")
-	if(EXISTS "${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp")
-		set(HAVE_NVIDIA_NDA_SUBMODULE TRUE)
-	endif()
-
-	set(AMD_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-AMD")
-	if(EXISTS "${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp")
-		set(HAVE_AMD_NDA_SUBMODULE TRUE)
-	endif()
-
-	set(INTEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Intel")
-	if(EXISTS "${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp")
-		set(HAVE_INTEL_NDA_SUBMODULE TRUE)
-	endif()
-
-	set(SENSICS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-Sensics")
-	if(EXISTS "${SENSICS_SRC_DIR}/RenderManagerSensicsDS_D3D11.h")
-		set(HAVE_SENSICS_NDA_SUBMODULE TRUE)
-	endif()
-endif()
 
 # Add one of these libraries for each vendor that we've got a driver
 # for and add a No driver that tells that it is unavailable when we
 # don't find the driver library.
-find_package(nvapi COMPONENTS NDA)
 find_package(liquidvr)
 find_package(OpenGL)
 find_package(OpenGLES2)
@@ -138,45 +112,8 @@ if (WIN32)
 		osvr/RenderKit/RenderManagerD3D11ATW.h)
 endif()
 
-###
-# Graphics API support
-###
 
 set(OSVRRM_IMPL_COMMON_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" ${EIGEN3_INCLUDE_DIR} "$<TARGET_PROPERTY:osvr::osvrClient,INTERFACE_INCLUDE_DIRECTORIES>")
-function(osvrrm_setup_nda_object_target _target)
-	# Set up defines and includes as if we were building as a part of the main rendermanager library
-	target_compile_definitions(${_target} PRIVATE osvrRenderManager_EXPORTS)
-	target_include_directories(${_target} PRIVATE "${NVAPI_INCLUDE_DIRS}" ${OSVRRM_IMPL_COMMON_INCLUDE_DIRS})
-
-	# Add the objects to the main library sources.
-	list(APPEND RenderManager_SOURCES $<TARGET_OBJECTS:${_target}>)
-	set(RenderManager_SOURCES "${RenderManager_SOURCES}" PARENT_SCOPE)
-endfunction()
-
-# How to build the NDA modules in "Debug" mode (since MSVC has a separate debug runtime) without potentially NDA-violating debug symbols
-option(BUILD_WITH_NDA_DEBUG_SYMBOLS "Should the DEBUG configuration contain symbols for the NDA components?" OFF)
-
-set(_debug_flags_regex "(/Z[io07I)|(/Yd)|(/d2Zi[+])")
-if(MSVC AND NOT BUILD_WITH_NDA_DEBUG_SYMBOLS)
-	macro(osvrrm_no_symbols_in_debug)
-		# Backup the original flags
-		set(_osvrrm_debug_flags_bak "${CMAKE_CXX_FLAGS_DEBUG}")
-		set(_osvrrm_relwithdebinfo_flags_bak "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-		string(REGEX REPLACE "${_debug_flags_regex}" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-		string(REGEX REPLACE "${_debug_flags_regex}" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-		#message(STATUS "Old CMAKE_CXX_FLAGS_DEBUG: '${_osvrrm_debug_flags_bak}'  New: '${CMAKE_CXX_FLAGS_DEBUG}'")
-		#message(STATUS "Old CMAKE_CXX_FLAGS_RELWITHDEBINFO: '${_osvrrm_relwithdebinfo_flags_bak}'  New: '${CMAKE_CXX_FLAGS_RELWITHDEBINFO}'")
-	endmacro()
-	macro(osvrrm_restore_symbols_in_debug)
-		set(_osvrrm_flags_bak "${CMAKE_CXX_FLAGS_DEBUG}")
-	endmacro()
-else()
-	# no-ops
-	macro(osvrrm_no_symbols_in_debug)
-	endmacro()
-	macro(osvrrm_restore_symbols_in_debug)
-	endmacro()
-endif()
 
 set(OSVRRM_HAVE_OPENGL_SUPPORT OFF)
 set(OSVRRM_HAVE_D3D11_SUPPORT OFF)
@@ -214,96 +151,24 @@ if(RM_USE_OPENGLES20)
 	list(APPEND OSVRRM_IMPL_COMMON_INCLUDE_DIRS ${OPENGLES2_INCLUDE_DIR})
 endif()
 
-if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
-	# Usage dependencies
-	add_library(osvrRM-nvidia-requirements INTERFACE)
-	target_link_libraries(osvrRM-nvidia-requirements INTERFACE nvapi)
-	target_include_directories(osvrRM-nvidia-requirements INTERFACE "${NVIDIA_SRC_DIR}")
-
-	# nVidia NDA files - object library so we can specify different debug compile flags.
-	osvrrm_no_symbols_in_debug()
-	add_library(osvrRenderManager-NVIDIA OBJECT
-		"${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp"
-		"${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.h")
-	target_include_directories(osvrRenderManager-NVIDIA PRIVATE "${NVAPI_INCLUDE_DIRS}" "${Boost_INCLUDE_DIR}")
-	osvrrm_setup_nda_object_target(osvrRenderManager-NVIDIA)
-	osvrrm_restore_symbols_in_debug()
-
-	set(RM_USE_NVIDIA_DIRECT_D3D11 TRUE)
-	message(STATUS " - NVIDIA direct D3D11 support: enabled (found NVAPI and NVIDIA NDA submodule)")
-else()
-	message(STATUS " - NVIDIA direct support: disabled (need NVAPI and NVIDIA NDA submodule)")
-endif()
-
-if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
-	# Usage dependencies
-	add_library(osvrRM-amd-requirements INTERFACE)
-	target_link_libraries(osvrRM-amd-requirements INTERFACE liquidvr)
-	target_include_directories(osvrRM-amd-requirements INTERFACE "${AMD_SRC_DIR}")
-
-	# AMD NDA files - object library so we can specify different debug compile flags.
-	osvrrm_no_symbols_in_debug()
-	add_library(osvrRenderManager-AMD OBJECT
-		"${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp"
-		"${AMD_SRC_DIR}/RenderManagerAMDD3D.h")
-	target_include_directories(osvrRenderManager-AMD PRIVATE "${LIQUIDVR_INCLUDE_DIR}" "${Boost_INCLUDE_DIR}")
-	osvrrm_setup_nda_object_target(osvrRenderManager-AMD)
-	osvrrm_restore_symbols_in_debug()
-
-	set(RM_USE_AMD_DIRECT_D3D11 TRUE)
-	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR and AMD NDA submodule)")
-else()
-	message(STATUS " - AMD direct support: disabled (need LIQUIDVR and AMD NDA submodule)")
-endif()
-
-if (HAVE_INTEL_NDA_SUBMODULE)
-	# Usage dependencies
-	add_library(osvrRM-intel-requirements INTERFACE)
-	target_include_directories(osvrRM-intel-requirements INTERFACE "${INTEL_SRC_DIR}")
-	# Intel NDA files - object library so we can specify different debug compile flags.
-	osvrrm_no_symbols_in_debug()
-	add_library(osvrRenderManager-Intel OBJECT
-		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp"
-		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.h")
-	target_include_directories(osvrRenderManager-Intel PRIVATE "${INTEL_SRC_DIR}" "${Boost_INCLUDE_DIR}")
-	osvrrm_setup_nda_object_target(osvrRenderManager-Intel)
-	osvrrm_restore_symbols_in_debug()
-
-	set(RM_USE_INTEL_DIRECT_D3D11 TRUE)
-	message(STATUS " - Intel direct D3D11 support: enabled (found Intel NDA submodule)")
-else()
-	message(STATUS " - Intel direct support: disabled (need Intel NDA submodule)")
-endif()
-
-if (HAVE_SENSICS_NDA_SUBMODULE)
-	# Sensics is a header-only lib for now
-	find_package(osvrDisplayServerClient)
-	if (osvrDisplayServerClient_FOUND AND (TARGET sensics::osvrDisplayServerClient OR TARGET sensics::osvrDisplayServerClient_static))
-		message(STATUS " - Sensics support: enabled")
-		set(RM_USE_SENSICS TRUE)
-		include_directories(${SENSICS_SRC_DIR})
-	endif()
-endif()
-
-
 #-----------------------------------------------------------------------------
 # SDL init/quit handler code that makes sure we only do it once.
 if (SDL2_FOUND)
-	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerSDLInitQuit.cpp osvr/RenderKit/RenderManagerSDLInitQuit.h )
+list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerSDLInitQuit.cpp osvr/RenderKit/RenderManagerSDLInitQuit.h )
 endif()
 
 #-----------------------------------------------------------------------------
 # OpenGL wrapped around Direct3D
 if ((RM_USE_NVIDIA_DIRECT_D3D11 OR RM_USE_AMD_DIRECT_D3D11) AND NOT RM_USE_OPENGLES20)
-	#-----------------------------------------------------------------------------
-	# OpenGL library as a wrapper for D3D DirectMode
-	if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
-		message(STATUS " - D3D11+OpenGL support: enabled (found NVAPI or LIQUIDVR, OpenGL, GLEW, and SDL2)")
-		list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerD3DOpenGL.cpp osvr/RenderKit/RenderManagerD3DOpenGL.h)
-		set(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL TRUE)
-	else()
-		message(STATUS " - Vendor direct D3D11+OpenGL support: disabled (need all of a vendor direct-mode D3D module, OpenGL, GLEW, and SDL2, at least one was missing)")
-	endif()
+#-----------------------------------------------------------------------------
+# OpenGL library as a wrapper for D3D DirectMode
+if (OPENGL_FOUND AND GLEW_FOUND AND SDL2_FOUND)
+	message(STATUS " - D3D11+OpenGL support: enabled (found NVAPI or LIQUIDVR, OpenGL, GLEW, and SDL2)")
+	list(APPEND RenderManager_SOURCES osvr/RenderKit/RenderManagerD3DOpenGL.cpp osvr/RenderKit/RenderManagerD3DOpenGL.h)
+	set(RM_USE_NVIDIA_DIRECT_D3D11_OPENGL TRUE)
+else()
+	message(STATUS " - Vendor direct D3D11+OpenGL support: disabled (need all of a vendor direct-mode D3D module, OpenGL, GLEW, and SDL2, at least one was missing)")
+endif()
 endif()
 
 ###
@@ -381,12 +246,12 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/RenderManager.h
 	osvr/RenderKit/RenderManagerD3DBase.h
 	osvr/RenderKit/RenderManagerC.h
-    osvr/RenderKit/RenderManagerD3D.h
+	osvr/RenderKit/RenderManagerD3D.h
 	osvr/RenderKit/RenderManagerD3D11C.h
 	osvr/RenderKit/RenderManagerOpenGL.h
 	osvr/RenderKit/RenderManagerOpenGLC.h
 	osvr/RenderKit/RenderManagerOpenGLVersion.h
-    osvr/RenderKit/RenderManagerD3DOpenGL.h
+	osvr/RenderKit/RenderManagerD3DOpenGL.h
 	osvr/RenderKit/GraphicsLibraryD3D11.h
 	osvr/RenderKit/GraphicsLibraryOpenGL.h
 	osvr/RenderKit/MonoPointMeshTypes.h
@@ -395,45 +260,17 @@ set (RenderManager_PUBLIC_HEADERS
 	osvr/RenderKit/osvr_display_configuration.h
 	osvr/RenderKit/osvr_compiler_tests.h
 	"${CMAKE_CURRENT_BINARY_DIR}/osvr/RenderKit/Export.h"
-)
+	)
+
 
 add_library(osvrRenderManager ${RenderManager_SOURCES} ${RenderManager_PUBLIC_HEADERS})
-if (NOT ANDROID)
-  target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
-endif()
-
 target_include_directories(osvrRenderManager PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	PRIVATE
 	${EIGEN3_INCLUDE_DIR})
-if (RM_USE_NVIDIA_DIRECT_D3D11)
-	target_link_libraries(osvrRenderManager
-		PRIVATE
-		osvrRM-nvidia-requirements)
-endif()
-if (RM_USE_AMD_DIRECT_D3D11)
-	target_link_libraries(osvrRenderManager
-		PRIVATE
-		osvrRM-amd-requirements)
-endif()
-if (RM_USE_INTEL_DIRECT_D3D11)
-	target_link_libraries(osvrRenderManager
-		PRIVATE
-		osvrRM-intel-requirements)
-endif()
-if (RM_USE_SENSICS)
-		if(TARGET sensics::osvrDisplayServerClient_static)
-			target_link_libraries(osvrRenderManager
-				PRIVATE
-				sensics::osvrDisplayServerClient_static)
-		else()
-			target_link_libraries(osvrRenderManager
-				PRIVATE
-				sensics::osvrDisplayServerClient)
-		endif()
-endif()
+
 if (WIN32)
 	target_link_libraries(osvrRenderManager PRIVATE D3D11 Dwmapi)
 endif()
@@ -453,6 +290,144 @@ set_property(TARGET
 	PROPERTY
 	PUBLIC_HEADER
 	${RenderManager_PUBLIC_HEADERS})
+if (NOT ANDROID)
+	target_compile_features(osvrRenderManager PRIVATE cxx_range_for)
+endif()
+###
+# Graphics API support
+###
+
+set(ENABLEDISABLE_COMMON_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/DirectModeToolSkeleton.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/ToolingArguments.h")
+
+function(osvrrm_setup_nda_object_target _target)
+	# Set up defines and includes as if we were building as a part of the main rendermanager library
+	target_compile_definitions(${_target} PRIVATE osvrRenderManager_EXPORTS)
+	target_include_directories(${_target} PRIVATE ${OSVRRM_IMPL_COMMON_INCLUDE_DIRS})
+
+	# Add the objects to the main library sources.
+	target_sources(osvrRenderManager PRIVATE $<TARGET_OBJECTS:${_target}>)
+endfunction()
+
+# How to build the NDA modules in "Debug" mode (since MSVC has a separate debug runtime) without potentially NDA-violating debug symbols
+option(BUILD_WITH_NDA_DEBUG_SYMBOLS "Should the DEBUG configuration contain symbols for the NDA components?" OFF)
+
+set(_debug_flags_regex "(/Z[io07I])|(/Yd)|(/d2Zi[+])")
+if(MSVC AND NOT BUILD_WITH_NDA_DEBUG_SYMBOLS)
+	macro(osvrrm_no_symbols_in_debug)
+		# Backup the original flags
+		set(_osvrrm_debug_flags_bak "${CMAKE_CXX_FLAGS_DEBUG}")
+		set(_osvrrm_relwithdebinfo_flags_bak "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+		string(REGEX REPLACE "${_debug_flags_regex}" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+		string(REGEX REPLACE "${_debug_flags_regex}" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+		#message(STATUS "Old CMAKE_CXX_FLAGS_DEBUG: '${_osvrrm_debug_flags_bak}'  New: '${CMAKE_CXX_FLAGS_DEBUG}'")
+		#message(STATUS "Old CMAKE_CXX_FLAGS_RELWITHDEBINFO: '${_osvrrm_relwithdebinfo_flags_bak}'  New: '${CMAKE_CXX_FLAGS_RELWITHDEBINFO}'")
+	endmacro()
+	macro(osvrrm_restore_symbols_in_debug)
+		# TODO figure out why we get linking errors in Debug with these uncommented.
+		#set(CMAKE_CXX_FLAGS_DEBUG "${_osvrrm_flags_bak}")
+		#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${_osvrrm_relwithdebinfo_flags_bak}")
+	endmacro()
+else()
+	# no-ops
+	macro(osvrrm_no_symbols_in_debug)
+	endmacro()
+	macro(osvrrm_restore_symbols_in_debug)
+	endmacro()
+endif()
+
+# Check for the NDA submodules
+file(GLOB POTENTIAL_SUBMODULES
+	RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_SOURCE_DIR}/osvr/RenderKit/NDA/OSVR-RenderManager-*")
+
+message(STATUS "")
+foreach(POTENTIAL_MODULE ${POTENTIAL_SUBMODULES})
+	get_filename_component(REPO "${POTENTIAL_MODULE}" NAME)
+	set(BUILDFILE "${CMAKE_CURRENT_SOURCE_DIR}/${POTENTIAL_MODULE}/Build.cmake")
+	if(EXISTS "${BUILDFILE}")
+		message(STATUS " - ${REPO} - Configuring")
+		include("${BUILDFILE}")
+	else()
+		message(STATUS " - ${REPO} - Skipping because no source found in submodule directory.")
+		message(STATUS "   If you have authorization to access this module, use git submodule init ${POTENTIAL_MODULE} and git submodule update to retrieve it.")
+	endif()
+	message(STATUS "")
+endforeach()
+
+# if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
+# 	# Usage dependencies
+# 	add_library(osvrRM-amd-requirements INTERFACE)
+# 	target_link_libraries(osvrRM-amd-requirements INTERFACE liquidvr)
+# 	target_include_directories(osvrRM-amd-requirements INTERFACE "${AMD_SRC_DIR}")
+
+# 	# AMD NDA files - object library so we can specify different debug compile flags.
+# 	osvrrm_no_symbols_in_debug()
+# 	add_library(osvrRenderManager-AMD OBJECT
+# 		"${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp"
+# 		"${AMD_SRC_DIR}/RenderManagerAMDD3D.h")
+# 	target_include_directories(osvrRenderManager-AMD PRIVATE "${LIQUIDVR_INCLUDE_DIR}" "${Boost_INCLUDE_DIR}")
+# 	osvrrm_setup_nda_object_target(osvrRenderManager-AMD)
+# 	osvrrm_restore_symbols_in_debug()
+
+# 	set(RM_USE_AMD_DIRECT_D3D11 TRUE)
+# 	message(STATUS " - AMD direct D3D11 support: enabled (found LIQUIDVR and AMD NDA submodule)")
+# else()
+# 	message(STATUS " - AMD direct support: disabled (need LIQUIDVR and AMD NDA submodule)")
+# endif()
+
+# if (HAVE_INTEL_NDA_SUBMODULE)
+# 	# Usage dependencies
+# 	add_library(osvrRM-intel-requirements INTERFACE)
+# 	target_include_directories(osvrRM-intel-requirements INTERFACE "${INTEL_SRC_DIR}")
+# 	# Intel NDA files - object library so we can specify different debug compile flags.
+# 	osvrrm_no_symbols_in_debug()
+# 	add_library(osvrRenderManager-Intel OBJECT
+# 		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp"
+# 		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.h")
+# 	target_include_directories(osvrRenderManager-Intel PRIVATE "${INTEL_SRC_DIR}" "${Boost_INCLUDE_DIR}")
+# 	osvrrm_setup_nda_object_target(osvrRenderManager-Intel)
+# 	osvrrm_restore_symbols_in_debug()
+
+# 	set(RM_USE_INTEL_DIRECT_D3D11 TRUE)
+# 	message(STATUS " - Intel direct D3D11 support: enabled (found Intel NDA submodule)")
+# else()
+# 	message(STATUS " - Intel direct support: disabled (need Intel NDA submodule)")
+# endif()
+
+# if (HAVE_SENSICS_NDA_SUBMODULE)
+# 	# Sensics is a header-only lib for now
+# 	find_package(osvrDisplayServerClient)
+# 	if (osvrDisplayServerClient_FOUND AND (TARGET sensics::osvrDisplayServerClient OR TARGET sensics::osvrDisplayServerClient_static))
+# 		message(STATUS " - Sensics support: enabled")
+# 		set(RM_USE_SENSICS TRUE)
+# 		include_directories(${SENSICS_SRC_DIR})
+# 	endif()
+# endif()
+
+
+# if (RM_USE_AMD_DIRECT_D3D11)
+# 	target_link_libraries(osvrRenderManager
+# 		PRIVATE
+# 		osvrRM-amd-requirements)
+# endif()
+# if (RM_USE_INTEL_DIRECT_D3D11)
+# 	target_link_libraries(osvrRenderManager
+# 		PRIVATE
+# 		osvrRM-intel-requirements)
+# endif()
+# if (RM_USE_SENSICS)
+# 		if(TARGET sensics::osvrDisplayServerClient_static)
+# 			target_link_libraries(osvrRenderManager
+# 				PRIVATE
+# 				sensics::osvrDisplayServerClient_static)
+# 		else()
+# 			target_link_libraries(osvrRenderManager
+# 				PRIVATE
+# 				sensics::osvrDisplayServerClient)
+# 		endif()
+# endif()
 
 # If we are using dynamic GLEW on Windows, let's copy it.
 if(GLEW_FOUND AND WIN32 AND NOT GLEW_LIBRARY MATCHES ".*s.lib")
@@ -502,11 +477,12 @@ endif()
 # This also lets it know where to find the header files.
 target_link_libraries(osvrRenderManager
 	PUBLIC
-	osvr::osvrClientKitCpp
+	osvr::osvrClientKit
 	PRIVATE
+	osvr::osvrClientKitCpp
 	JsonCpp::JsonCpp
 	osvr::osvrUtil
-        osvr::osvrCommon
+	osvr::osvrCommon
 	vendored-vrpn
 	vendored-quat)
 osvrrm_copy_deps(osvr::osvrClientKit osvr::osvrClient osvr::osvrCommon osvr::osvrUtil)
@@ -548,62 +524,28 @@ install(TARGETS
 	PUBLIC_HEADER DESTINATION include/osvr/RenderKit
 )
 
-set(ENABLEDISABLE_COMMON_SOURCES osvr/RenderKit/DirectModeToolSkeleton.h osvr/RenderKit/ToolingArguments.h)
+# if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 
-if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
-	set(NVAPI_EXTRA_HEADERS "${NVIDIA_SRC_DIR}/CheckSuccess.h" "${NVIDIA_SRC_DIR}/Util.h" "${NVIDIA_SRC_DIR}/NVAPIWrappers.h")
+# 	osvrrm_no_symbols_in_debug()
+# 	#-----------------------------------------------------------------------------
+# 	# Enable DirectMode on attached OSVR HDKs
+# 	add_executable(EnableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
+# 	target_link_libraries(EnableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
 
-	osvrrm_no_symbols_in_debug()
-	#-----------------------------------------------------------------------------
-	# Enable DirectMode on attached OSVR HDKs
-	# TODO rename to EnableOSVRDirectModeNVIDIA
-	add_executable(EnableOSVRDirectMode ${ENABLEDISABLE_COMMON_SOURCES} "${NVIDIA_SRC_DIR}/EnableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
-	target_link_libraries(EnableOSVRDirectMode PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
+# 	#-----------------------------------------------------------------------------
+# 	# Disable DirectMode on attached OSVR HDKs
+# 	add_executable(DisableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
+# 	target_link_libraries(DisableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
+# 	osvrrm_restore_symbols_in_debug()
 
-	#-----------------------------------------------------------------------------
-	# Disable DirectMode on attached OSVR HDKs
-	# TODO rename to DisableOSVRDirectModeNVIDIA
-	add_executable(DisableOSVRDirectMode ${ENABLEDISABLE_COMMON_SOURCES} "${NVIDIA_SRC_DIR}/DisableOSVRDirectMode.cpp" ${NVAPI_EXTRA_HEADERS})
-	target_link_libraries(DisableOSVRDirectMode PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
-
-	#-----------------------------------------------------------------------------
-	# Debugging/troubleshooting application for direct mode.
-	add_executable(DirectModeDebugging "${NVIDIA_SRC_DIR}/DirectModeDebugging.cpp" ${NVAPI_EXTRA_HEADERS})
-	target_link_libraries(DirectModeDebugging PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-nvidia-requirements)
-	osvrrm_restore_symbols_in_debug()
-
-	install(TARGETS
-		EnableOSVRDirectMode
-		DisableOSVRDirectMode
-		DirectModeDebugging
-		EXPORT osvrRenderManagerTargets
-		RUNTIME
-		DESTINATION ${CMAKE_INSTALL_BINDIR}
-		CONFIGURATIONS ${TOOL_CONFIGURATIONS})
-endif()
-
-if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
-
-	osvrrm_no_symbols_in_debug()
-	#-----------------------------------------------------------------------------
-	# Enable DirectMode on attached OSVR HDKs
-	add_executable(EnableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/EnableOSVRDirectModeAMD.cpp")
-	target_link_libraries(EnableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
-
-	#-----------------------------------------------------------------------------
-	# Disable DirectMode on attached OSVR HDKs
-	add_executable(DisableOSVRDirectModeAMD ${ENABLEDISABLE_COMMON_SOURCES} "${AMD_SRC_DIR}/DisableOSVRDirectModeAMD.cpp")
-	target_link_libraries(DisableOSVRDirectModeAMD PRIVATE osvr::osvrClientKitCpp osvrRenderManagerCpp osvrRM-amd-requirements)
-	osvrrm_restore_symbols_in_debug()
-
-	install(TARGETS
-		EnableOSVRDirectModeAMD
-		DisableOSVRDirectModeAMD
-		EXPORT osvrRenderManagerTargets
-		RUNTIME
-		DESTINATION ${CMAKE_INSTALL_BINDIR}
-		CONFIGURATIONS ${TOOL_CONFIGURATIONS})
-endif()
+# 	install(TARGETS
+# 		EnableOSVRDirectModeAMD
+# 		DisableOSVRDirectModeAMD
+# 		EXPORT osvrRenderManagerTargets
+# 		RUNTIME
+# 		DESTINATION ${CMAKE_INSTALL_BINDIR}
+# 		CONFIGURATIONS ${TOOL_CONFIGURATIONS})
+# endif()
 
 ###
 # Set Up Package for External Usage
@@ -695,14 +637,14 @@ install(FILES
 
 # Install examples
 if(INSTALL_EXAMPLES)
-    install(DIRECTORY examples
-        DESTINATION ${CMAKE_INSTALL_DOCDIR}
-        FILES_MATCHING
-        PATTERN "*.cpp"
-        PATTERN "*.h"
-        PATTERN "*.c"
-        PATTERN "*.hlsl"
-        PATTERN "*/CMakeLists.txt")
+	install(DIRECTORY examples
+		DESTINATION ${CMAKE_INSTALL_DOCDIR}
+		FILES_MATCHING
+		PATTERN "*.cpp"
+		PATTERN "*.h"
+		PATTERN "*.c"
+		PATTERN "*.hlsl"
+		PATTERN "*/CMakeLists.txt")
 endif()
 
 # Tests
