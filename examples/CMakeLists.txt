@@ -61,6 +61,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(AdjustableRenderingDelayD3D AdjustableRenderingDelayD3D.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(AdjustableRenderingDelayD3D PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 		target_compile_features(AdjustableRenderingDelayD3D PRIVATE cxx_range_for)
+		set_target_properties(AdjustableRenderingDelayD3D PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 
 	# D3D Example program using the C API
@@ -69,6 +71,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(RenderManagerD3DCAPIExample RenderManagerD3DCAPIExample.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(RenderManagerD3DCAPIExample PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 		target_compile_features(RenderManagerD3DCAPIExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerD3DCAPIExample PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 
 	# D3D Example program
@@ -77,6 +81,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(RenderManagerD3DExample3D RenderManagerD3DExample3D.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(RenderManagerD3DExample3D PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 		target_compile_features(RenderManagerD3DExample3D PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerD3DExample3D PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 
 	# D3D Example program using Present mode
@@ -85,6 +91,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(RenderManagerD3DPresentExample3D RenderManagerD3DPresentExample3D.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(RenderManagerD3DPresentExample3D PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 		target_compile_features(RenderManagerD3DPresentExample3D PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerD3DPresentExample3D PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 
 	# D3D Example program using Present mode that also passes in device and context
@@ -93,6 +101,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(RenderManagerD3DPresentMakeDeviceExample3D RenderManagerD3DPresentMakeDeviceExample3D.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(RenderManagerD3DPresentMakeDeviceExample3D PRIVATE osvrRenderManager::osvrRenderManagerCpp D3D11)
 		target_compile_features(RenderManagerD3DPresentMakeDeviceExample3D PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerD3DPresentMakeDeviceExample3D PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 
 	# D3D Example program using Present mode that also passes in device and context and works with ATW
@@ -101,6 +111,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(RenderManagerD3DATWDoubleBufferExample RenderManagerD3DATWDoubleBufferExample.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(RenderManagerD3DATWDoubleBufferExample PRIVATE osvrRenderManager::osvrRenderManagerCpp D3D11)
 		target_compile_features(RenderManagerD3DATWDoubleBufferExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerD3DATWDoubleBufferExample PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 
 	# D3D Example program using Present mode, single buffer for both eyes
@@ -109,6 +121,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT AND OSVRRM_HAVE_COMMON_D3D_SOURCES)
 		add_executable(RenderManagerD3DPresentSideBySideExample RenderManagerD3DPresentSideBySideExample.cpp ${COMMON_D3D_SOURCES})
 		target_link_libraries(RenderManagerD3DPresentSideBySideExample PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 		target_compile_features(RenderManagerD3DPresentSideBySideExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerD3DPresentSideBySideExample PROPERTIES
+			FOLDER "Examples/D3D")
 	endif()
 endif() # have common d3d sources
 
@@ -122,6 +136,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT
 	add_executable(RenderManagerD3DTest2D RenderManagerD3DTest2D.cpp ${COMMON_D3D_2D_SOURCES})
 	target_link_libraries(RenderManagerD3DTest2D PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 	target_compile_features(RenderManagerD3DTest2D PRIVATE cxx_range_for)
+	set_target_properties(RenderManagerD3DTest2D PROPERTIES
+		FOLDER "Examples/D3D")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -135,6 +151,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT
 	add_executable(LatencyTestD3DExample LatencyTestD3DExample.cpp ${COMMON_D3D_2D_SOURCES})
 	target_link_libraries(LatencyTestD3DExample PRIVATE osvrRenderManager::osvrRenderManagerCpp vendored-quat)
 	target_compile_features(LatencyTestD3DExample PRIVATE cxx_range_for)
+	set_target_properties(LatencyTestD3DExample PROPERTIES
+		FOLDER "Examples/D3D")
 endif()
 
 
@@ -148,6 +166,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT
 	add_executable(RenderManagerD3DHeadSpaceExample RenderManagerD3DHeadSpaceExample.cpp ${COMMON_D3D_SOURCES})
 	target_link_libraries(RenderManagerD3DHeadSpaceExample PRIVATE osvrRenderManager::osvrRenderManagerCpp vendored-quat)
 	target_compile_features(RenderManagerD3DHeadSpaceExample PRIVATE cxx_range_for)
+	set_target_properties(RenderManagerD3DHeadSpaceExample PROPERTIES
+		FOLDER "Examples/D3D")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -163,6 +183,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT
 	add_executable(SpinCubeD3D SpinCubeD3D.cpp ${COMMON_D3D_SOURCES})
 	target_link_libraries(SpinCubeD3D PRIVATE osvrRenderManager::osvrRenderManagerCpp vendored-vrpn vendored-quat)
 	target_compile_features(SpinCubeD3D PRIVATE cxx_range_for)
+	set_target_properties(SpinCubeD3D PROPERTIES
+		FOLDER "Examples/D3D")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -179,6 +201,8 @@ if(OSVRRM_HAVE_D3D11_SUPPORT
 	add_executable(RestartD3D RestartD3D.cpp ${COMMON_D3D_SOURCES})
 	target_link_libraries(RestartD3D PRIVATE osvrRenderManager::osvrRenderManagerCpp vendored-vrpn vendored-quat D3D11)
 	target_compile_features(RestartD3D PRIVATE cxx_range_for)
+	set_target_properties(RestartD3D PROPERTIES
+		FOLDER "Examples/D3D")
 endif()
 
 
@@ -197,6 +221,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND SDL2_FOUND AND GLEW_FOUND)
 		add_executable(RenderManagerOpenGLSharedContextExample RenderManagerOpenGLSharedContextExample.cpp)
 		target_link_libraries(RenderManagerOpenGLSharedContextExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLSharedContextExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLSharedContextExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -206,6 +232,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND SDL2_FOUND AND GLEW_FOUND)
 		add_executable(RenderManagerOpenGLCAPISharedContextExample RenderManagerOpenGLCAPISharedContextExample.cpp)
 		target_link_libraries(RenderManagerOpenGLCAPISharedContextExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLCAPISharedContextExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLCAPISharedContextExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
  	#-----------------------------------------------------------------------------
@@ -215,6 +243,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND SDL2_FOUND AND GLEW_FOUND)
 		add_executable(RenderManagerOpenGLSharedContextPresentExample RenderManagerOpenGLSharedContextPresentExample.cpp)
 		target_link_libraries(RenderManagerOpenGLSharedContextPresentExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW SDL2::SDL2 convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLSharedContextPresentExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLSharedContextPresentExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 endif()
 
@@ -227,6 +257,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND NOT APPLE)
 		add_executable(RenderManagerOpenGLExample RenderManagerOpenGLExample.cpp)
 		target_link_libraries(RenderManagerOpenGLExample PRIVATE osvrRenderManager::osvrRenderManagerCpp convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -236,6 +268,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND NOT APPLE)
 		add_executable(RenderManagerOpenGLHeadSpaceExample RenderManagerOpenGLHeadSpaceExample.cpp)
 		target_link_libraries(RenderManagerOpenGLHeadSpaceExample PRIVATE osvrRenderManager::osvrRenderManagerCpp convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLHeadSpaceExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLHeadSpaceExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -253,6 +287,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND NOT APPLE)
 			Qt5::OpenGL
 			Qt5::Widgets)
 		target_compile_features(RenderManagerOpenGLQt5Example PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLQt5Example PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 endif()
 
@@ -267,6 +303,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND)
 		add_executable(RenderManagerOpenGLCoreExample RenderManagerOpenGLCoreExample.cpp)
 		target_link_libraries(RenderManagerOpenGLCoreExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLCoreExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLCoreExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -276,6 +314,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND)
 		add_executable(RenderManagerOpenGLHighPolyTest RenderManagerOpenGLHighPolyTest.cpp)
 		target_link_libraries(RenderManagerOpenGLHighPolyTest PRIVATE vendored-vrpn osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLHighPolyTest PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLHighPolyTest PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 endif()
 
@@ -288,6 +328,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND AND NOT APPLE)
 		add_executable(AdjustableRenderingDelayOpenGL AdjustableRenderingDelayOpenGL.cpp)
 		target_link_libraries(AdjustableRenderingDelayOpenGL PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(AdjustableRenderingDelayOpenGL PRIVATE cxx_range_for)
+		set_target_properties(AdjustableRenderingDelayOpenGL PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -297,6 +339,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND AND NOT APPLE)
 		add_executable(RenderManagerOpenGLPresentExample RenderManagerOpenGLPresentExample.cpp)
 		target_link_libraries(RenderManagerOpenGLPresentExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLPresentExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLPresentExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -306,6 +350,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND AND NOT APPLE)
 		add_executable(RenderManagerOpenGLCAPIExample RenderManagerOpenGLCAPIExample.cpp)
 		target_link_libraries(RenderManagerOpenGLCAPIExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLCAPIExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLCAPIExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 
 	#-----------------------------------------------------------------------------
@@ -315,6 +361,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT AND OPENGL_FOUND AND GLEW_FOUND AND NOT APPLE)
 		add_executable(RenderManagerOpenGLPresentSideBySideExample RenderManagerOpenGLPresentSideBySideExample.cpp)
 		target_link_libraries(RenderManagerOpenGLPresentSideBySideExample PRIVATE osvrRenderManager::osvrRenderManagerCpp GLEW::GLEW convenience_gldeps)
 		target_compile_features(RenderManagerOpenGLPresentSideBySideExample PRIVATE cxx_range_for)
+		set_target_properties(RenderManagerOpenGLPresentSideBySideExample PROPERTIES
+			FOLDER "Examples/OpenGL")
 	endif()
 endif()
 
@@ -327,6 +375,8 @@ if(OSVRRM_USE_OPENGLES20
 	list(APPEND BUILT_EXAMPLES RenderManagerOpenGLES2Example)
 	add_executable(RenderManagerOpenGLES2Example RenderManagerOpenGLES2Example.cpp)
 	target_link_libraries(RenderManagerOpenGLES2Example PRIVATE osvrRenderManager::osvrRenderManagerCpp ${OPENGLES2_LIBRARIES})
+	set_target_properties(RenderManagerOpenGLES2Example PROPERTIES
+		FOLDER "Examples/OpenGLES")
 endif()
 
 if(OSVRRM_HAVE_OPENGL_SUPPORT
@@ -343,6 +393,8 @@ if(OSVRRM_HAVE_OPENGL_SUPPORT
 	add_executable(SpinCubeOpenGL SpinCubeOpenGL.cpp font.c)
 	target_link_libraries(SpinCubeOpenGL PRIVATE osvrRenderManager::osvrRenderManagerCpp convenience_gldeps vendored-vrpn vendored-quat)
 	target_compile_features(SpinCubeOpenGL PRIVATE cxx_range_for)
+	set_target_properties(SpinCubeOpenGL PROPERTIES
+		FOLDER "Examples/OpenGL")
 
 endif()
 
@@ -354,6 +406,8 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SolidColor.cpp")
 	add_executable(SolidColor SolidColor.cpp)
 	target_link_libraries(SolidColor PRIVATE osvrRenderManager::osvrRenderManagerCpp)
 	target_compile_features(SolidColor PRIVATE cxx_range_for)
+	set_target_properties(SolidColor PROPERTIES
+		FOLDER "Examples")
 endif()
 
 list(LENGTH BUILT_EXAMPLES NUM_BUILT_EXAMPLES)
