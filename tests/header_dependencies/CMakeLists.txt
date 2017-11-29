@@ -3,23 +3,23 @@
 #
 
 set(IGNORED_HEADERS
-        RenderKit/DirectModeToolSkeleton.h
-        RenderKit/DistortionCorrectTextureCoordinate.h
-        RenderKit/GraphicsLibraryD3D11.h
-        RenderKit/RenderManagerOpenGL.h
-        RenderKit/RenderManagerD3D.h
-        RenderKit/RenderManagerD3D11ATW.h
-        RenderKit/RenderManagerD3DOpenGL.h
-        RenderKit/RenderManagerOpenGLATW.h
-        RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.h
-        RenderKit/NDA/OSVR-RenderManager-NVIDIA/Util.h
-        RenderKit/NDA/OSVR-RenderManager-NVIDIA/CheckSuccess.h
-        RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVAPIWrappers.h
-        RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVIDIADriverVersion.h
-        RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.h
-        RenderKit/NDA/OSVR-RenderManager-Intel/RenderManagerIntelD3D.h
-        RenderKit/NDA/OSVR-RenderManager-Intel/dxgi2_preview.h
-        RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerSensicsDS_D3D11.h
+		RenderKit/DirectModeToolSkeleton.h
+		RenderKit/DistortionCorrectTextureCoordinate.h
+		RenderKit/GraphicsLibraryD3D11.h
+		RenderKit/RenderManagerOpenGL.h
+		RenderKit/RenderManagerD3D.h
+		RenderKit/RenderManagerD3D11ATW.h
+		RenderKit/RenderManagerD3DOpenGL.h
+		RenderKit/RenderManagerOpenGLATW.h
+		RenderKit/NDA/OSVR-RenderManager-NVIDIA/RenderManagerNVidiaD3D.h
+		RenderKit/NDA/OSVR-RenderManager-NVIDIA/Util.h
+		RenderKit/NDA/OSVR-RenderManager-NVIDIA/CheckSuccess.h
+		RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVAPIWrappers.h
+		RenderKit/NDA/OSVR-RenderManager-NVIDIA/NVIDIADriverVersion.h
+		RenderKit/NDA/OSVR-RenderManager-AMD/RenderManagerAMDD3D.h
+		RenderKit/NDA/OSVR-RenderManager-Intel/RenderManagerIntelD3D.h
+		RenderKit/NDA/OSVR-RenderManager-Intel/dxgi2_preview.h
+		RenderKit/NDA/OSVR-RenderManager-Sensics/RenderManagerSensicsDS_D3D11.h
 )
 
 add_library(eigen_interface INTERFACE)
@@ -50,7 +50,7 @@ set(COMMON_TEST_LIBRARIES osvrRenderManager)
 
 add_custom_target(header_dependencies)
 
-file(GLOB_RECURSE headers RELATIVE "${HEADER_BASE}" ${HEADER_BASE}/*.h)
+file(GLOB headers RELATIVE "${HEADER_BASE}" ${HEADER_BASE}/RenderKit/*.h)
 set(test_index 0)
 foreach(HEADER ${headers})
 	# Sample of relevant variables computed here
@@ -94,7 +94,7 @@ foreach(HEADER ${headers})
 				${COMMON_TEST_LIBRARIES}
 				${LIBRARIES_${symbolname}})
 
-			add_test(NAME ${test_name}_builds COMMAND ${test_name})
+			add_test(NAME ${test_name}_${symbolname}_builds COMMAND ${test_name})
 			add_dependencies(header_dependencies ${test_name})
 		endforeach()
 		math(EXPR test_index "${test_index} + 1")
