@@ -257,6 +257,7 @@ namespace osvr {
 				  //m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Queued next frame info, waiting for it to be presented...";
                 }
 
+				if(m_params.m_verticalSyncBlocksRendering)
 				{
 					std::unique_lock<std::mutex> lock(mMutex);
 					mPresentFinishedCV.wait(lock, [this] { return !mNextFrameAvailable; });
