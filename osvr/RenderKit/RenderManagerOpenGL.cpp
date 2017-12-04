@@ -47,6 +47,11 @@ Sensics, Inc.
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#ifndef OSVR_RM_USE_OPENGLES20
+  #define STORE_STATE
+#endif
+
+
 
 #ifndef OSVR_ANDROID
 //==========================================================================
@@ -1289,6 +1294,7 @@ namespace renderkit {
         });
 #endif
 
+#ifndef STORE_STATE
         /// Switch to our vertex/shader programs if this is the first eye
 		if (params.m_index == 0) {
 			glUseProgram(m_programId);
@@ -1302,6 +1308,11 @@ namespace renderkit {
 			glDisable(GL_BLEND);
 			glDisable(GL_STENCIL_TEST);
 		}
+#else
+        glUseProgram(m_programId);
+        glDisable(GL_BLEND);
+        glDisable(GL_STENCIL_TEST);
+#endif
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1454,9 +1465,13 @@ namespace renderkit {
             return false;
         }
 
-		// If this was last eye unbind shader program
-		if(params.m_index >= GetNumEyes() - 1)
-			glUseProgram(0);
+#ifndef STORE_STATE
+#ifndef OSVR_RM_USE_OPENGLES20
+        // If this was last eye unbind shader program
+        if(params.m_index >= GetNumEyes() - 1)
+            glUseProgram(0);
+#endif
+#endif
 
         return true;
     }
