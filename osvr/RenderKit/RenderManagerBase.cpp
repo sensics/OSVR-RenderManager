@@ -63,6 +63,9 @@ namespace renderkit {
 
 #ifdef RM_USE_OPENGL
 #include "RenderManagerOpenGL.h"
+#ifdef OSVR_RM_USE_OPENGLES20
+#include "RenderManagerOpenGLATW.h"
+#endif
 #include "GraphicsLibraryOpenGL.h"
 #endif
 
@@ -2434,7 +2437,15 @@ namespace renderkit {
 #endif
             } else {
 #ifdef RM_USE_OPENGL
+    #ifdef OSVR_RM_USE_OPENGLES20
+                if (p.m_asynchronousTimeWarp) {
+                    ret.reset(new RenderManagerOpenGLATW(contextParameter, p));
+                } else {
+                    ret.reset(new RenderManagerOpenGL(contextParameter, p));
+                }
+    #else
                 ret.reset(new RenderManagerOpenGL(contextParameter, p));
+    #endif
 #else
                 m_log->error() << "OpenGL render library not compiled in";
                 return nullptr;
