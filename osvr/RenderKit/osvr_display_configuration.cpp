@@ -532,6 +532,11 @@ void OSVRDisplayConfiguration::parse(const std::string& display_description) {
     {
         auto const& distortion = hmd["distortion"];
 
+        /// Find out how many desired triangles, if this is specified.
+        /// If not specified, set to a default.
+        m_distortionDesiredTriangleCount =
+          distortion.get("desired_triangle_count", 200 * 64).asInt();
+
         /// We will detect distortion type based on either the explicitly
         /// specified string or the presence of essential object members.
         m_distortionTypeString = distortion["type"].asString();
@@ -788,6 +793,11 @@ OSVRDisplayConfiguration::getDistortionPolynomalGreen() const {
 std::vector<float> const&
 OSVRDisplayConfiguration::getDistortionPolynomalBlue() const {
     return m_distortionPolynomialBlue;
+}
+
+int OSVR_RENDERMANAGER_EXPORT
+OSVRDisplayConfiguration::getDesiredDistortionTriangleCount() const {
+    return m_distortionDesiredTriangleCount;
 }
 
 std::vector<OSVRDisplayConfiguration::EyeInfo> const&

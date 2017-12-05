@@ -223,7 +223,7 @@ if (NVAPI_FOUND AND HAVE_NVIDIA_NDA_SUBMODULE)
 	add_library(osvrRenderManager-NVIDIA OBJECT
 		"${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.cpp"
 		"${NVIDIA_SRC_DIR}/RenderManagerNVidiaD3D.h")
-	target_include_directories(osvrRenderManager-NVIDIA PRIVATE "${NVAPI_INCLUDE_DIRS}")
+	target_include_directories(osvrRenderManager-NVIDIA PRIVATE "${NVAPI_INCLUDE_DIRS}" "${Boost_INCLUDE_DIR}")
 	osvrrm_setup_nda_object_target(osvrRenderManager-NVIDIA)
 	osvrrm_restore_symbols_in_debug()
 
@@ -244,7 +244,7 @@ if (LIQUIDVR_FOUND AND HAVE_AMD_NDA_SUBMODULE)
 	add_library(osvrRenderManager-AMD OBJECT
 		"${AMD_SRC_DIR}/RenderManagerAMDD3D.cpp"
 		"${AMD_SRC_DIR}/RenderManagerAMDD3D.h")
-	target_include_directories(osvrRenderManager-AMD PRIVATE "${LIQUIDVR_INCLUDE_DIR}")
+	target_include_directories(osvrRenderManager-AMD PRIVATE "${LIQUIDVR_INCLUDE_DIR}" "${Boost_INCLUDE_DIR}")
 	osvrrm_setup_nda_object_target(osvrRenderManager-AMD)
 	osvrrm_restore_symbols_in_debug()
 
@@ -263,7 +263,7 @@ if (HAVE_INTEL_NDA_SUBMODULE)
 	add_library(osvrRenderManager-Intel OBJECT
 		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.cpp"
 		"${INTEL_SRC_DIR}/RenderManagerIntelD3D.h")
-	target_include_directories(osvrRenderManager-Intel PRIVATE "${INTEL_SRC_DIR}")
+	target_include_directories(osvrRenderManager-Intel PRIVATE "${INTEL_SRC_DIR}" "${Boost_INCLUDE_DIR}")
 	osvrrm_setup_nda_object_target(osvrRenderManager-Intel)
 	osvrrm_restore_symbols_in_debug()
 
