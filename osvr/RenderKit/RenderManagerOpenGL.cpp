@@ -434,6 +434,10 @@ namespace renderkit {
             m_displayWidth = widthOverride;
             m_displayHeight = heightOverride;
         }
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        m_GLVAOExtensionAvailable = IsGLExtensionSupported("GL_OES_vertex_array_object");
+#endif
     }
 
     RenderManagerOpenGL::~RenderManagerOpenGL() {
@@ -916,9 +920,7 @@ namespace renderkit {
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer()
         : 
-#ifndef OSVR_RM_USE_OPENGLES20
         VAO(0),
-#endif
         vertexBuffer(0),
         indexBuffer(0)
     {   }
@@ -927,9 +929,7 @@ namespace renderkit {
         DistortionMeshBuffer && rhs) {
         renderManager = std::move(rhs.renderManager);
         display = std::move(rhs.display);
-#ifndef OSVR_RM_USE_OPENGLES20
         VAO = std::move(rhs.VAO);
-#endif
         vertexBuffer = std::move(rhs.vertexBuffer);
         indexBuffer = std::move(rhs.indexBuffer);
         vertices = std::move(rhs.vertices);
@@ -947,9 +947,7 @@ namespace renderkit {
             Clear();
             renderManager = std::move(rhs.renderManager);
             display = std::move(rhs.display);
-#ifndef OSVR_RM_USE_OPENGLES20
             VAO = std::move(rhs.VAO);
-#endif
             vertexBuffer = std::move(rhs.vertexBuffer);
             indexBuffer = std::move(rhs.indexBuffer);
             vertices = std::move(rhs.vertices);
@@ -965,12 +963,16 @@ namespace renderkit {
             // If makeCurrent() fails give up on destroying OpenGL objects
             return;
         }
-#ifndef OSVR_RM_USE_OPENGLES20
+
         if (VAO) {
+#ifdef OSVR_RM_USE_OPENGLES20
+            glDeleteVertexArraysOES(1, &VAO);
+#else
             glDeleteVertexArrays(1, &VAO);
+#endif
             VAO = 0;
         }
-#endif
+
         if (vertexBuffer) {
             glDeleteBuffers(1, &vertexBuffer);
             vertexBuffer = 0;
@@ -991,19 +993,30 @@ namespace renderkit {
         ) {
 
 #ifdef OSVR_RM_USE_OPENGLES20
-        // Record the current state of the array and element
+        // Record the current state of the VAO or array and element
         // buffer bindings and restore them when we leave this
         // function so that we don't mess with the application's
         // rendering state.
+        GLint prevVAO;
         GLint prevArray;
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
-        auto resetArray = util::finally([&]{
-          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
-        });
         GLint prevElement;
-        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
-        auto resetElement = util::finally([&]{
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+
+        if(m_GLVAOExtensionAvailable) {
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING_OES, &prevVAO);
+        }
+        else {
+            glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+            glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+        }
+
+        auto resetArrays = util::finally([&]{
+            if(m_GLVAOExtensionAvailable) {
+                glBindVertexArrayOES(prevVAO);
+            }
+            else {
+                glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+            }
         });
 #else
         // Record and restore the Vertex Array Object binding so we
@@ -1073,7 +1086,12 @@ namespace renderkit {
             meshBuffer.indices = mesh.indices;
 
             // Construct the geometry we're going to render into the eyes
-#ifndef OSVR_RM_USE_OPENGLES20
+#ifdef OSVR_RM_USE_OPENGLES20
+            if(m_GLVAOExtensionAvailable) {
+                glGenVertexArraysOES(1, &meshBuffer.VAO);
+                glBindVertexArrayOES(meshBuffer.VAO);
+            }
+#else
             glGenVertexArrays(1, &meshBuffer.VAO);
             glBindVertexArray(meshBuffer.VAO);
 #endif
@@ -1236,16 +1254,26 @@ namespace renderkit {
         });
 
 #ifdef OSVR_RM_USE_OPENGLES20
+        GLint prevVAO;
         GLint prevArray;
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
-        auto resetArray = util::finally([&]{
-          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
-        });
-
         GLint prevElement;
-        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
-        auto resetElement = util::finally([&]{
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+
+        if(m_GLVAOExtensionAvailable) {
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING_OES, &prevVAO);
+        }
+        else {
+            glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+            glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+        }
+
+        auto resetArrays = util::finally([&]{
+            if(m_GLVAOExtensionAvailable) {
+                glBindVertexArrayOES(prevVAO);
+            }
+            else {
+                glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+            }
         });
 #else
         GLint prevVAO;
@@ -1430,29 +1458,34 @@ namespace renderkit {
         auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
 
 #ifdef OSVR_RM_USE_OPENGLES20
-        glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
-        size_t const stride = sizeof(DistortionVertex);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, pos));
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, texRed));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, texGreen));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, texBlue));
-        glEnableVertexAttribArray(3);
+        if(m_GLVAOExtensionAvailable) {
+            glBindVertexArrayOES(meshBuffer.VAO);
+        }
+        else {
+            glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
+            size_t const stride = sizeof(DistortionVertex);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, pos));
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, texRed));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, texGreen));
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, texBlue));
+            glEnableVertexAttribArray(3);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+        }
 #else
         glBindVertexArray(meshBuffer.VAO);
+#endif
         if (checkForGLError(
             "RenderManagerOpenGL::PresentEye after glBindVertexArray(meshBuffer.VAO)")) {
             return false;
         }
-#endif
 
         GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
         glDrawElements(GL_TRIANGLE_STRIP, numElements, GL_UNSIGNED_SHORT, 0);
@@ -1470,6 +1503,10 @@ namespace renderkit {
         // If this was last eye unbind shader program
         if(params.m_index >= GetNumEyes() - 1)
             glUseProgram(0);
+#else
+        // TODO: This won't be needed
+        if(m_GLVAOExtensionAvailable && params.m_index >= GetNumEyes() - 1)
+            glBindVertexArrayOES(0);
 #endif
 #endif
 
@@ -1506,6 +1543,18 @@ namespace renderkit {
 
       return true;
     }
+
+bool RenderManagerOpenGL::IsGLExtensionSupported(const std::string& extensionName) {
+    const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
+        if(!extensions) {
+            m_log->error() << "RenderManagerOpenGL::IsGLExtensionSupported: glGetString failed";
+            return false;
+        }
+    m_log->info() << extensions;
+    std::string extensionsStr(extensions);
+    m_log->info() << extensionsStr;
+    return extensionsStr.find(extensionName) != std::string::npos;
+}
 
 
 } // namespace renderkit

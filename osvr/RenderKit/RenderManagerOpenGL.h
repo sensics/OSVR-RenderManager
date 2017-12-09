@@ -163,6 +163,10 @@ namespace renderkit {
         std::vector<GLuint> m_depthBuffers; ///< Depth/stencil buffers to hand to
                                             /// render callbacks
 
+#ifdef OSVR_RM_USE_OPENGLES20
+        bool m_GLVAOExtensionAvailable = false;
+#endif
+
         struct DistortionVertex {
             GLfloat pos[4];
             GLfloat texRed[2];
@@ -176,9 +180,7 @@ namespace renderkit {
             RenderManagerOpenGL* renderManager;
             size_t display;
 
-#ifndef OSVR_RM_USE_OPENGLES20
             GLuint VAO;
-#endif
             GLuint vertexBuffer;
             GLuint indexBuffer;
             std::vector<DistortionVertex> vertices;
@@ -259,6 +261,8 @@ namespace renderkit {
           OSVR_OpenGLContextParams& contextParamsOut) {
           delete[] contextParamsOut.windowTitle;
         }
+
+        bool IsGLExtensionSupported(const std::string& extensionName);
 
         /// See if we had an OpenGL error
         /// @return True if there is an error, false if not.
