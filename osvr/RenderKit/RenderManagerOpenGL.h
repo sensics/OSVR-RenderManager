@@ -156,7 +156,6 @@ namespace renderkit {
 
         // To do with our Render() path.
         std::vector<GLuint> m_frameBuffers;      ///< Groups a color buffer and a depth buffer (per display)
-        GLuint m_initialFrameBuffer;    ///< Frame buffer when we started rendering.
 
         std::vector<RenderBuffer>
             m_colorBuffers; ///< Color buffers to hand to render callbacks
@@ -166,7 +165,19 @@ namespace renderkit {
 #ifdef OSVR_RM_USE_OPENGLES20
         bool m_GLVAOExtensionAvailable = false;
 #endif
+
+        // Stored client GL state
         bool m_storeClientGLState = true;
+        GLint m_initialFrameBuffer;
+        GLboolean m_prevDepthTest, m_prevCullFace, m_prevBlend, m_prevStencilTest;
+        GLint m_prevUserProgram;
+        GLint m_prevTextureUnit;
+        GLint m_prevTexture;
+        GLint m_prevVAO;
+#ifdef OSVR_RM_USE_OPENGLES20
+        GLint m_prevArray;
+        GLint m_prevElement;
+#endif
 
         struct DistortionVertex {
             GLfloat pos[4];
