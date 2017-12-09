@@ -1407,9 +1407,9 @@ namespace renderkit {
             displayFrameBuffer = 0;
         }
 
-		// Only bind buffer if first eye or the eyes use different displays
+		// Only clear buffer if first eye or the eyes use different displays
+		glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
 		if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1)) {
-			glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
 
