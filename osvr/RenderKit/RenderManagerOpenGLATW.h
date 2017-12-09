@@ -583,6 +583,7 @@ namespace renderkit {
                 atwParams.m_maxMSBeforeVsyncTimeWarp = 0.0f;
 
                 mRenderManager = new RenderManagerOpenGL(m_context, atwParams);
+                mRenderManager->m_storeClientGLState = false;
 
                 m_log->info() << "RenderManagerOpenGLATW::threadFunc: Registering render buffers to the harnessed "
                                  "RenderManagerOpenGL";

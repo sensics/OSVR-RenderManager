@@ -166,6 +166,7 @@ namespace renderkit {
 #ifdef OSVR_RM_USE_OPENGLES20
         bool m_GLVAOExtensionAvailable = false;
 #endif
+        bool m_storeClientGLState = true;
 
         struct DistortionVertex {
             GLfloat pos[4];
