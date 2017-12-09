@@ -40,11 +40,12 @@ Sensics, Inc.
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
 
-  // Bind the vertex-array extensions from the DLL
+  // Bind the extensions from the DLL
   #include <dlfcn.h>
   PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
   PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES;
   PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
+  PFNGLDISCARDFRAMEBUFFEREXTPROC glDiscardFramebufferEXT;
   class CalledBeforeCodeRuns {
     public:
       CalledBeforeCodeRuns() {
@@ -59,6 +60,9 @@ Sensics, Inc.
 	glGenVertexArraysOES = (PFNGLGENVERTEXARRAYSOESPROC)
 				dlsym(libhandle,
 				"glGenVertexArraysOES");
+	glDiscardFramebufferEXT = (PFNGLDISCARDFRAMEBUFFEREXTPROC)
+				dlsym(libhandle,
+				"glDiscardFramebufferEXT");
     }
   };
   static CalledBeforeCodeRuns getFunctionPointers;
@@ -164,6 +168,7 @@ namespace renderkit {
 
 #ifdef OSVR_RM_USE_OPENGLES20
         bool m_GLVAOExtensionAvailable = false;
+        bool m_GLDiscardExtensionAvailable = false;
 #endif
 
         // Stored client GL state

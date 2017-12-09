@@ -433,6 +433,7 @@ namespace renderkit {
 
 #ifdef OSVR_RM_USE_OPENGLES20
         m_GLVAOExtensionAvailable = IsGLExtensionSupported("GL_OES_vertex_array_object");
+        m_GLDiscardExtensionAvailable = IsGLExtensionSupported("GL_EXT_discard_framebuffer");
 #endif
     }
 
@@ -892,6 +893,18 @@ namespace renderkit {
                       projection, deadline);
         checkForGLError(
           "RenderManagerOpenGL::RenderSpace: After calling user callback");
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        // At this point we should have the off-screen FBO still bound,
+        // so we discard its depth and stencil buffers before unbinding it
+        // to stop them from being copied.
+        if (m_GLDiscardExtensionAvailable) {
+            const GLenum attachments[]  = {GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT};
+            glDiscardFramebufferEXT(GL_FRAMEBUFFER, 2, attachments);
+            checkForGLError(
+              "RenderManagerOpenGL::RenderSpace discard framebuffer failed. Client might have changed FBO binding");
+        }
+#endif
 
         /// @todo Keep track of timing information
 
