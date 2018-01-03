@@ -323,6 +323,10 @@ namespace renderkit {
                 nullptr; ///< Room space to insert
             const OSVR_PoseState* roomFromHeadReplace =
                 nullptr; ///< Overrides head space
+			const OSVR_PoseState* roomFromLeftEyeReplace =
+				nullptr; ///< Overrides left eye space
+			const OSVR_PoseState* roomFromRightEyeReplace =
+				nullptr; ///< Overrides right eye space
             double nearClipDistanceMeters = 0.1;
             double farClipDistanceMeters = 100.0;
             double IPDMeters = 0.063; ///< Inter-puppilary distance of the viewer
@@ -616,6 +620,9 @@ namespace renderkit {
                 m_displayConfiguration; ///< Display configuration
 
             std::string m_roomFromHeadName; ///< Transform to use for head space
+			std::string m_roomFromLeftEyeName; ///< Transform to use for left eye space
+			std::string m_roomFromRightEyeName; ///< Transform to use for right eye space
+
 
             /// Graphics library (device/context) to use instead of creating one
             /// if the pointer is non-NULL.  Note that the appropriate context
@@ -742,7 +749,12 @@ namespace renderkit {
         /// Head space to use, or nullptr in case of none (which should
         /// be checked for, but is sort of an error).
         OSVR_ClientInterface m_roomFromHeadInterface;
+		OSVR_ClientInterface m_roomFromLeftEyeInterface;
+		OSVR_ClientInterface m_roomFromRightEyeInterface;
         OSVR_PoseState m_roomFromHead; ///< Transform to use for head space
+		OSVR_PoseState m_roomFromLeftEye; ///< Transform to use for left eye space
+		OSVR_PoseState m_roomFromRightEye; ///< Transform to use for right eye space
+
 
         /// @brief Stores display callback information
         ///
@@ -1168,8 +1180,16 @@ namespace renderkit {
         bool hasHeadPose() const;
         bool getLastHeadPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
 
+		bool hasLeftEyePose() const;
+		bool hasRightEyePose() const;
+		bool getLastLeftEyePose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
+		bool getLastRightEyePose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
+
       private:
         std::unique_ptr<PoseStateCaching> m_headPoseCache;
+		std::unique_ptr<PoseStateCaching> m_leftEyePoseCache;
+		std::unique_ptr<PoseStateCaching> m_rightEyePoseCache;
+
     };
 
     //=========================================================================

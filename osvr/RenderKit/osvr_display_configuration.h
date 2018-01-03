@@ -133,9 +133,6 @@ class OSVRDisplayConfiguration {
     std::vector<float> const& getDistortionPolynomalBlue() const;
     ///@}
 
-    /// Returns the desired number of triangles in the constructed distortion mesh.
-    int OSVR_RENDERMANAGER_EXPORT getDesiredDistortionTriangleCount() const;
-
     /// Structure holding the information for one eye.
     class EyeInfo {
       public:
@@ -195,7 +192,6 @@ class OSVRDisplayConfiguration {
     std::vector<float> m_distortionPolynomialRed;
     std::vector<float> m_distortionPolynomialGreen;
     std::vector<float> m_distortionPolynomialBlue;
-    int m_distortionDesiredTriangleCount;
 
     // Rendering
     double m_rightRoll = 0.;
