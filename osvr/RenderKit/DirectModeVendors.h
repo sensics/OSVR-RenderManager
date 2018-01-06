@@ -241,7 +241,6 @@ namespace renderkit {
             Vendor{"TVL", "TotalVision"},
             Vendor{"FOV", "FOVE"},
             Vendor{"LZT", "HomeVR"},
-            Vendor{"NEC", "Lumus"},
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
         return vendors;
@@ -253,6 +252,7 @@ namespace renderkit {
         using Vendor = vendorid::DirectModeVendorEntry;
         static DirectModeVendors vendors = DirectModeVendors{
             Vendor{"SAM", "Samsung"},
+            Vendor{"NEC", "Lumus" },
             /* add new vendors here - keep grouped by display descriptor vendor */
         };
         return vendors;
