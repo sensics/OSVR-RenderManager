@@ -82,6 +82,10 @@ namespace renderkit {
 
     class RenderManagerOpenGL : public RenderManager {
       public:
+        /// Construct an OpenGL render manager.
+        RenderManagerOpenGL(
+            OSVR_ClientContext context,
+            ConstructorParameters p);
         virtual ~RenderManagerOpenGL();
 
         // Opens the D3D renderer we're going to use.
@@ -90,10 +94,6 @@ namespace renderkit {
         bool OSVR_RENDERMANAGER_EXPORT GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) override;
 
       protected:
-        /// Construct an OpenGL render manager.
-        RenderManagerOpenGL(
-            OSVR_ClientContext context,
-            ConstructorParameters p);
 
         OSVR_RENDERMANAGER_EXPORT bool UpdateDistortionMeshesInternal(
             DistortionMeshType type ///< Type of mesh to produce

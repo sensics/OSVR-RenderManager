@@ -37,6 +37,17 @@ namespace renderkit {
 
     class RenderManagerD3D11OpenGL : public RenderManagerOpenGL {
       public:
+        /// Construct a D3D DirectMode renderer to do DirectMode
+        // rendering, then harness it so that we can provide an OpenGL
+        // library interface back to the client.  Uses the OpenGL/DX
+        // interop functions to connect the two.
+        // NOTE: This will call delete on the harnessed RenderManager
+        // when it is destroyed.
+        RenderManagerD3D11OpenGL(
+            OSVR_ClientContext context,
+            ConstructorParameters p,
+            std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness);
+
         virtual OSVR_RENDERMANAGER_EXPORT ~RenderManagerD3D11OpenGL();
 
         // Is the renderer currently working?
@@ -60,16 +71,6 @@ namespace renderkit {
         }
 
       protected:
-        /// Construct a D3D DirectMode renderer to do DirectMode
-        // rendering, then harness it so that we can provide an OpenGL
-        // library interface back to the client.  Uses the OpenGL/DX
-        // interop functions to connect the two.
-        // NOTE: This will call delete on the harnessed RenderManager
-        // when it is destroyed.
-        RenderManagerD3D11OpenGL(
-            OSVR_ClientContext context,
-            ConstructorParameters p,
-            std::unique_ptr<RenderManagerD3D11Base>&& D3DToHarness);
 
         bool m_displayOpen; ///< Has our display been opened?
 

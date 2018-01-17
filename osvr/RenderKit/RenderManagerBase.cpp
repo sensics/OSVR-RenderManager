@@ -109,6 +109,7 @@ namespace renderkit {
 #include <sstream>
 #include <exception>
 #include <memory>
+#include <utility>
 #include <map>
 #include <algorithm>
 
@@ -265,6 +266,197 @@ static void OSVR_from_q(OSVR_PoseState& pose, const q_xyz_quat_type& xform) {
 
 namespace osvr {
 namespace renderkit {
+
+    class RenderManagerFactory;
+    class RenderManagerFactoryRegistry {
+      private:
+        std::map<std::string, std::shared_ptr<RenderManagerFactory> > mRegistry;
+
+      public:
+        void addFactory(const std::string& name, std::shared_ptr<RenderManagerFactory> factoryPtr) {
+            mRegistry[name] = factoryPtr;
+        }
+
+        std::shared_ptr<RenderManagerFactory> getFactory(const std::string& name) const {
+            auto factory = mRegistry.find(name);
+            if (factory == mRegistry.end()) {
+                return nullptr;
+            }
+            return factory->second;
+        }
+
+        // Create render manager using the named factory, if it exists, otherwise returns null
+        RenderManager* createRenderManager(const std::string& name, OSVR_ClientContext contextParameter,
+            const RenderManager::ConstructorParameters& options, // a public version of this
+            GraphicsLibrary graphicsLibrary) const;
+    };
+
+    class RenderManagerFactory {
+      protected:
+        osvr::util::log::LoggerPtr m_log;
+
+      public:
+        RenderManagerFactory() { m_log = osvr::util::log::make_logger("RenderManager"); }
+        virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
+                                                   OSVR_ClientContext contextParameter,
+                                                   const RenderManager::ConstructorParameters& options,
+                                                   GraphicsLibrary graphicsLibrary) = 0;
+    };
+
+    RenderManager* RenderManagerFactoryRegistry::createRenderManager(const std::string& name, OSVR_ClientContext contextParameter,
+        const RenderManager::ConstructorParameters& options, // a public version of this
+        GraphicsLibrary graphicsLibrary) const {
+        auto factory = getFactory(name);
+        /* log if !factory */
+        return !factory ? nullptr : factory->createRenderManager(*this, contextParameter, options, graphicsLibrary);
+    }
+
+    // Name: "Direct3D11"
+    class Direct3D11RootRenderManagerFactory : public RenderManagerFactory {
+      public:
+        virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
+                                                   OSVR_ClientContext contextParameter,
+                                                   const RenderManager::ConstructorParameters& options,
+                                                   GraphicsLibrary graphicsLibrary) override {
+#ifdef RM_USE_SENSICS
+            auto ret = new RenderManagerSensicsDS_D3D11(contextParameter, p);
+
+            if (ret->doingOkay()) {
+                return ret;
+            } else {
+                // if not doing okay, delete this instance and try again
+                // with a non-compositor instance below
+                m_log->warn() << "Could not create Sensics Compositor instance."
+                    << " Attempting to create a non-compositor instance." << std::flush;
+                delete ret;
+                ret = nullptr;
+            }
+#endif
+
+            // if direct mode is on
+            if (options.m_directMode) {
+                return registry.createRenderManager("com_sensics_D3D11_DirectMode", contextParameter, options,
+                                                     graphicsLibrary);
+            }
+
+            return new RenderManagerD3D11(contextParameter, options);
+        }
+    };
+
+    // Name: "com_sensics_D3D11_DirectMode"
+    class Direct3D11DirectModeRenderManagerFactory : public RenderManagerFactory {
+    public:
+        virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
+            OSVR_ClientContext contextParameter,
+            const RenderManager::ConstructorParameters& options,
+            GraphicsLibrary graphicsLibrary) override {
+            // If we've been asked for asynchronous time warp, we layer
+            // the request on top of a request for a DirectRender instance
+            // to harness.  @todo This should be doable on top of a non-
+            // DirectMode interface as well.
+            if (options.m_asynchronousTimeWarp) {
+                RenderManager::ConstructorParameters pTemp = options;
+                pTemp.m_graphicsLibrary.D3D11 = nullptr;
+                auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
+                return new RenderManagerD3D11ATW(contextParameter, options, wrappedRm);
+            }
+            else {
+                // Try each available DirectRender library to see if we can
+                // get a pointer to a RenderManager that has access to the
+                // DirectMode display we want to use.
+                auto ret = openRenderManagerDirectMode(contextParameter, options);
+                if (!ret) {
+                    m_log->error() << "Could not open the"
+                        << " requested DirectMode display";
+                }
+                return ret;
+            }
+        }
+    };
+
+    // Name: "OpenGL"
+    class OpenGLRootRenderManagerFactory : public RenderManagerFactory {
+        virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
+            OSVR_ClientContext contextParameter,
+            const RenderManager::ConstructorParameters& options,
+            GraphicsLibrary graphicsLibrary) override {
+            // if direct mode is on
+            if (options.m_directMode) {
+#ifdef RM_USE_NVIDIA_DIRECT_D3D11_OPENGL
+                // NVIDIA DirectMode is currently only implemented under Direct3D11,
+                // so we wrap this with an OpenGL renderer.
+                // Set the parameters on the harnessed renderer to not apply the
+                // rendering fixes that we're applying.  Also set its render
+                // library to match.
+                RenderManager::ConstructorParameters p2 = options;
+                p2.m_renderLibrary = "Direct3D11";
+                p2.m_directMode = true;
+
+                // @todo This needs to be fixed elsewhere, and generalized to
+                // work with all forms of distortion correction.
+                // Flip y on the center of projection on the distortion
+                // correction, because we're going to be rendering in OpenGL
+                // but distorting in D3D, and they use a different texture
+                // orientation.
+                // When we do this, we need to take into account the D scaling
+                // factor being applied to the center of projection; first
+                // scaling back into unity, then flipping, then rescaling.
+                for (size_t eye = 0; eye < options.m_distortionParameters.size();
+                    ++eye) {
+                    if (p2.m_distortionParameters[eye].m_distortionCOP.size() <
+                        2) {
+                        m_log->error() << "Insufficient distortion parameters";
+                        return nullptr;
+                    }
+                    if (p2.m_distortionParameters[eye].m_distortionD.size() <
+                        2) {
+                        m_log->error() << "Insufficient distortion parameters";
+                        return nullptr;
+                    }
+                    float original =
+                        p2.m_distortionParameters[eye].m_distortionCOP[1];
+                    float normalized =
+                        original /
+                        p2.m_distortionParameters[eye].m_distortionD[1];
+                    float flipped = 1.0f - normalized;
+                    float scaled =
+                        flipped *
+                        p2.m_distortionParameters[eye].m_distortionD[1];
+                    p2.m_distortionParameters[eye].m_distortionCOP[1] = scaled;
+                }
+
+                // this line saves us about 250 lines of duplicate code in original
+                auto host = registry.createRenderManager("com_sensics_D3D11_DirectMode", contextParameter, p2,
+                    graphicsLibrary);
+                if (!host) {
+                    m_log->error() << "Could not create direct mode RenderManager instance." << std::flush;
+                    return nullptr;
+                }
+
+                std::unique_ptr<osvr::renderkit::RenderManagerD3D11Base> hostPtr(dynamic_cast<osvr::renderkit::RenderManagerD3D11Base*>(host));
+
+                return new RenderManagerD3D11OpenGL(contextParameter, options, std::move(hostPtr));
+#else
+                m_log->error() << "OpenGL/Direct3D Interop not compiled in";
+                return nullptr;
+#endif
+            }
+
+#ifdef RM_USE_OPENGL
+// Current OpenGL ATW implementation only tested on Android EGL environment, but
+// could potentially work on desktop (untested).
+#ifdef OSVR_RM_USE_OPENGLES20
+            // if ATW is on and hardware supports ATW
+            if (options.m_asynchronousTimeWarp) {
+                return new RenderManagerOpenGLATW(contextParameter, options);
+            }
+#endif
+            return new RenderManagerOpenGL(contextParameter, options);
+#else
+            m_log->error() << "OpenGL render library not compiled in";
+#endif
+        }
+    };
 
     RenderManager::RenderManager(
         OSVR_ClientContext context,
@@ -2319,142 +2511,162 @@ namespace renderkit {
 
         // @todo Read the info we need from Core.
 
-        // Open the appropriate render manager based on the rendering library
-        // and DirectMode selected.
-        if (p.m_renderLibrary == "Direct3D11") {
-#ifdef RM_USE_D3D11
-  #ifdef RM_USE_SENSICS
-            // See if we are able to construct a Sensics Compositor.  If so,
-            // construct a RenderManager based on it and return it; otherwise,
-            // construct one based on the configuration parameters.
-            ret.reset(new RenderManagerSensicsDS_D3D11(contextParameter, p));
-            if (!ret->doingOkay()) {
-                ret.reset(nullptr);
-  #endif
-                if (p.m_directMode) {
-                    // If we've been asked for asynchronous time warp, we layer
-                    // the request on top of a request for a DirectRender instance
-                    // to harness.  @todo This should be doable on top of a non-
-                    // DirectMode interface as well.
-                    if (p.m_asynchronousTimeWarp) {
-                        RenderManager::ConstructorParameters pTemp = p;
-                        pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                        auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
-                        ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
-                    }
-                    else {
-                        // Try each available DirectRender library to see if we can
-                        // get a pointer to a RenderManager that has access to the
-                        // DirectMode display we want to use.
-                        ret.reset(openRenderManagerDirectMode(contextParameter, p));
-                    }
-                    if (ret == nullptr) {
-                        m_log->error() << "Could not open the"
-                            << " requested DirectMode display";
-                    }
-                } else {
-                    ret.reset(new RenderManagerD3D11(contextParameter, p));
-                }
-  #ifdef RM_USE_SENSICS
-            }
-  #endif
-#else
-              m_log->error() << "D3D11 render library not compiled in";
-              return nullptr;
-#endif
-        } else if (p.m_renderLibrary == "OpenGL") {
-            if (p.m_directMode) {
-#ifdef RM_USE_NVIDIA_DIRECT_D3D11_OPENGL
-                // NVIDIA DirectMode is currently only implemented under Direct3D11,
-                // so we wrap this with an OpenGL renderer.
-                // Set the parameters on the harnessed renderer to not apply the
-                // rendering fixes that we're applying.  Also set its render
-                // library to match.
-                RenderManager::ConstructorParameters p2 = p;
-                p2.m_renderLibrary = "Direct3D11";
-                p2.m_directMode = true;
+        // hard coded render manager factories
+        RenderManagerFactoryRegistry registry;
+        registry.addFactory("org_osvr_Direct3D11", std::make_shared<Direct3D11RootRenderManagerFactory>());
+        registry.addFactory("org_osvr_OpenGL", std::make_shared<OpenGLRootRenderManagerFactory>());
+        registry.addFactory("com_sensics_D3D11_DirectMode",
+                            std::make_shared<Direct3D11DirectModeRenderManagerFactory>());
 
-                // @todo This needs to be fixed elsewhere, and generalized to
-                // work with all forms of distortion correction.
-                // Flip y on the center of projection on the distortion
-                // correction, because we're going to be rendering in OpenGL
-                // but distorting in D3D, and they use a different texture
-                // orientation.
-                // When we do this, we need to take into account the D scaling
-                // factor being applied to the center of projection; first
-                // scaling back into unity, then flipping, then rescaling.
-                for (size_t eye = 0; eye < p.m_distortionParameters.size();
-                     ++eye) {
-                    if (p2.m_distortionParameters[eye].m_distortionCOP.size() <
-                        2) {
-                        m_log->error() << "Insufficient distortion parameters";
-                        return nullptr;
-                    }
-                    if (p2.m_distortionParameters[eye].m_distortionD.size() <
-                        2) {
-                        m_log->error() << "Insufficient distortion parameters";
-                        return nullptr;
-                    }
-                    float original =
-                        p2.m_distortionParameters[eye].m_distortionCOP[1];
-                    float normalized =
-                        original /
-                        p2.m_distortionParameters[eye].m_distortionD[1];
-                    float flipped = 1.0f - normalized;
-                    float scaled =
-                        flipped *
-                        p2.m_distortionParameters[eye].m_distortionD[1];
-                    p2.m_distortionParameters[eye].m_distortionCOP[1] = scaled;
-                }
+        // map render library names to render manager factory names (root factories)
+        std::map<std::string, std::string> libraryFactoryMap;
+        libraryFactoryMap.insert(std::make_pair("Direct3D11", "org_osvr_Direct3D11"));
+        libraryFactoryMap.insert(std::make_pair("OpenGL", "org_osvr_OpenGL"));
 
-                // If we've been asked for asynchronous time warp, we layer
-                // the request on top of a request for a DirectRender instance
-                // to harness.  @todo This should be doable on top of a non-
-                // DirectMode interface as well.
-                std::unique_ptr<RenderManagerD3D11Base> host = nullptr;
-                if (p.m_asynchronousTimeWarp) {
-                  RenderManager::ConstructorParameters pTemp = p2;
-                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
-                  auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
-                  host.reset(new RenderManagerD3D11ATW(contextParameter, p2, wrappedRm));
-                } else {
-                  // Try each available DirectRender library to see if we can
-                  // get a pointer to a RenderManager that has access to the
-                  // DirectMode display we want to use.
-                  host.reset(openRenderManagerDirectMode(contextParameter, p2));
-                }
-                if (host == nullptr) {
-                  m_log->error() << "Could not open the"
-                    << " requested harnessed DirectMode display";
-                }
-
-                ret.reset(
-                  new RenderManagerD3D11OpenGL(contextParameter, p, std::move(host)));
-#else
-                m_log->error() << "OpenGL/Direct3D Interop not compiled in";
-                return nullptr;
-#endif
-            } else {
-#ifdef RM_USE_OPENGL
-    #ifdef OSVR_RM_USE_OPENGLES20
-                if (p.m_asynchronousTimeWarp) {
-                    ret.reset(new RenderManagerOpenGLATW(contextParameter, p));
-                } else {
-                    ret.reset(new RenderManagerOpenGL(contextParameter, p));
-                }
-    #else
-                ret.reset(new RenderManagerOpenGL(contextParameter, p));
-    #endif
-#else
-                m_log->error() << "OpenGL render library not compiled in";
-                return nullptr;
-#endif
-            }
+        auto factoryName = libraryFactoryMap.find(p.m_renderLibrary);
+        if (factoryName != libraryFactoryMap.end()) {
+            ret.reset(registry.createRenderManager(factoryName->second, contextParameter, p, p.m_graphicsLibrary));
         } else {
-            m_log->error() << "Unrecognized render library: "
-                      << p.m_renderLibrary;
+            m_log->error() << "No known RenderManager factory for render library " << p.m_renderLibrary << std::flush;
             return nullptr;
         }
+
+//        // Open the appropriate render manager based on the rendering library
+//        // and DirectMode selected.
+//        if (p.m_renderLibrary == "Direct3D11") {
+//#ifdef RM_USE_D3D11
+//  #ifdef RM_USE_SENSICS
+//            // See if we are able to construct a Sensics Compositor.  If so,
+//            // construct a RenderManager based on it and return it; otherwise,
+//            // construct one based on the configuration parameters.
+//            ret.reset(new RenderManagerSensicsDS_D3D11(contextParameter, p));
+//            if (!ret->doingOkay()) {
+//                ret.reset(nullptr);
+//  #endif
+//                if (p.m_directMode) {
+//                    // If we've been asked for asynchronous time warp, we layer
+//                    // the request on top of a request for a DirectRender instance
+//                    // to harness.  @todo This should be doable on top of a non-
+//                    // DirectMode interface as well.
+//                    if (p.m_asynchronousTimeWarp) {
+//                        RenderManager::ConstructorParameters pTemp = p;
+//                        pTemp.m_graphicsLibrary.D3D11 = nullptr;
+//                        auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
+//                        ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
+//                    }
+//                    else {
+//                        // Try each available DirectRender library to see if we can
+//                        // get a pointer to a RenderManager that has access to the
+//                        // DirectMode display we want to use.
+//                        ret.reset(openRenderManagerDirectMode(contextParameter, p));
+//                    }
+//                    if (ret == nullptr) {
+//                        m_log->error() << "Could not open the"
+//                            << " requested DirectMode display";
+//                    }
+//                } else {
+//                    ret.reset(new RenderManagerD3D11(contextParameter, p));
+//                }
+//  #ifdef RM_USE_SENSICS
+//            }
+//  #endif
+//#else
+//              m_log->error() << "D3D11 render library not compiled in";
+//              return nullptr;
+//#endif
+//        } else if (p.m_renderLibrary == "OpenGL") {
+//            if (p.m_directMode) {
+//#ifdef RM_USE_NVIDIA_DIRECT_D3D11_OPENGL
+//                // NVIDIA DirectMode is currently only implemented under Direct3D11,
+//                // so we wrap this with an OpenGL renderer.
+//                // Set the parameters on the harnessed renderer to not apply the
+//                // rendering fixes that we're applying.  Also set its render
+//                // library to match.
+//                RenderManager::ConstructorParameters p2 = p;
+//                p2.m_renderLibrary = "Direct3D11";
+//                p2.m_directMode = true;
+//
+//                // @todo This needs to be fixed elsewhere, and generalized to
+//                // work with all forms of distortion correction.
+//                // Flip y on the center of projection on the distortion
+//                // correction, because we're going to be rendering in OpenGL
+//                // but distorting in D3D, and they use a different texture
+//                // orientation.
+//                // When we do this, we need to take into account the D scaling
+//                // factor being applied to the center of projection; first
+//                // scaling back into unity, then flipping, then rescaling.
+//                for (size_t eye = 0; eye < p.m_distortionParameters.size();
+//                     ++eye) {
+//                    if (p2.m_distortionParameters[eye].m_distortionCOP.size() <
+//                        2) {
+//                        m_log->error() << "Insufficient distortion parameters";
+//                        return nullptr;
+//                    }
+//                    if (p2.m_distortionParameters[eye].m_distortionD.size() <
+//                        2) {
+//                        m_log->error() << "Insufficient distortion parameters";
+//                        return nullptr;
+//                    }
+//                    float original =
+//                        p2.m_distortionParameters[eye].m_distortionCOP[1];
+//                    float normalized =
+//                        original /
+//                        p2.m_distortionParameters[eye].m_distortionD[1];
+//                    float flipped = 1.0f - normalized;
+//                    float scaled =
+//                        flipped *
+//                        p2.m_distortionParameters[eye].m_distortionD[1];
+//                    p2.m_distortionParameters[eye].m_distortionCOP[1] = scaled;
+//                }
+//
+//                // If we've been asked for asynchronous time warp, we layer
+//                // the request on top of a request for a DirectRender instance
+//                // to harness.  @todo This should be doable on top of a non-
+//                // DirectMode interface as well.
+//                std::unique_ptr<RenderManagerD3D11Base> host = nullptr;
+//                if (p.m_asynchronousTimeWarp) {
+//                  RenderManager::ConstructorParameters pTemp = p2;
+//                  pTemp.m_graphicsLibrary.D3D11 = nullptr;
+//                  auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
+//                  host.reset(new RenderManagerD3D11ATW(contextParameter, p2, wrappedRm));
+//                } else {
+//                  // Try each available DirectRender library to see if we can
+//                  // get a pointer to a RenderManager that has access to the
+//                  // DirectMode display we want to use.
+//                  host.reset(openRenderManagerDirectMode(contextParameter, p2));
+//                }
+//                if (host == nullptr) {
+//                  m_log->error() << "Could not open the"
+//                    << " requested harnessed DirectMode display";
+//                }
+//
+//                ret.reset(
+//                  new RenderManagerD3D11OpenGL(contextParameter, p, std::move(host)));
+//#else
+//                m_log->error() << "OpenGL/Direct3D Interop not compiled in";
+//                return nullptr;
+//#endif
+//            } else {
+//#ifdef RM_USE_OPENGL
+//    #ifdef OSVR_RM_USE_OPENGLES20
+//                if (p.m_asynchronousTimeWarp) {
+//                    ret.reset(new RenderManagerOpenGLATW(contextParameter, p));
+//                } else {
+//                    ret.reset(new RenderManagerOpenGL(contextParameter, p));
+//                }
+//    #else
+//                ret.reset(new RenderManagerOpenGL(contextParameter, p));
+//    #endif
+//#else
+//                m_log->error() << "OpenGL render library not compiled in";
+//                return nullptr;
+//#endif
+//            }
+//        } else {
+//            m_log->error() << "Unrecognized render library: "
+//                      << p.m_renderLibrary;
+//            return nullptr;
+//        }
 
         // Check and see if the render manager is doing okay.  If not, return
         // nullptr.

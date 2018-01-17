@@ -219,6 +219,137 @@ namespace renderkit {
         bool m_doingOkay;
 
       public:
+
+          ///-------------------------------------------------------------
+          /// Values that control how we do our rendering.  Some RenderManager
+          /// subclasses implement only a subset of the techniques that can be
+          /// specified.
+          class ConstructorParameters {
+          public:
+              /// Fill in defaults for the parameters.
+              OSVR_RENDERMANAGER_EXPORT ConstructorParameters() {
+                  m_directMode = false;
+                  m_directModeIndex = 0;
+                  m_directDisplayIndex = 0;
+                  m_directHighPriority = false;
+                  m_displayRotation = Zero;
+                  m_numBuffers = 2;
+                  m_verticalSync = true;
+                  m_verticalSyncBlocksRendering = false;
+                  m_renderLibrary = ""; ////< Unspecified, which is invalid.
+
+                  m_windowTitle = "OSVR";
+                  m_windowFullScreen = false;
+                  m_windowXPosition = 0;
+                  m_windowYPosition = 0;
+                  m_bitsPerColor = 8;
+
+                  m_renderOverfillFactor = 1.0f;
+                  m_renderOversampleFactor = 1.0f;
+                  m_enableTimeWarp = true;
+                  m_asynchronousTimeWarp = false;
+                  m_maxMSBeforeVsyncTimeWarp = 0.0f;
+
+                  m_clientPredictionEnabled = false;
+                  m_clientPredictionLocalTimeOverride = false;
+
+                  m_graphicsLibrary = GraphicsLibrary();
+              }
+              typedef enum {
+                  Zero,
+                  Ninety,
+                  OneEighty,
+                  TwoSeventy
+              } Display_Rotation;
+
+              bool m_directMode; ///< Should we render using DirectMode?
+
+              void addCandidatePNPID(const char* pnpid);
+              std::vector<uint32_t>
+                  m_directVendorIds; ///< Vendor IDs of the displays to use
+                                     /// Hardware PNPIDs of the displays, corresponding 1-1 with
+                                     /// m_directVendorIds
+              std::vector<std::string> m_pnpIds;
+
+              /// @todo Mode selection should include update rate/pixel format
+              /// selections.
+              int32_t m_directModeIndex; ///< Which mode to use (-1 to select based
+                                         // on params)?
+              uint32_t m_directDisplayIndex; ///< Which display to use
+              bool m_directHighPriority;     ///< Do high-priority rendering in
+                                             // DirectMode?
+              unsigned m_numBuffers; ///< How many buffers (2 = double buffering)
+              bool m_verticalSync;   ///< Do we wait for Vsync to swap buffers?
+              bool m_verticalSyncBlocksRendering; ///< Block rendering waiting for
+                                                  // sync?
+              std::string m_renderLibrary; ///< Which rendering library to use
+
+              std::string m_windowTitle; ///< Title of any window we create
+              bool m_windowFullScreen;   ///< If not Direct Mode, do we want full
+                                         /// screen?
+              int m_windowXPosition;     ///< Where to put the window
+              int m_windowYPosition;     ///< Where to put the window
+              Display_Rotation m_displayRotation; ///< Present mode: Rotate display
+                                                  // about Z when presenting
+              unsigned m_bitsPerColor; ///< Color depth of the window we want
+
+                                       /// This expands the size of the render window, adding more pixels
+                                       /// around the border, so that there is margin to be rendered when
+                                       /// we're using distortion (which pulls in pixels from outside the
+                                       /// boundary) and when we're using Time Warp (which also pulls in
+                                       /// edge pixels as we move).  The larger this factor, the less
+                                       /// likely we'll see clamped images at the border but the more
+                                       /// work taken during rendering.
+                                       /// A factor of 1.0 means render at standard size, 2.0 would
+                                       /// render 4x as many pixels (2x in both X and Y).
+              float m_renderOverfillFactor;
+
+              /// This increases the density of the render texture, adding more
+              /// pixels within the texture, so that when it is rendered into
+              /// the final buffer with distortion correction it can be
+              /// expanded by the distortion without making fat pixels.
+              ///   Alternatively, it can be reduced to make rendering
+              /// faster at the expense if visible pixel resolution.
+              /// A factor of 1.0 means render at standard size, 2.0 would
+              /// render 4x as many pixels (2x in both X and Y) and 0.5
+              /// would render 1/4 as many pixels.
+              float m_renderOversampleFactor;
+
+              std::vector<DistortionParameters>
+                  m_distortionParameters; ///< One set per eye x display
+
+              bool m_enableTimeWarp;       ///< Use time warp?
+              bool m_justInTimeWarp;       ///< Use just-in-timewarp?
+                                           ///(requires enable)
+              float m_justInTimeWarpRotation; ///< Rotation in degrees, 0 = top, 90 = right
+              bool m_asynchronousTimeWarp; ///< Use Asynchronous time warp?
+                                           ///(requires enable)
+
+                                           /// Render waits until at most this many ms before vsync to do
+                                           /// timewarp (requires enable)
+              float m_maxMSBeforeVsyncTimeWarp;
+
+              /// Prediction settings.
+              bool m_clientPredictionEnabled; ///< Use client-side prediction?
+                                              /// Static Delay + Delay from present to eye start
+              std::vector<float> m_eyeDelaysMS;
+              bool m_clientPredictionLocalTimeOverride;  ///< Override tracker timestamp?
+
+              std::shared_ptr<OSVRDisplayConfiguration>
+                  m_displayConfiguration; ///< Display configuration
+
+              std::string m_roomFromHeadName; ///< Transform to use for head space
+
+                                              /// Graphics library (device/context) to use instead of creating one
+                                              /// if the pointer is non-NULL.  Note that the appropriate context
+                                              /// pointer for the m_renderLibrary must be filled in.
+              GraphicsLibrary m_graphicsLibrary;
+          };
+
+        /// @brief Constructor given OSVR context and parameters
+        RenderManager(OSVR_ClientContext context,
+            const ConstructorParameters& p);
+
         ///-------------------------------------------------------------
         /// Create a RenderManager using the createRenderManager() function.
 
@@ -497,132 +628,6 @@ namespace renderkit {
                 return false;
         }
 
-        ///-------------------------------------------------------------
-        /// Values that control how we do our rendering.  Some RenderManager
-        /// subclasses implement only a subset of the techniques that can be
-        /// specified.
-        class ConstructorParameters {
-          public:
-            /// Fill in defaults for the parameters.
-            OSVR_RENDERMANAGER_EXPORT ConstructorParameters() {
-                m_directMode = false;
-                m_directModeIndex = 0;
-                m_directDisplayIndex = 0;
-                m_directHighPriority = false;
-                m_displayRotation = Zero;
-                m_numBuffers = 2;
-                m_verticalSync = true;
-                m_verticalSyncBlocksRendering = false;
-                m_renderLibrary = ""; ////< Unspecified, which is invalid.
-
-                m_windowTitle = "OSVR";
-                m_windowFullScreen = false;
-                m_windowXPosition = 0;
-                m_windowYPosition = 0;
-                m_bitsPerColor = 8;
-
-                m_renderOverfillFactor = 1.0f;
-                m_renderOversampleFactor = 1.0f;
-                m_enableTimeWarp = true;
-                m_asynchronousTimeWarp = false;
-                m_maxMSBeforeVsyncTimeWarp = 0.0f;
-
-                m_clientPredictionEnabled = false;
-                m_clientPredictionLocalTimeOverride = false;
-
-                m_graphicsLibrary = GraphicsLibrary();
-            }
-            typedef enum {
-                Zero,
-                Ninety,
-                OneEighty,
-                TwoSeventy
-            } Display_Rotation;
-
-            bool m_directMode; ///< Should we render using DirectMode?
-
-            void addCandidatePNPID(const char* pnpid);
-            std::vector<uint32_t>
-                m_directVendorIds; ///< Vendor IDs of the displays to use
-            /// Hardware PNPIDs of the displays, corresponding 1-1 with
-            /// m_directVendorIds
-            std::vector<std::string> m_pnpIds;
-
-            /// @todo Mode selection should include update rate/pixel format
-            /// selections.
-            int32_t m_directModeIndex; ///< Which mode to use (-1 to select based
-            // on params)?
-            uint32_t m_directDisplayIndex; ///< Which display to use
-            bool m_directHighPriority;     ///< Do high-priority rendering in
-            // DirectMode?
-            unsigned m_numBuffers; ///< How many buffers (2 = double buffering)
-            bool m_verticalSync;   ///< Do we wait for Vsync to swap buffers?
-            bool m_verticalSyncBlocksRendering; ///< Block rendering waiting for
-            // sync?
-            std::string m_renderLibrary; ///< Which rendering library to use
-
-            std::string m_windowTitle; ///< Title of any window we create
-            bool m_windowFullScreen;   ///< If not Direct Mode, do we want full
-                                       /// screen?
-            int m_windowXPosition;     ///< Where to put the window
-            int m_windowYPosition;     ///< Where to put the window
-            Display_Rotation m_displayRotation; ///< Present mode: Rotate display
-            // about Z when presenting
-            unsigned m_bitsPerColor; ///< Color depth of the window we want
-
-            /// This expands the size of the render window, adding more pixels
-            /// around the border, so that there is margin to be rendered when
-            /// we're using distortion (which pulls in pixels from outside the
-            /// boundary) and when we're using Time Warp (which also pulls in
-            /// edge pixels as we move).  The larger this factor, the less
-            /// likely we'll see clamped images at the border but the more
-            /// work taken during rendering.
-            /// A factor of 1.0 means render at standard size, 2.0 would
-            /// render 4x as many pixels (2x in both X and Y).
-            float m_renderOverfillFactor;
-
-            /// This increases the density of the render texture, adding more
-            /// pixels within the texture, so that when it is rendered into
-            /// the final buffer with distortion correction it can be
-            /// expanded by the distortion without making fat pixels.
-            ///   Alternatively, it can be reduced to make rendering
-            /// faster at the expense if visible pixel resolution.
-            /// A factor of 1.0 means render at standard size, 2.0 would
-            /// render 4x as many pixels (2x in both X and Y) and 0.5
-            /// would render 1/4 as many pixels.
-            float m_renderOversampleFactor;
-
-            std::vector<DistortionParameters>
-                m_distortionParameters; ///< One set per eye x display
-
-            bool m_enableTimeWarp;       ///< Use time warp?
-            bool m_justInTimeWarp;       ///< Use just-in-timewarp?
-                                         ///(requires enable)
-            float m_justInTimeWarpRotation; ///< Rotation in degrees, 0 = top, 90 = right
-            bool m_asynchronousTimeWarp; ///< Use Asynchronous time warp?
-                                         ///(requires enable)
-
-            /// Render waits until at most this many ms before vsync to do
-            /// timewarp (requires enable)
-            float m_maxMSBeforeVsyncTimeWarp;
-
-            /// Prediction settings.
-            bool m_clientPredictionEnabled; ///< Use client-side prediction?
-            /// Static Delay + Delay from present to eye start
-            std::vector<float> m_eyeDelaysMS;
-            bool m_clientPredictionLocalTimeOverride;  ///< Override tracker timestamp?
-
-            std::shared_ptr<OSVRDisplayConfiguration>
-                m_displayConfiguration; ///< Display configuration
-
-            std::string m_roomFromHeadName; ///< Transform to use for head space
-
-            /// Graphics library (device/context) to use instead of creating one
-            /// if the pointer is non-NULL.  Note that the appropriate context
-            /// pointer for the m_renderLibrary must be filled in.
-            GraphicsLibrary m_graphicsLibrary;
-        };
-
         //--------------------------------------------------------------------------
         // Methods needed to handle passing information across a DLL boundary in
         // a way that is safer.  std::vector cannot be passed across such a
@@ -685,10 +690,6 @@ namespace renderkit {
         virtual void OSVR_RENDERMANAGER_EXPORT setDoingOkay(bool value) {
             m_doingOkay = value;
         }
-
-        /// @brief Constructor given OSVR context and parameters
-        RenderManager(OSVR_ClientContext context,
-                      const ConstructorParameters& p);
 
         /// Mutex to provide thread safety to this class and its
         /// subclasses.  NOTE: All subclasses must lock this mutex

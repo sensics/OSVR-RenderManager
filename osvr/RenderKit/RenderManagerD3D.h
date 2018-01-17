@@ -32,6 +32,10 @@ namespace renderkit {
 
     class RenderManagerD3D11 : public RenderManagerD3D11Base {
       public:
+        /// Construct a D3D RenderManager.
+        RenderManagerD3D11(
+            OSVR_ClientContext context,
+            ConstructorParameters p);
         virtual ~RenderManagerD3D11();
 
         // Opens the D3D renderer we're going to use.
@@ -41,10 +45,6 @@ namespace renderkit {
           GetTimingInfo(size_t whichEye, OSVR_RenderTimingInfo& info) override;
 
       protected:
-        /// Construct a D3D RenderManager.
-        RenderManagerD3D11(
-            OSVR_ClientContext context,
-            ConstructorParameters p);
 
         // Classes and structures needed to do our rendering.
         class DisplayInfo {

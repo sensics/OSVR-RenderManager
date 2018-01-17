@@ -43,6 +43,10 @@ namespace renderkit {
 
     class RenderManagerD3D11Base : public RenderManager {
       public:
+        /// Construct a D3D RenderManager.
+        OSVR_RENDERMANAGER_EXPORT RenderManagerD3D11Base(
+            OSVR_ClientContext context,
+            ConstructorParameters p);
         virtual OSVR_RENDERMANAGER_EXPORT ~RenderManagerD3D11Base();
 
         // Creates the D3D11 device and context to be used
@@ -64,10 +68,6 @@ namespace renderkit {
               std::vector<OSVR_ViewportDescription>(),
               bool flipInY = false) override;
 
-        /// Construct a D3D RenderManager.
-        OSVR_RENDERMANAGER_EXPORT RenderManagerD3D11Base(
-            OSVR_ClientContext context,
-            ConstructorParameters p);
 
         virtual bool OSVR_RENDERMANAGER_EXPORT UpdateDistortionMeshesInternal(
             DistortionMeshType type ///< Type of mesh to produce
