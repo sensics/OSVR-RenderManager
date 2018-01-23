@@ -273,9 +273,7 @@ namespace renderkit {
         std::map<std::string, std::shared_ptr<RenderManagerFactory> > mRegistry;
 
       public:
-        void addFactory(const std::string& name, std::shared_ptr<RenderManagerFactory> factoryPtr) {
-            mRegistry[name] = factoryPtr;
-        }
+          void addFactory(std::shared_ptr<RenderManagerFactory> factoryPtr);
 
         std::shared_ptr<RenderManagerFactory> getFactory(const std::string& name) const {
             auto factory = mRegistry.find(name);
@@ -297,11 +295,16 @@ namespace renderkit {
 
       public:
         RenderManagerFactory() { m_log = osvr::util::log::make_logger("RenderManager"); }
+        virtual std::string getName() = 0;
         virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
                                                    OSVR_ClientContext contextParameter,
                                                    const RenderManager::ConstructorParameters& options,
                                                    GraphicsLibrary graphicsLibrary) = 0;
     };
+
+    void RenderManagerFactoryRegistry::addFactory(std::shared_ptr<RenderManagerFactory> factoryPtr) {
+        this->mRegistry[factoryPtr->getName()] = factoryPtr;
+    }
 
     RenderManager* RenderManagerFactoryRegistry::createRenderManager(const std::string& name, OSVR_ClientContext contextParameter,
         const RenderManager::ConstructorParameters& options, // a public version of this
@@ -311,9 +314,11 @@ namespace renderkit {
         return !factory ? nullptr : factory->createRenderManager(*this, contextParameter, options, graphicsLibrary);
     }
 
+
     // Name: "Direct3D11"
     class Direct3D11RootRenderManagerFactory : public RenderManagerFactory {
       public:
+        virtual std::string getName() override { return "org_osvr_Direct3D11"; }
         virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
                                                    OSVR_ClientContext contextParameter,
                                                    const RenderManager::ConstructorParameters& options,
@@ -346,6 +351,7 @@ namespace renderkit {
     // Name: "com_sensics_D3D11_DirectMode"
     class Direct3D11DirectModeRenderManagerFactory : public RenderManagerFactory {
     public:
+        virtual std::string getName() override { return "com_sensics_D3D11_DirectMode"; }
         virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
             OSVR_ClientContext contextParameter,
             const RenderManager::ConstructorParameters& options,
@@ -376,6 +382,7 @@ namespace renderkit {
 
     // Name: "OpenGL"
     class OpenGLRootRenderManagerFactory : public RenderManagerFactory {
+        virtual std::string getName() override { return "org_osvr_OpenGL"; }
         virtual RenderManager* createRenderManager(const RenderManagerFactoryRegistry& registry,
             OSVR_ClientContext contextParameter,
             const RenderManager::ConstructorParameters& options,
@@ -2513,10 +2520,9 @@ namespace renderkit {
 
         // hard coded render manager factories
         RenderManagerFactoryRegistry registry;
-        registry.addFactory("org_osvr_Direct3D11", std::make_shared<Direct3D11RootRenderManagerFactory>());
-        registry.addFactory("org_osvr_OpenGL", std::make_shared<OpenGLRootRenderManagerFactory>());
-        registry.addFactory("com_sensics_D3D11_DirectMode",
-                            std::make_shared<Direct3D11DirectModeRenderManagerFactory>());
+        registry.addFactory(std::make_shared<Direct3D11RootRenderManagerFactory>());
+        registry.addFactory(std::make_shared<OpenGLRootRenderManagerFactory>());
+        registry.addFactory(std::make_shared<Direct3D11DirectModeRenderManagerFactory>());
 
         // map render library names to render manager factory names (root factories)
         std::map<std::string, std::string> libraryFactoryMap;
