@@ -854,6 +854,23 @@ namespace renderkit {
             return false;
         }
 
+        // Set color and depth buffers for the frame buffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                             m_colorBuffers[eye].OpenGL->colorBufferName, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                  GL_RENDERBUFFER, m_depthBuffers[eye]);
+        if (checkForGLError(
+                "RenderManagerOpenGL::RenderEyeInitialize Setting textures")) {
+            return false;
+        }
+        // Always check that our framebuffer is ok
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+            GL_FRAMEBUFFER_COMPLETE) {
+            m_log->error() << "RenderManagerOpenGL::RenderEyeInitialize: Incomplete "
+                              "Framebuffer";
+            return false;
+        }
+
         // Call the display set-up callback for each eye, because they each
         // have their own frame buffer whether or not they actually end up
         // in different windows.
