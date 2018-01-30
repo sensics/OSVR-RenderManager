@@ -576,7 +576,7 @@ namespace renderkit {
 			// Attach color and depth buffers to framebuffer
 			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(i));
 			if (checkForGLError(
-				"RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
+				"RenderManagerOpenGL::constructRenderBuffers glBindFrameBuffer")) {
 				return false;
 			}
 
@@ -586,14 +586,14 @@ namespace renderkit {
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 				GL_RENDERBUFFER, m_depthBuffers[i]);
 			if (checkForGLError(
-				"RenderManagerOpenGL::RenderEyeInitialize Setting textures")) {
+				"RenderManagerOpenGL::constructRenderBuffers Setting textures")) {
 				return false;
 			}
 
 			// Check that our framebuffer is ok
 			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
 				GL_FRAMEBUFFER_COMPLETE) {
-				m_log->error() << "RenderManagerOpenGL::RenderEyeInitialize: Incomplete "
+				m_log->error() << "RenderManagerOpenGL::constructRenderBuffers: Incomplete "
 					"Framebuffer";
 				return false;
 			}
@@ -848,7 +848,7 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(eye));
+        glBindFramebuffer(GL_FRAMEBUFFER, GetDisplayUsedByEye(eye));
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
             return false;

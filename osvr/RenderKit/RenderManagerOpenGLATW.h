@@ -653,8 +653,6 @@ namespace renderkit {
                     expectedFrameInterval = static_cast<double>(timing.hardwareDisplayInterval.seconds +
                                                                 timing.hardwareDisplayInterval.microseconds / 1e6);
                 } else {
-                    //m_log->error() << "RenderManagerThread::threadFunc() = couldn't get timing info";
-
                     // if we can't get timing info, we're probably in extended mode.
                     // in this case, render as often as possible.
                     timeToPresent = true;
