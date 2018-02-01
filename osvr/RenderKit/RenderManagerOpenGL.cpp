@@ -451,14 +451,24 @@ namespace renderkit {
 
             deleteProgram();
 
-            size_t numEyes = GetNumEyes();
             // @todo Handle the case of multiple displays per eye
+            // @todo have these std::vectors contain RAII objects that self-destruct
+            //       properly (including setting current context) as this code below is brittle
             for (size_t i = 0; i < m_colorBuffers.size(); i++) {
                 glDeleteTextures(1, &m_colorBuffers[i].OpenGL->colorBufferName);
                 delete m_colorBuffers[i].OpenGL;
-                glDeleteRenderbuffers(1, &m_depthBuffers[i]);
-				glDeleteFramebuffers(1, &m_frameBuffers[i]);
             }
+            m_colorBuffers.clear();
+
+            for(size_t i = 0; i < m_depthBuffers.size(); i++) {
+                glDeleteRenderbuffers(1, &m_depthBuffers[i]);
+            }
+            m_depthBuffers.clear();
+
+            for(size_t i = 0; i < m_frameBuffers.size(); i++) {
+                glDeleteFramebuffers(1, &m_frameBuffers[i]);
+            }
+            m_frameBuffers.clear();
 
             m_distortionMeshBuffer.clear();
 
