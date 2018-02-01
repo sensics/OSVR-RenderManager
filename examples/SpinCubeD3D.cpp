@@ -280,9 +280,6 @@ int main(int argc, char* argv[]) {
             new osvr::renderkit::RenderBufferD3D11;
         rbD3D->colorBuffer = D3DTexture;
         rbD3D->colorBufferView = renderTargetView;
-        osvr::renderkit::RenderBuffer rb;
-        rb.D3D11 = rbD3D;
-        renderBuffers.push_back(rb);
 
         //==================================================================
         // Create a depth buffer
@@ -328,6 +325,12 @@ int main(int argc, char* argv[]) {
             return -5;
         }
         depthStencilViews.push_back(depthStencilView);
+        
+        rbD3D->depthStencilBuffer = depthStencilBuffer;
+        rbD3D->depthStencilView = depthStencilView;
+        osvr::renderkit::RenderBuffer rb;
+        rb.D3D11 = rbD3D;
+        renderBuffers.push_back(rb);
     }
 
     // Create depth stencil state.
