@@ -583,6 +583,7 @@ namespace renderkit {
                 atwParams.m_maxMSBeforeVsyncTimeWarp = 0.0f;
 
                 mRenderManager = new RenderManagerOpenGL(m_context, atwParams);
+                mRenderManager->m_storeClientGLState = false;
 
                 m_log->info() << "RenderManagerOpenGLATW::threadFunc: Registering render buffers to the harnessed "
                                  "RenderManagerOpenGL";
@@ -652,8 +653,6 @@ namespace renderkit {
                     expectedFrameInterval = static_cast<double>(timing.hardwareDisplayInterval.seconds +
                                                                 timing.hardwareDisplayInterval.microseconds / 1e6);
                 } else {
-                    m_log->error() << "RenderManagerThread::threadFunc() = couldn't get timing info";
-
                     // if we can't get timing info, we're probably in extended mode.
                     // in this case, render as often as possible.
                     timeToPresent = true;

@@ -48,6 +48,7 @@ Sensics, Inc.
 #include <Eigen/Geometry>
 
 
+
 #ifndef OSVR_ANDROID
 //==========================================================================
 // In case the caller does not specify an OpenGL toolkit to use, we use this
@@ -359,6 +360,9 @@ namespace renderkit {
 
     /// @todo Make this compile to no-op when debugging is off.
     bool RenderManagerOpenGL::checkForGLError(const std::string& message) {
+#ifndef _DEBUG
+		return false;
+#else
         GLenum err;
         bool ret = false;
         while((err = glGetError()) != GL_NO_ERROR) {
@@ -391,6 +395,7 @@ namespace renderkit {
             ret = true;
         }
         return ret;
+#endif
     }
 
     RenderManagerOpenGL::RenderManagerOpenGL(OSVR_ClientContext context, ConstructorParameters p)
@@ -425,11 +430,16 @@ namespace renderkit {
             m_displayWidth = widthOverride;
             m_displayHeight = heightOverride;
         }
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        m_GLVAOExtensionAvailable = IsGLExtensionSupported("GL_OES_vertex_array_object");
+        m_GLDiscardExtensionAvailable = IsGLExtensionSupported("GL_EXT_discard_framebuffer");
+#endif
     }
 
     RenderManagerOpenGL::~RenderManagerOpenGL() {
         if (m_displayOpen) {
-            for (size_t i = 0; i < m_frameBuffers.size(); i++) {
+            for (size_t i = 0; i < GetNumDisplays(); i++) {
                 if (!m_toolkit.makeCurrent ||
                     !m_toolkit.makeCurrent(m_toolkit.data, i)) {
                     // If makeCurrent() fails give up on destroying OpenGL objects
@@ -437,18 +447,28 @@ namespace renderkit {
                     delete m_library.OpenGL;
                     return;
                 }
-                glDeleteFramebuffers(1, &m_frameBuffers[i]);
             }
 
             deleteProgram();
 
-            size_t numEyes = GetNumEyes();
             // @todo Handle the case of multiple displays per eye
+            // @todo have these std::vectors contain RAII objects that self-destruct
+            //       properly (including setting current context) as this code below is brittle
             for (size_t i = 0; i < m_colorBuffers.size(); i++) {
                 glDeleteTextures(1, &m_colorBuffers[i].OpenGL->colorBufferName);
                 delete m_colorBuffers[i].OpenGL;
+            }
+            m_colorBuffers.clear();
+
+            for(size_t i = 0; i < m_depthBuffers.size(); i++) {
                 glDeleteRenderbuffers(1, &m_depthBuffers[i]);
             }
+            m_depthBuffers.clear();
+
+            for(size_t i = 0; i < m_frameBuffers.size(); i++) {
+                glDeleteFramebuffers(1, &m_frameBuffers[i]);
+            }
+            m_frameBuffers.clear();
 
             m_distortionMeshBuffer.clear();
 
@@ -504,9 +524,6 @@ namespace renderkit {
                 !m_toolkit.makeCurrent(m_toolkit.data, i)) {
                 return false;
             }
-            GLuint frameBuffer = 0;
-            glGenFramebuffers(1, &frameBuffer);
-            m_frameBuffers.push_back(frameBuffer);
         }
 
         //======================================================
@@ -520,6 +537,10 @@ namespace renderkit {
                 !m_toolkit.makeCurrent(m_toolkit.data, GetDisplayUsedByEye(i))) {
                 return false;
             }
+
+			GLuint frameBuffer = 0;
+			glGenFramebuffers(1, &frameBuffer);
+			m_frameBuffers.push_back(frameBuffer);
 
             // The color buffer for this eye
             GLuint colorBufferName = 0;
@@ -544,6 +565,16 @@ namespace renderkit {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
                          GL_UNSIGNED_BYTE, 0);
 
+			// Bilinear filtering and clamp to the edge of the texture.
+			const GLfloat border[] = { 0, 0, 0, 0 };
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#ifndef OSVR_RM_USE_OPENGLES20
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+#endif
+
             // The depth buffer
             GLuint depthrenderbuffer;
             glGenRenderbuffers(1, &depthrenderbuffer);
@@ -551,6 +582,31 @@ namespace renderkit {
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width,
                                   height);
             m_depthBuffers.push_back(depthrenderbuffer);
+
+			// Attach color and depth buffers to framebuffer
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(i));
+			if (checkForGLError(
+				"RenderManagerOpenGL::constructRenderBuffers glBindFrameBuffer")) {
+				return false;
+			}
+
+			// Set color and depth buffers for the frame buffer
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+				m_colorBuffers[i].OpenGL->colorBufferName, 0);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+				GL_RENDERBUFFER, m_depthBuffers[i]);
+			if (checkForGLError(
+				"RenderManagerOpenGL::constructRenderBuffers Setting textures")) {
+				return false;
+			}
+
+			// Check that our framebuffer is ok
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
+				GL_FRAMEBUFFER_COMPLETE) {
+				m_log->error() << "RenderManagerOpenGL::constructRenderBuffers: Incomplete "
+					"Framebuffer";
+				return false;
+			}
         }
 
         // Register the render buffers we're going to use to present
@@ -795,12 +851,6 @@ namespace renderkit {
         }
         checkForGLError("RenderManagerOpenGL::RenderDisplayInitialize end");
 
-		// Store the frame buffer that was active before we started rendering,
-		// so we can put it back when we finalize.
-		GLint fb;
-		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
-		m_initialFrameBuffer = static_cast<GLuint>(fb);
-
 		return true;
     }
 
@@ -808,7 +858,7 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers.at(GetDisplayUsedByEye(eye)));
+        glBindFramebuffer(GL_FRAMEBUFFER, GetDisplayUsedByEye(eye));
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
             return false;
@@ -823,7 +873,6 @@ namespace renderkit {
                 "RenderManagerOpenGL::RenderEyeInitialize Setting textures")) {
             return false;
         }
-
         // Always check that our framebuffer is ok
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !=
             GL_FRAMEBUFFER_COMPLETE) {
@@ -849,12 +898,6 @@ namespace renderkit {
     bool RenderManagerOpenGL::RenderDisplayFinalize(size_t eye) {
         checkForGLError("RenderManagerOpenGL::RenderEyeFinalize starting");
 
-        // Put the frame buffer back to the default one.
-        glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
-        if (checkForGLError(
-                "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
-            return false;
-        }
         return true;
     }
 
@@ -878,6 +921,18 @@ namespace renderkit {
         checkForGLError(
           "RenderManagerOpenGL::RenderSpace: After calling user callback");
 
+#ifdef OSVR_RM_USE_OPENGLES20
+        // At this point we should have the off-screen FBO still bound,
+        // so we discard its depth and stencil buffers before unbinding it
+        // to stop them from being copied.
+        if (m_GLDiscardExtensionAvailable) {
+            const GLenum attachments[]  = {GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT};
+            glDiscardFramebufferEXT(GL_FRAMEBUFFER, 2, attachments);
+            checkForGLError(
+              "RenderManagerOpenGL::RenderSpace discard framebuffer failed. Client might have changed FBO binding");
+        }
+#endif
+
         /// @todo Keep track of timing information
 
         return true;
@@ -885,9 +940,7 @@ namespace renderkit {
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer()
         : 
-#ifndef OSVR_RM_USE_OPENGLES20
         VAO(0),
-#endif
         vertexBuffer(0),
         indexBuffer(0)
     {   }
@@ -896,9 +949,7 @@ namespace renderkit {
         DistortionMeshBuffer && rhs) {
         renderManager = std::move(rhs.renderManager);
         display = std::move(rhs.display);
-#ifndef OSVR_RM_USE_OPENGLES20
         VAO = std::move(rhs.VAO);
-#endif
         vertexBuffer = std::move(rhs.vertexBuffer);
         indexBuffer = std::move(rhs.indexBuffer);
         vertices = std::move(rhs.vertices);
@@ -916,9 +967,7 @@ namespace renderkit {
             Clear();
             renderManager = std::move(rhs.renderManager);
             display = std::move(rhs.display);
-#ifndef OSVR_RM_USE_OPENGLES20
             VAO = std::move(rhs.VAO);
-#endif
             vertexBuffer = std::move(rhs.vertexBuffer);
             indexBuffer = std::move(rhs.indexBuffer);
             vertices = std::move(rhs.vertices);
@@ -934,12 +983,16 @@ namespace renderkit {
             // If makeCurrent() fails give up on destroying OpenGL objects
             return;
         }
-#ifndef OSVR_RM_USE_OPENGLES20
+
         if (VAO) {
+#ifdef OSVR_RM_USE_OPENGLES20
+            glDeleteVertexArraysOES(1, &VAO);
+#else
             glDeleteVertexArrays(1, &VAO);
+#endif
             VAO = 0;
         }
-#endif
+
         if (vertexBuffer) {
             glDeleteBuffers(1, &vertexBuffer);
             vertexBuffer = 0;
@@ -960,19 +1013,30 @@ namespace renderkit {
         ) {
 
 #ifdef OSVR_RM_USE_OPENGLES20
-        // Record the current state of the array and element
+        // Record the current state of the VAO or array and element
         // buffer bindings and restore them when we leave this
         // function so that we don't mess with the application's
         // rendering state.
+        GLint prevVAO;
         GLint prevArray;
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
-        auto resetArray = util::finally([&]{
-          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
-        });
         GLint prevElement;
-        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
-        auto resetElement = util::finally([&]{
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+
+        if(m_GLVAOExtensionAvailable) {
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING_OES, &prevVAO);
+        }
+        else {
+            glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+            glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+        }
+
+        auto resetArrays = util::finally([&]{
+            if(m_GLVAOExtensionAvailable) {
+                glBindVertexArrayOES(prevVAO);
+            }
+            else {
+                glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
+            }
         });
 #else
         // Record and restore the Vertex Array Object binding so we
@@ -1042,7 +1106,12 @@ namespace renderkit {
             meshBuffer.indices = mesh.indices;
 
             // Construct the geometry we're going to render into the eyes
-#ifndef OSVR_RM_USE_OPENGLES20
+#ifdef OSVR_RM_USE_OPENGLES20
+            if(m_GLVAOExtensionAvailable) {
+                glGenVertexArraysOES(1, &meshBuffer.VAO);
+                glBindVertexArrayOES(meshBuffer.VAO);
+            }
+#else
             glGenVertexArrays(1, &meshBuffer.VAO);
             glBindVertexArray(meshBuffer.VAO);
 #endif
@@ -1142,6 +1211,49 @@ namespace renderkit {
             return false;
         }
 
+		// If first eye, Store the client GL state from before we started rendering,
+		// so we can put it back when we finalize.
+        if (params.m_index == 0 && m_storeClientGLState) {
+		    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_initialFrameBuffer);
+            glGetIntegerv(GL_CURRENT_PROGRAM, &m_prevUserProgram);
+            glGetIntegerv(GL_ACTIVE_TEXTURE, &m_prevTextureUnit);
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &m_prevTexture);
+#ifdef OSVR_RM_USE_OPENGLES20
+            if(m_GLVAOExtensionAvailable) {
+                glGetIntegerv(GL_VERTEX_ARRAY_BINDING_OES, &m_prevVAO);
+            }
+            else {
+                glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &m_prevArray);
+                glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &m_prevElement);
+            }
+#else
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &m_prevVAO);
+#endif
+            glGetBooleanv(GL_DEPTH_TEST, &m_prevDepthTest);
+            glGetBooleanv(GL_CULL_FACE, &m_prevCullFace);
+            glGetBooleanv(GL_BLEND, &m_prevBlend);
+            glGetBooleanv(GL_STENCIL_TEST, &m_prevStencilTest);
+
+            // Disable modes in case client set them
+            glDisable(GL_BLEND);
+			glDisable(GL_STENCIL_TEST);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+
+			if (checkForGLError(
+				"RenderManagerOpenGL::RenderDisplayInitialize after storing client state")) {
+				return false;
+			}
+        }
+
+        // Switch to our vertex/shader programs
+        if (params.m_index == 0)
+		    glUseProgram(m_programId);
+	    if (checkForGLError(
+		    "RenderManagerOpenGL::RenderDisplayInitialize after use program")) {
+			return false;
+		}
+
         // Construct the OpenGL viewport based on which eye this is.
         OSVR_ViewportDescription viewportDesc;
         if (!ConstructViewportForPresent(
@@ -1174,104 +1286,55 @@ namespace renderkit {
         // We make use of the util::finally() lambda function to put
         // things back no matter how we exit this function, whether at
         // the end or in an error return partway through.
+        // This is canceled after the first eye ends without error so it
+        // iss only reset after the last eye
 
-        /// Store the user program so we can put it back again before
-        /// returning.
-        GLint userProgram;
-        glGetIntegerv(GL_CURRENT_PROGRAM, &userProgram);
-        auto resetProgram = util::finally([&]{
-          glUseProgram(userProgram);
-        });
-        checkForGLError("RenderManagerOpenGL::PresentEye after get user program");
-
-        /// Store our framebuffer so we can put it back again before returning.
-        GLint prevFrameBuffer;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
-        auto resetFrameBuffer = util::finally([&]{
-          glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
-        });
-
-        GLint prevTextureUnit;
-        glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTextureUnit);
-        auto resetTextureUnit = util::finally([&]{
-          glActiveTexture(prevTextureUnit);
-        });
-
-        GLint prevTexture;
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
-        auto resetTexture = util::finally([&]{
-          glBindTexture(GL_TEXTURE_2D, prevTexture);
-        });
-
+        auto resetState = util::finally([&]{
+            // Put the frame buffer back to the default one.
+            if (m_storeClientGLState) {
+                glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
+                glUseProgram(m_prevUserProgram);
+                glActiveTexture(m_prevTextureUnit);
+                glBindTexture(GL_TEXTURE_2D, m_prevTexture);
 #ifdef OSVR_RM_USE_OPENGLES20
-        GLint prevArray;
-        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
-        auto resetArray = util::finally([&]{
-          glBindBuffer(GL_ARRAY_BUFFER, prevArray);
-        });
-
-        GLint prevElement;
-        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
-        auto resetElement = util::finally([&]{
-          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
-        });
+                if(m_GLVAOExtensionAvailable) {
+                    glBindVertexArrayOES(m_prevVAO);
+                }
+                else {
+                    glBindBuffer(GL_ARRAY_BUFFER, m_prevArray);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_prevElement);
+                }
 #else
-        GLint prevVAO;
-        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
-        auto resetVAO = util::finally([&]{
-          glBindVertexArray(prevVAO);
-        });
+                glBindVertexArray(m_prevVAO);
 #endif
-
-        GLboolean depthTest, cullFace;
-        glGetBooleanv(GL_DEPTH_TEST, &depthTest);
-        auto resetDepthTest = util::finally([&]{
-          if (depthTest) {
-            glEnable(GL_DEPTH_TEST);
-          } else {
-            glDisable(GL_DEPTH_TEST);
-          }
+                if (m_prevDepthTest) {
+                    glEnable(GL_DEPTH_TEST);
+                } else {
+                    glDisable(GL_DEPTH_TEST);
+                }
+                if (m_prevCullFace) {
+                    glEnable(GL_CULL_FACE);
+                } else {
+                    glDisable(GL_CULL_FACE);
+                }
+                if (m_prevBlend) {
+                    glEnable(GL_BLEND);
+                }
+                else {
+                    glDisable(GL_BLEND);
+                }
+                if (m_prevStencilTest) {
+                    glEnable(GL_STENCIL_TEST);
+                }
+                else {
+                    glDisable(GL_STENCIL_TEST);
+                }
+            }
+            if (checkForGLError(
+                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
+                return false;
+            }
         });
-        glGetBooleanv(GL_CULL_FACE, &cullFace);
-        auto resetCullFace = util::finally([&]{
-          if (cullFace) {
-            glEnable(GL_CULL_FACE);
-          } else {
-            glDisable(GL_CULL_FACE);
-          }
-        });
-        GLboolean blend;
-        glGetBooleanv(GL_BLEND, &blend);
-        auto resetBlend = util::finally([&]{
-          if (blend) {
-            glEnable(GL_BLEND);
-          }
-          else {
-            glDisable(GL_BLEND);
-          }
-        });
-        GLboolean stencilTest;
-        glGetBooleanv(GL_STENCIL_TEST, &stencilTest);
-        auto resetStencilTest = util::finally([&]{
-          if (stencilTest) {
-            glEnable(GL_STENCIL_TEST);
-          }
-          else {
-            glDisable(GL_STENCIL_TEST);
-          }
-        });
-
-        // Turn off blending and stencil test, in case the application has
-        // turned them on.
-        glDisable(GL_BLEND);
-        glDisable(GL_STENCIL_TEST);
-
-        /// Switch to our vertex/shader programs
-        glUseProgram(m_programId);
-        if (checkForGLError(
-          "RenderManagerOpenGL::PresentEye after use program")) {
-          return false;
-        }
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1356,38 +1419,22 @@ namespace renderkit {
             !m_toolkit.getDisplayFrameBuffer(m_toolkit.data, GetDisplayUsedByEye(params.m_index), &displayFrameBuffer)) {
             displayFrameBuffer = 0;
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
+
+		// Only bind and clear buffer if first eye or the eyes use different displays
+		if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1)) {
+		    glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glActiveTexture(GL_TEXTURE0);
+		}
 
         // Bind the texture that we're going to use to render into the
         // frame buffer.
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, params.m_buffer.OpenGL->colorBufferName);
 
-        // Bilinear filtering and clamp to the edge of the texture.
-        const GLfloat border[] = { 0, 0, 0, 0 };
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-#ifndef OSVR_RM_USE_OPENGLES20
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
-#endif
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after texture bind")) {
           return false;
         }
-
-        // NOTE: No need to clear the buffer in color or depth; we're
-        // always overwriting the whole thing.  We do need to store the
-        // value of the depth-test bit and restore it, turning it off for
-        // our use here.
-        // Disable depth testing.
-        // Enable 2D texturing.
-        // Disable face culling (in case client switched
-        // front-face).
-
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
 
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after environment setting")) {
@@ -1397,36 +1444,46 @@ namespace renderkit {
         auto const & meshBuffer = m_distortionMeshBuffer[params.m_index];
 
 #ifdef OSVR_RM_USE_OPENGLES20
-        glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
-        size_t const stride = sizeof(DistortionVertex);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, pos));
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, texRed));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, texGreen));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
-          (void*)offsetof(DistortionVertex, texBlue));
-        glEnableVertexAttribArray(3);
+        if(m_GLVAOExtensionAvailable) {
+            glBindVertexArrayOES(meshBuffer.VAO);
+        }
+        else {
+            glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
+            size_t const stride = sizeof(DistortionVertex);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, pos));
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, texRed));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, texGreen));
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, stride,
+              (void*)offsetof(DistortionVertex, texBlue));
+            glEnableVertexAttribArray(3);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuffer.indexBuffer);
+        }
 #else
         glBindVertexArray(meshBuffer.VAO);
+#endif
         if (checkForGLError(
             "RenderManagerOpenGL::PresentEye after glBindVertexArray(meshBuffer.VAO)")) {
             return false;
         }
-#endif
 
         GLsizei numElements = static_cast<GLsizei>(meshBuffer.indices.size());
-        glDrawElements(GL_TRIANGLES, numElements, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, numElements, GL_UNSIGNED_SHORT, 0);
         if (checkForGLError(
             "RenderManagerOpenGL::PresentEye after glDrawElements")) {
             //return false;
         }
+
+        // If we made it here without an error, cancel the fail-safe
+        // state reset if this is the first eye
+        if (params.m_index == 0)
+            resetState.cancel();
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;
@@ -1465,6 +1522,18 @@ namespace renderkit {
 
       return true;
     }
+
+bool RenderManagerOpenGL::IsGLExtensionSupported(const std::string& extensionName) {
+    const char* extensions = (const char*) glGetString(GL_EXTENSIONS);
+        if(!extensions) {
+            m_log->error() << "RenderManagerOpenGL::IsGLExtensionSupported: glGetString failed";
+            return false;
+        }
+    m_log->info() << extensions;
+    std::string extensionsStr(extensions);
+    m_log->info() << extensionsStr;
+    return extensionsStr.find(extensionName) != std::string::npos;
+}
 
 
 } // namespace renderkit
