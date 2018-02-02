@@ -57,11 +57,9 @@ typedef void* OSVR_RenderManagerRegisterBufferState;
 typedef void* OSVR_RenderInfoCollection;
 typedef size_t OSVR_RenderInfoCount;
 
-// @todo could we use this for the C++ API as well?
 typedef struct OSVR_RenderParams {
-    // not sure why the original struct had pointers here
-    OSVR_PoseState* worldFromRoomAppend; //< Room space to insert
-    OSVR_PoseState* roomFromHeadReplace; //< Overrides head space
+    OSVR_PoseState* worldFromRoomAppend; ///< Room space to insert, null for none
+    OSVR_PoseState* roomFromHeadReplace; ///< Overrides head space, no override if null
     double nearClipDistanceMeters;
     double farClipDistanceMeters;
 } OSVR_RenderParams;
