@@ -858,7 +858,7 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, GetDisplayUsedByEye(eye));
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers[eye]);
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
             return false;
