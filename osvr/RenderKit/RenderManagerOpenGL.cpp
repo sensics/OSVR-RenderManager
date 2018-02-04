@@ -1268,19 +1268,18 @@ namespace renderkit {
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
 
-			if (checkForGLError(
-				"RenderManagerOpenGL::RenderDisplayInitialize after storing client state")) {
-				return false;
-			}
+            if (checkForGLError(
+	            "RenderManagerOpenGL::PresentEye after storing client state")) {
+	            return false;
+            }
         }
 
         // Switch to our vertex/shader programs
         if (params.m_index == 0)
 		    glUseProgram(m_programId);
-	    if (checkForGLError(
-		    "RenderManagerOpenGL::RenderDisplayInitialize after use program")) {
-			return false;
-		}
+        if (checkForGLError("RenderManagerOpenGL::PresentEye after use program")) {
+          return false;
+        }
 
         // Construct the OpenGL viewport based on which eye this is.
         OSVR_ViewportDescription viewportDesc;
@@ -1358,8 +1357,10 @@ namespace renderkit {
                     glDisable(GL_STENCIL_TEST);
                 }
             }
-            checkForGLError(
-                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer");
+            if (checkForGLError(
+               "RenderManagerOpenGL::PresentEye after resetState")) {
+              return false;
+            }
         });
 
         // Set up a Projection matrix that undoes the scale factor applied
