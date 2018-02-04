@@ -1346,14 +1346,12 @@ namespace renderkit {
                 }
                 if (m_prevBlend) {
                     glEnable(GL_BLEND);
-                }
-                else {
+                } else {
                     glDisable(GL_BLEND);
                 }
                 if (m_prevStencilTest) {
                     glEnable(GL_STENCIL_TEST);
-                }
-                else {
+                } else {
                     glDisable(GL_STENCIL_TEST);
                 }
             }
