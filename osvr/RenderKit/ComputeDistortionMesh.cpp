@@ -141,29 +141,34 @@ namespace renderkit {
                   }
               }
 
-              // Generate a pair of triangles for each quad, wound
-              // counter-clockwise from the mesh grid
+              // Generate a pair of triangles for each quad, as a trignale strip
 
-              // total of quadsPerSide * quadsPerSide * 6 vertices added: reserve
+              // total of (quadsPerSide + 1) * quadsPerSide * 2 vertices added: reserve
               // that space to avoid excess copying during mesh generation.
-              ret.indices.reserve(quadsPerSide * quadsPerSide * 6);
+              ret.indices.reserve((quadsPerSide + 1) * quadsPerSide * 2);
               for (int x = 0; x < quadsPerSide; x++) {
                   for (int y = 0; y < quadsPerSide; y++) {
                       // Grid generated above is in column-major order
                       int indexLL = x*numVertsPerSide + y;
                       int indexHL = indexLL + numVertsPerSide;
-                      int indexHH = indexLL + numVertsPerSide + 1;
-                      int indexLH = indexLL + 1;
+                      //int indexHH = indexLL + numVertsPerSide + 1;
+                      //int indexLH = indexLL + 1;
 
-                      // Triangle 1
+                      if(y == 0 && x != 0)
+                          ret.indices.emplace_back(indexLL);
+
+                      // Triangle 1 & 2
                       ret.indices.emplace_back(indexLL);
                       ret.indices.emplace_back(indexHL);
-                      ret.indices.emplace_back(indexHH);
+                      //ret.indices.emplace_back(indexHH);
 
                       // Triangle 2
-                      ret.indices.emplace_back(indexLL);
-                      ret.indices.emplace_back(indexHH);
-                      ret.indices.emplace_back(indexLH);
+                      //ret.indices.emplace_back(indexLL);
+                      //ret.indices.emplace_back(indexHH);
+                      //ret.indices.emplace_back(indexLH);
+
+                      if(y == quadsPerSide - 1 /*&& x != quadsPerSide - 1*/)
+                          ret.indices.emplace_back(indexHL);
                   }
               }
           } break;

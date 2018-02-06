@@ -40,11 +40,12 @@ Sensics, Inc.
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
 
-  // Bind the vertex-array extensions from the DLL
+  // Bind the extensions from the DLL
   #include <dlfcn.h>
   PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
   PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES;
   PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
+  PFNGLDISCARDFRAMEBUFFEREXTPROC glDiscardFramebufferEXT;
   class CalledBeforeCodeRuns {
     public:
       CalledBeforeCodeRuns() {
@@ -59,6 +60,9 @@ Sensics, Inc.
 	glGenVertexArraysOES = (PFNGLGENVERTEXARRAYSOESPROC)
 				dlsym(libhandle,
 				"glGenVertexArraysOES");
+	glDiscardFramebufferEXT = (PFNGLDISCARDFRAMEBUFFEREXTPROC)
+				dlsym(libhandle,
+				"glDiscardFramebufferEXT");
     }
   };
   static CalledBeforeCodeRuns getFunctionPointers;
@@ -156,12 +160,29 @@ namespace renderkit {
 
         // To do with our Render() path.
         std::vector<GLuint> m_frameBuffers;      ///< Groups a color buffer and a depth buffer (per display)
-        GLuint m_initialFrameBuffer;    ///< Frame buffer when we started rendering.
 
         std::vector<RenderBuffer>
             m_colorBuffers; ///< Color buffers to hand to render callbacks
         std::vector<GLuint> m_depthBuffers; ///< Depth/stencil buffers to hand to
                                             /// render callbacks
+
+#ifdef OSVR_RM_USE_OPENGLES20
+        bool m_GLVAOExtensionAvailable = false;
+        bool m_GLDiscardExtensionAvailable = false;
+#endif
+
+        // Stored client GL state
+        bool m_storeClientGLState = true;
+        GLint m_initialFrameBuffer;
+        GLboolean m_prevDepthTest, m_prevCullFace, m_prevBlend, m_prevStencilTest;
+        GLint m_prevUserProgram;
+        GLint m_prevTextureUnit;
+        GLint m_prevTexture;
+        GLint m_prevVAO;
+#ifdef OSVR_RM_USE_OPENGLES20
+        GLint m_prevArray;
+        GLint m_prevElement;
+#endif
 
         struct DistortionVertex {
             GLfloat pos[4];
@@ -176,9 +197,7 @@ namespace renderkit {
             RenderManagerOpenGL* renderManager;
             size_t display;
 
-#ifndef OSVR_RM_USE_OPENGLES20
             GLuint VAO;
-#endif
             GLuint vertexBuffer;
             GLuint indexBuffer;
             std::vector<DistortionVertex> vertices;
@@ -259,6 +278,8 @@ namespace renderkit {
           OSVR_OpenGLContextParams& contextParamsOut) {
           delete[] contextParamsOut.windowTitle;
         }
+
+        bool IsGLExtensionSupported(const std::string& extensionName);
 
         /// See if we had an OpenGL error
         /// @return True if there is an error, false if not.
