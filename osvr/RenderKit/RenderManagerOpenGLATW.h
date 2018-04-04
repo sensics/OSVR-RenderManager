@@ -400,67 +400,62 @@ namespace renderkit {
                 return true;
             }
 
-            // We use a D3D query placed right at the end of rendering to make
-            // sure we wait until rendering has finished on our buffers before
-            // handing them over to the ATW thread.  We flush our queue so that
-            // rendering will get moving right away.
-            // @todo Enable overlapped rendering on one frame while presentation
-            // of the previous by doing this waiting on another thread.
-            // WaitForRenderCompletion();
+#if 1
             glFinish();
-
+#else
             // This code is disabled because of a potential bug in the Tegra drivers with eglClientWaitSync
             // crashing. For now, using a glFinish()
+            if(this->mEGLFenceExtensionAvailable && eglGetCurrentContext() != EGL_NO_CONTEXT) {
+                std::lock_guard<std::mutex> lock(mMutex);
+                if(mFenceSync) {
+                    m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglDestroySyncKHR";
+                    if(eglDestroySyncKHR_ && eglDestroySyncKHR_(mDisplay, mFenceSync) == EGL_FALSE) {
+                        m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglDestroySyncKHR return EGL_FALSE. "
+                            << "Maybe something is wrong with the extension support on this platform?";
+                    // ignore failure for now, but maybe we need to find
+                    // some way to drop back to non-ATW when we can't load the sync
+                    // and high-priority context extensions.
+                    } else {
+                        m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: destroyed the previous SyncKHR";
+                    }
+                    mFenceSync = nullptr;
+                }
 
-            // if(this->mEGLFenceExtensionAvailable && eglGetCurrentContext() != EGL_NO_CONTEXT) {
-            //     std::lock_guard<std::mutex> lock(mMutex);
-            //     if(mFenceSync) {
-            //         m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglDestroySyncKHR";
-            //         if(eglDestroySyncKHR_ && eglDestroySyncKHR_(mDisplay, mFenceSync) == EGL_FALSE) {
-            //             m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglDestroySyncKHR return EGL_FALSE. "
-            //                 << "Maybe something is wrong with the extension support on this platform?";
-            //         // ignore failure for now, but maybe we need to find
-            //         // some way to drop back to non-ATW when we can't load the sync
-            //         // and high-priority context extensions.
-            //         } else {
-            //             m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: destroyed the previous SyncKHR";
-            //         }
-            //         mFenceSync = nullptr;
-            //     }
+                if(eglCreateSyncKHR_) {
+                    m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR";
+                    mFenceSync = eglCreateSyncKHR_(mDisplay, EGL_SYNC_FENCE_KHR_, nullptr);
+                    if(mFenceSync == EGL_NO_SYNC_KHR_) {
+                        m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR returned EGL_NO_SYNC_KHR. "
+                            << "Maybe something is wrong with the extension support on this platform?";
+                        // ignore failure for now, but maybe we need to find
+                        // some way to drop back to non-ATW when we can't load the sync
+                        // and high-priority context extensions.
+                    } else {
+                        m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: created a new SyncKHR";
+                    }
+                } else {
+                    m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR not initialized.";
+                }
 
-            //     if(eglCreateSyncKHR_) {
-            //         m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR";
-            //         mFenceSync = eglCreateSyncKHR_(mDisplay, EGL_SYNC_FENCE_KHR_, nullptr);
-            //         if(mFenceSync == EGL_NO_SYNC_KHR_) {
-            //             m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR returned EGL_NO_SYNC_KHR. "
-            //                 << "Maybe something is wrong with the extension support on this platform?";
-            //             // ignore failure for now, but maybe we need to find
-            //             // some way to drop back to non-ATW when we can't load the sync
-            //             // and high-priority context extensions.
-            //         } else {
-            //             m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: created a new SyncKHR";
-            //         }
-            //     } else {
-            //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglCreateSyncKHR not initialized.";
-            //     }
+                if(eglClientWaitSyncKHR_) {
+                    m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR";
+                    //const EGLTimeKHR_ tenMs = 1e+7;
+                    EGLint waitResult = eglClientWaitSyncKHR_(mDisplay, mFenceSync,
+                        EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_, EGL_FOREVER_KHR_);
 
-                // if(eglClientWaitSyncKHR_) {
-                //     m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR";
-                //     //const EGLTimeKHR_ tenMs = 1e+7;
-                //     EGLint waitResult = eglClientWaitSyncKHR_(mDisplay, mFenceSync,
-                //         EGL_SYNC_FLUSH_COMMANDS_BIT_KHR_, EGL_FOREVER_KHR_);
+                    if(waitResult == EGL_TIMEOUT_EXPIRED_KHR_) {
+                        m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_TIMEOUT_EXPIRED_KHR when waiting for the sync fence.";
+                    } else if(waitResult == EGL_FALSE) {
+                        m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_FALSE returned from eglClientWaitSyncKHR. Something might be wrong.";
+                    } else {
+                        m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: successfully waited on mFenceSync";
+                    }
+                } else {
+                    m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR_ not initialized";
+                }
+            }
 
-                //     if(waitResult == EGL_TIMEOUT_EXPIRED_KHR_) {
-                //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_TIMEOUT_EXPIRED_KHR when waiting for the sync fence.";
-                //     } else if(waitResult == EGL_FALSE) {
-                //         m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: got an EGL_FALSE returned from eglClientWaitSyncKHR. Something might be wrong.";
-                //     } else {
-                //         m_log->info() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: successfully waited on mFenceSync";
-                //     }
-                // } else {
-                //     m_log->error() << "RenderManagerOpenGLATW::PresentRenderBuffersInternal: eglClientWaitSyncKHR_ not initialized";
-                // }
-            // }
+#endif
 
             { // Adding block to scope the lock_guard.
                 // Lock our mutex so we don't adjust the buffers while rendering is happening.
@@ -585,18 +580,6 @@ namespace renderkit {
                 mRenderManager = new RenderManagerOpenGL(m_context, atwParams);
                 mRenderManager->m_storeClientGLState = false;
 
-                m_log->info() << "RenderManagerOpenGLATW::threadFunc: Registering render buffers to the harnessed "
-                                 "RenderManagerOpenGL";
-
-                if (!mRenderManager->RegisterRenderBuffers(
-                    mRegisteredRenderBuffers, mAppWillNotOverwriteBeforeNewPresent)) {
-                    m_log->error() << "RenderManagerOpenGLATW::"
-                                   << "threadFunc: Could not Register render"
-                                   << " buffers on harnessed RenderManager";
-                    mATWThreadInitialized = false;
-                }
-
-
                 m_log->info() << "RenderManagerOpenGLATW::threadFunc: Calling harnessed OpenDisplay()";
                 auto ret = mRenderManager->OpenDisplay();
                 if (ret.status == OpenStatus::FAILURE) {
@@ -617,8 +600,9 @@ namespace renderkit {
                 quit = true;
             }
 
+            bool harnessedRenderBuffersRegistered = false;
             while (!quit) {
-
+                
                 // Wait until it is time to present the render buffers.
                 // If we've got a specified maximum time before vsync,
                 // we use that.  Otherwise, we set the threshold to 1ms
@@ -682,7 +666,29 @@ namespace renderkit {
                         // Lock our mutex so that we're not rendering while new buffers are
                         // being presented.
                         std::lock_guard<std::mutex> lock(mMutex);
-                        if (mFirstFramePresented) {
+
+                        if(!m_renderBuffersRegistered) {
+                            continue;
+                        }
+
+                        if(!harnessedRenderBuffersRegistered) {
+                            m_log->info() << "RenderManagerOpenGLATW::threadFunc: "
+                                          << "Registering render buffers to the harnessed "
+                                          << "RenderManagerOpenGL";
+
+                            if (!mRenderManager->RegisterRenderBuffers(
+                                mRegisteredRenderBuffers, mAppWillNotOverwriteBeforeNewPresent)) {
+                                m_log->error() << "RenderManagerOpenGLATW::threadFunc: "
+                                               << "Could not Register render "
+                                               << "buffers on harnessed RenderManager";
+                                setDoingOkay(false);
+                                mQuit = true;
+                            } else {
+                                harnessedRenderBuffersRegistered = true;
+                            }
+                        }
+
+                        if (mFirstFramePresented && harnessedRenderBuffersRegistered) {
                             // Update the context so we get our callbacks called and
                             // update tracker state, which will be read during the
                             // time-warp calculation in our harnessed RenderManager.
@@ -800,12 +806,14 @@ namespace renderkit {
             // we should support letting them register the render buffers
             // in batches, not all at once.
             std::unique_lock<std::mutex> lock(mMutex);
+// this was a bug. client should be able to register render buffers after calling OpenDisplay.
+#if 0
             if(mRenderManager) {
                 m_log->error() << "RenderManagerOpenGLATW::RegisterRenderBuffersInternal: "
                     << "OpenDisplay has already been called. Cannot register new render buffers.";
                 return false;
             }
-
+#endif
             mRegisteredRenderBuffers = buffers;
             mAppWillNotOverwriteBeforeNewPresent = appWillNotOverwriteBeforeNewPresent;
 
