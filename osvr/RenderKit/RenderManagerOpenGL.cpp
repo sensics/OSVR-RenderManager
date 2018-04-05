@@ -1358,10 +1358,8 @@ namespace renderkit {
                     glDisable(GL_STENCIL_TEST);
                 }
             }
-            if (checkForGLError(
-                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
-                return false;
-            }
+            checkForGLError(
+                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer");
         });
 
         // Set up a Projection matrix that undoes the scale factor applied
