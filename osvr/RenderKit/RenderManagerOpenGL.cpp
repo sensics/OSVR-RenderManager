@@ -47,6 +47,34 @@ Sensics, Inc.
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#ifdef OSVR_RM_USE_OPENGLES20
+  // Bind the extensions from the DLL
+  #include <dlfcn.h>
+  PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
+  PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES;
+  PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
+  PFNGLDISCARDFRAMEBUFFEREXTPROC glDiscardFramebufferEXT;
+  class CalledBeforeCodeRuns {
+    public:
+      CalledBeforeCodeRuns() {
+	void *libhandle = dlopen("libGLESv2.so", RTLD_LAZY);
+
+	glBindVertexArrayOES = (PFNGLBINDVERTEXARRAYOESPROC)
+				dlsym(libhandle,
+				"glBindVertexArrayOES");
+	glDeleteVertexArraysOES = (PFNGLDELETEVERTEXARRAYSOESPROC)
+				dlsym(libhandle,
+				"glDeleteVertexArraysOES");
+	glGenVertexArraysOES = (PFNGLGENVERTEXARRAYSOESPROC)
+				dlsym(libhandle,
+				"glGenVertexArraysOES");
+	glDiscardFramebufferEXT = (PFNGLDISCARDFRAMEBUFFEREXTPROC)
+				dlsym(libhandle,
+				"glDiscardFramebufferEXT");
+    }
+  };
+  static CalledBeforeCodeRuns getFunctionPointers;
+#endif
 
 
 #ifndef OSVR_ANDROID
@@ -939,7 +967,7 @@ namespace renderkit {
     }
 
     RenderManagerOpenGL::DistortionMeshBuffer::DistortionMeshBuffer()
-        : 
+        :
         VAO(0),
         vertexBuffer(0),
         indexBuffer(0)
@@ -1330,10 +1358,8 @@ namespace renderkit {
                     glDisable(GL_STENCIL_TEST);
                 }
             }
-            if (checkForGLError(
-                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
-                return false;
-            }
+            checkForGLError(
+                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer");
         });
 
         // Set up a Projection matrix that undoes the scale factor applied
