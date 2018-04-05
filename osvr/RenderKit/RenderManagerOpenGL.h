@@ -40,32 +40,11 @@ Sensics, Inc.
   #include <GLES2/gl2.h>
   #include <GLES2/gl2ext.h>
 
-  // Bind the extensions from the DLL
-  #include <dlfcn.h>
-  PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
-  PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES;
-  PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
-  PFNGLDISCARDFRAMEBUFFEREXTPROC glDiscardFramebufferEXT;
-  class CalledBeforeCodeRuns {
-    public:
-      CalledBeforeCodeRuns() {
-	void *libhandle = dlopen("libGLESv2.so", RTLD_LAZY);
 
-	glBindVertexArrayOES = (PFNGLBINDVERTEXARRAYOESPROC)
-				dlsym(libhandle,
-				"glBindVertexArrayOES");
-	glDeleteVertexArraysOES = (PFNGLDELETEVERTEXARRAYSOESPROC)
-				dlsym(libhandle,
-				"glDeleteVertexArraysOES");
-	glGenVertexArraysOES = (PFNGLGENVERTEXARRAYSOESPROC)
-				dlsym(libhandle,
-				"glGenVertexArraysOES");
-	glDiscardFramebufferEXT = (PFNGLDISCARDFRAMEBUFFEREXTPROC)
-				dlsym(libhandle,
-				"glDiscardFramebufferEXT");
-    }
-  };
-  static CalledBeforeCodeRuns getFunctionPointers;
+  extern PFNGLBINDVERTEXARRAYOESPROC glBindVertexArrayOES;
+  extern PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES;
+  extern PFNGLGENVERTEXARRAYSOESPROC glGenVertexArraysOES;
+  extern PFNGLDISCARDFRAMEBUFFEREXTPROC glDiscardFramebufferEXT;
 
 #else
   #ifdef __APPLE__
@@ -290,7 +269,7 @@ namespace renderkit {
         createRenderManager(OSVR_ClientContext context,
                             const std::string& renderLibraryName,
                             GraphicsLibrary graphicsLibrary);
-        
+
         friend class RenderManagerOpenGLATW;
     };
 
