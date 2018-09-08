@@ -1357,7 +1357,7 @@ namespace renderkit {
             }
             if (checkForGLError(
                "RenderManagerOpenGL::PresentEye after resetState")) {
-                return;
+              return;
             }
         });
 
