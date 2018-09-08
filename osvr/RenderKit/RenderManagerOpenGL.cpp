@@ -1183,7 +1183,7 @@ namespace renderkit {
           "RenderManagerOpenGL::RenderFramaFinalize: start");
         if (!PresentRenderBuffersInternal(m_colorBuffers, m_renderInfoForRender,
                                           m_renderParamsForRender)) {
-            m_log->error() << "RenderManagerD3D11OpenGL::RenderFrameFinalize: Could "
+            m_log->error() << "RenderManagerOpenGL::RenderFrameFinalize: Could "
                               "not present render buffers";
             return false;
         }
