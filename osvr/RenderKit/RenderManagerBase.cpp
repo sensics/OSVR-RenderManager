@@ -333,13 +333,15 @@ namespace renderkit {
 		if (osvrClientGetInterface(m_context, leftEyeSpaceName.c_str(),
 			&m_roomFromLeftViewpointInterface) ==
 			OSVR_RETURN_FAILURE) {
-			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << leftEyeSpaceName;
+			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << leftEyeSpaceName
+                << ", basing view on head + IPD";
 		}
 		osvrPose3SetIdentity(&m_roomFromLeftViewpoint);
 		if (osvrClientGetInterface(m_context, rightEyeSpaceName.c_str(),
 			&m_roomFromRightViewpointInterface) ==
 			OSVR_RETURN_FAILURE) {
-			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << rightEyeSpaceName;
+			m_log->error() << "RenderManager::RenderManager(): Can't get interface " << rightEyeSpaceName
+                << ", basing view on head + IPD";
 		}
 		osvrPose3SetIdentity(&m_roomFromRightViewpoint);
 
