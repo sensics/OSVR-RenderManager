@@ -316,31 +316,35 @@ namespace renderkit {
         /// and Z pointing towards the back of the head, right-handed), send
         /// a pointer to a head transform.  This does not override any
         /// room transform, but will have the room appended.
-        class RenderParams {
-          public:
-            /// @brief Default constructor reads things from a display configuration.
-            /// @param [in] dc OSVRDisplayConfiguration to read values from.  If none
-            ///                is specified, it defaults to the default configuration.
-            RenderParams(OSVRDisplayConfiguration const &dc = OSVRDisplayConfiguration()) {
-              nearClipDistanceMeters = dc.getNearClipMeters();
-              farClipDistanceMeters = dc.getFarClipMeters();
-              IPDMeters = dc.getIPDMeters();
-            };
+		class RenderParams {
+		public:
+			/// @brief Default constructor reads things from a display configuration.
+			/// @param [in] dc OSVRDisplayConfiguration to read values from.  If none
+			///                is specified, it defaults to the default configuration.
+			RenderParams(OSVRDisplayConfiguration const &dc = OSVRDisplayConfiguration()) {
+				nearClipDistanceMeters = dc.getNearClipMeters();
+				farClipDistanceMeters = dc.getFarClipMeters();
+				IPDMeters = dc.getIPDMeters();
+			};
 
-            const OSVR_PoseState* worldFromRoomAppend =
-                nullptr; ///< Room space to insert
-            const OSVR_PoseState* roomFromHeadReplace =
-                nullptr; ///< Overrides head space
+			const OSVR_PoseState* worldFromRoomAppend =
+				nullptr; ///< Room space to insert
+			const OSVR_PoseState* roomFromHeadReplace =
+				nullptr; ///< Overrides head space
+			const OSVR_PoseState* roomFromLeftViewpointReplace =
+				nullptr; ///< Overrides left viewpoint space
+			const OSVR_PoseState* roomFromRightViewpointReplace =
+				nullptr; ///< Overrides right viewpoint space
 
-            /// Gets the near and far clipping distances from the display configuration
-            /// in the default constructor.  Can be overridden.
-            double nearClipDistanceMeters;
-            double farClipDistanceMeters;
+			/// Gets the near and far clipping distances from the display configuration
+			/// in the default constructor.  Can be overridden.
+			double nearClipDistanceMeters;
+			double farClipDistanceMeters;
 
-            /// Gets the default IPD from the display configuration in the
-            /// default constructor.  Can be overridden.
-            double IPDMeters;
-        };
+			/// Gets the default IPD from the display configuration in the
+			/// default constructor.  Can be overridden.
+			double IPDMeters;
+		};
 
         /// @brief Render the scene with minimum latency.
         ///
@@ -630,6 +634,8 @@ namespace renderkit {
                 m_displayConfiguration; ///< Display configuration
 
             std::string m_roomFromHeadName; ///< Transform to use for head space
+			std::string m_roomFromLeftViewpointName; ///< Transform to use for left eye space
+			std::string m_roomFromRightViewpointName; ///< Transform to use for right eye space
 
             /// Graphics library (device/context) to use instead of creating one
             /// if the pointer is non-NULL.  Note that the appropriate context
@@ -757,6 +763,11 @@ namespace renderkit {
         /// be checked for, but is sort of an error).
         OSVR_ClientInterface m_roomFromHeadInterface;
         OSVR_PoseState m_roomFromHead; ///< Transform to use for head space
+
+		OSVR_ClientInterface m_roomFromLeftViewpointInterface;
+		OSVR_ClientInterface m_roomFromRightViewpointInterface;
+		OSVR_PoseState m_roomFromLeftViewpoint; ///< Transform to use for left viewpoint
+		OSVR_PoseState m_roomFromRightViewpoint; ///< Transform to use for right viewpoint
 
         /// @brief Stores display callback information
         ///
@@ -1181,9 +1192,15 @@ namespace renderkit {
 
         bool hasHeadPose() const;
         bool getLastHeadPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
+		bool hasLeftViewpointPose() const;
+		bool hasRightViewpointPose() const;
+		bool getLastLeftViewpointPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
+		bool getLastRightViewpointPose(OSVR_TimeValue& tv, OSVR_Pose3& pose) const;
 
       private:
         std::unique_ptr<PoseStateCaching> m_headPoseCache;
+		std::unique_ptr<PoseStateCaching> m_leftViewpointPoseCache;
+		std::unique_ptr<PoseStateCaching> m_rightViewpointPoseCache;
     };
 
     //=========================================================================
