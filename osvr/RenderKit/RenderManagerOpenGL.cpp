@@ -566,9 +566,9 @@ namespace renderkit {
                 return false;
             }
 
-			GLuint frameBuffer = 0;
-			glGenFramebuffers(1, &frameBuffer);
-			m_frameBuffers.push_back(frameBuffer);
+            GLuint frameBuffer = 0;
+            glGenFramebuffers(1, &frameBuffer);
+            m_frameBuffers.push_back(frameBuffer);
 
             // The color buffer for this eye
             GLuint colorBufferName = 0;
@@ -886,7 +886,7 @@ namespace renderkit {
         checkForGLError("RenderManagerOpenGL::RenderEyeInitialize starting");
 
         // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, GetDisplayUsedByEye(eye));
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers[eye]);
         if (checkForGLError(
                 "RenderManagerOpenGL::RenderEyeInitialize glBindFrameBuffer")) {
             return false;
@@ -1239,8 +1239,8 @@ namespace renderkit {
             return false;
         }
 
-		// If first eye, Store the client GL state from before we started rendering,
-		// so we can put it back when we finalize.
+        // If first eye, Store the client GL state from before we started rendering,
+        // so we can put it back when we finalize.
         if (params.m_index == 0 && m_storeClientGLState) {
 		    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_initialFrameBuffer);
             glGetIntegerv(GL_CURRENT_PROGRAM, &m_prevUserProgram);
@@ -1264,23 +1264,22 @@ namespace renderkit {
 
             // Disable modes in case client set them
             glDisable(GL_BLEND);
-			glDisable(GL_STENCIL_TEST);
+            glDisable(GL_STENCIL_TEST);
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_CULL_FACE);
 
-			if (checkForGLError(
-				"RenderManagerOpenGL::RenderDisplayInitialize after storing client state")) {
-				return false;
-			}
+            if (checkForGLError(
+	            "RenderManagerOpenGL::PresentEye after storing client state")) {
+	            return false;
+            }
         }
 
         // Switch to our vertex/shader programs
         if (params.m_index == 0)
 		    glUseProgram(m_programId);
-	    if (checkForGLError(
-		    "RenderManagerOpenGL::RenderDisplayInitialize after use program")) {
-			return false;
-		}
+        if (checkForGLError("RenderManagerOpenGL::PresentEye after use program")) {
+          return false;
+        }
 
         // Construct the OpenGL viewport based on which eye this is.
         OSVR_ViewportDescription viewportDesc;
@@ -1347,19 +1346,19 @@ namespace renderkit {
                 }
                 if (m_prevBlend) {
                     glEnable(GL_BLEND);
-                }
-                else {
+                } else {
                     glDisable(GL_BLEND);
                 }
                 if (m_prevStencilTest) {
                     glEnable(GL_STENCIL_TEST);
-                }
-                else {
+                } else {
                     glDisable(GL_STENCIL_TEST);
                 }
             }
-            checkForGLError(
-                    "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer");
+            if (checkForGLError(
+               "RenderManagerOpenGL::PresentEye after resetState")) {
+              return;
+            }
         });
 
         // Set up a Projection matrix that undoes the scale factor applied
@@ -1446,12 +1445,12 @@ namespace renderkit {
             displayFrameBuffer = 0;
         }
 
-		// Only bind and clear buffer if first eye or the eyes use different displays
-		if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1)) {
-		    glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glActiveTexture(GL_TEXTURE0);
-		}
+        // Only bind and clear buffer if first eye or the eyes use different displays
+        if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1)) {
+		        glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
+	        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glActiveTexture(GL_TEXTURE0);
+        }
 
         // Bind the texture that we're going to use to render into the
         // frame buffer.
