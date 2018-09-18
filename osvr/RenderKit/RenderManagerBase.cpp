@@ -2450,7 +2450,7 @@ namespace renderkit {
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
         } while (displayReturnCode == OSVR_RETURN_FAILURE);
-        m_log->error() << "Got Display info from server "
+        m_log->info() << "Got Display info from server "
                      "(ignore earlier errors that occured while we were "
                      "waiting to connect)";
 
