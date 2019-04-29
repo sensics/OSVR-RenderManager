@@ -2648,39 +2648,6 @@ namespace renderkit {
                 p2.m_renderLibrary = "Direct3D11";
                 p2.m_directMode = true;
 
-                // @todo This needs to be fixed elsewhere, and generalized to
-                // work with all forms of distortion correction.
-                // Flip y on the center of projection on the distortion
-                // correction, because we're going to be rendering in OpenGL
-                // but distorting in D3D, and they use a different texture
-                // orientation.
-                // When we do this, we need to take into account the D scaling
-                // factor being applied to the center of projection; first
-                // scaling back into unity, then flipping, then rescaling.
-                for (size_t eye = 0; eye < p.m_distortionParameters.size();
-                     ++eye) {
-                    if (p2.m_distortionParameters[eye].m_distortionCOP.size() <
-                        2) {
-                        m_log->error() << "Insufficient distortion parameters";
-                        return nullptr;
-                    }
-                    if (p2.m_distortionParameters[eye].m_distortionD.size() <
-                        2) {
-                        m_log->error() << "Insufficient distortion parameters";
-                        return nullptr;
-                    }
-                    float original =
-                        p2.m_distortionParameters[eye].m_distortionCOP[1];
-                    float normalized =
-                        original /
-                        p2.m_distortionParameters[eye].m_distortionD[1];
-                    float flipped = 1.0f - normalized;
-                    float scaled =
-                        flipped *
-                        p2.m_distortionParameters[eye].m_distortionD[1];
-                    p2.m_distortionParameters[eye].m_distortionCOP[1] = scaled;
-                }
-
                 // If we've been asked for asynchronous time warp, we layer
                 // the request on top of a request for a DirectRender instance
                 // to harness.  @todo This should be doable on top of a non-
