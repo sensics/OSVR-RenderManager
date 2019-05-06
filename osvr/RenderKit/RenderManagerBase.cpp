@@ -1952,14 +1952,9 @@ namespace renderkit {
               const float &xShearWithY = coeffs[2];
               const float &yShearWithX = coeffs[3];
               justInTimeWarp(0, 0) = xScale;
-              justInTimeWarp(1, 1) = yScale;
-              if (doTranspose) {
-                justInTimeWarp(0, 1) = xShearWithY;
-                justInTimeWarp(1, 0) = yShearWithX;
-              } else {
-                justInTimeWarp(1, 0) = xShearWithY;
-                justInTimeWarp(0, 1) = yShearWithX;
-              }
+              justInTimeWarp(1, 1) *= yScale; // Maintain sign, just scale
+              justInTimeWarp(0, 1) = xShearWithY;
+              justInTimeWarp(1, 0) = flipYScale * yShearWithX; // Shear in flipped direction
             }
 
             /// Scale the points so that they will fit into the range
