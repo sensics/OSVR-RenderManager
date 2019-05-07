@@ -1952,7 +1952,7 @@ namespace renderkit {
               const float &xShearWithY = coeffs[2];
               const float &yShearWithX = coeffs[3];
               justInTimeWarp(0, 0) = xScale;
-              justInTimeWarp(1, 1) *= yScale; // Maintain sign, just scale
+              justInTimeWarp(1, 1) = yScale;
               justInTimeWarp(0, 1) = xShearWithY;
               justInTimeWarp(1, 0) = flipYScale * yShearWithX; // Shear in flipped direction
             }
