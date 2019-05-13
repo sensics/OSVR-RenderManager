@@ -1,15 +1,15 @@
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-AMD"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-AMD
-	url = git@github.com:sensics/OSVR-RenderManager-AMD.git
+	url = git@gitlab.com:OSVR/RenderManagerModules/OSVR-RenderManager-AMD.git
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-NVIDIA
-	url = git@github.com:sensics/OSVR-RenderManager-NVIDIA.git
+	url = git@gitlab.com:OSVR/RenderManagerModules/OSVR-RenderManager-NVIDIA.git
 [submodule "vendor/vrpn"]
 	path = vendor/vrpn
 	url = https://github.com/vrpn/vrpn.git
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-Intel"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-Intel
-	url = git@github.com:sensics/OSVR-RenderManager-Intel.git
+	url = git@gitlab.com:OSVR/RenderManagerModules/OSVR-RenderManager-Intel.git
 [submodule "osvr/RenderKit/NDA/OSVR-RenderManager-Sensics"]
 	path = osvr/RenderKit/NDA/OSVR-RenderManager-Sensics
-	url = git@github.com:sensics/OSVR-RenderManager-Sensics.git
+	url = git@gitlab.com:OSVR/RenderManagerModules/OSVR-RenderManager-Sensics.git
