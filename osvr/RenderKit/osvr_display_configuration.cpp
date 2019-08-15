@@ -51,6 +51,7 @@ static const std::initializer_list<BuiltInKeysAndData>
         {"OSVR_HDK_13_V2", osvr_display_config_built_in_osvr_hdk13_v2},
         {"OSVR_HDK_20_V1", osvr_display_config_built_in_osvr_hdk20_v1}};
 
+
 OSVRDisplayConfiguration::OSVRDisplayConfiguration() {
     // do nothing
 }
@@ -393,6 +394,75 @@ inline void parseDistortionPolynomial(Json::Value const& distortion,
     }
 }
 
+/// @Helper function to parse distortion parameters from json
+bool ParseDistortionJson(OSVRDisplayConfiguration::DistortionInfo& di, const Json::Value& distortion) {
+
+    /// Find out how many desired triangles, if this is specified.
+    /// If not specified, set to a default.
+    di.m_distortionDesiredTriangleCount = distortion.get("desired_triangle_count", 200 * 64).asInt();
+
+    /// We will detect distortion type based on either the explicitly
+    /// specified string or the presence of essential object members.
+    di.m_distortionTypeString = distortion["type"].asString();
+    if (di.m_distortionTypeString == "rgb_symmetric_polynomials" || distortion.isMember("polynomial_coeffs_red")) {
+
+        std::cout << "OSVRDisplayConfiguration::ParseDistortionJson(): Using polynomial "
+                     "distortion.\n";
+        di.m_distortionType = OSVRDisplayConfiguration::RGB_SYMMETRIC_POLYNOMIALS;
+        di.m_distortionDistanceScaleX = distortion.get("distance_scale_x", 1.f).asFloat();
+        di.m_distortionDistanceScaleY = distortion.get("distance_scale_y", 1.f).asFloat();
+        parseDistortionPolynomial(distortion, "red", di.m_distortionPolynomialRed);
+        parseDistortionPolynomial(distortion, "green", di.m_distortionPolynomialGreen);
+        parseDistortionPolynomial(distortion, "blue", di.m_distortionPolynomialBlue);
+    } else if (di.m_distortionTypeString == "mono_point_samples" || distortion.isMember("mono_point_samples") ||
+               distortion.isMember("mono_point_samples_built_in") ||
+               distortion.isMember("mono_point_samples_external_file")) {
+
+        std::cout << "OSVRDisplayConfiguration::ParseDistortionJson(): Using mono point "
+                     "sample distortion.\n";
+        di.m_distortionType = OSVRDisplayConfiguration::MONO_POINT_SAMPLES;
+        parseDistortionMonoPointMeshes(distortion, di.m_distortionMonoPointMesh);
+
+    } else if (di.m_distortionTypeString == "rgb_point_samples" || distortion.isMember("rgb_point_samples") ||
+               distortion.isMember("rgb_point_samples_external_file")) {
+
+        std::cout << "OSVRDisplayConfiguration::ParseDistortionJson(): Using rgb point "
+                     "sample distortion.\n";
+        di.m_distortionType = OSVRDisplayConfiguration::RGB_POINT_SAMPLES;
+        parseDistortionRGBPointMeshes(distortion, di.m_distortionRGBPointMesh);
+
+    } else if (di.m_distortionTypeString == "rgb_k1_coefficients") {
+#if 0
+            // Simple distortion params ignored by RenderManager
+            /// @todo how to use these, or use them if non-zero, to set up
+            /// distortion?
+            double k1_red = distortion.get("k1_red", 0).asDouble();
+            double k1_green = distortion.get("k1_green", 0).asDouble();
+            double k1_blue = distortion.get("k1_blue", 0).asDouble();
+#endif
+        di.m_distortionType = OSVRDisplayConfiguration::RGB_SYMMETRIC_POLYNOMIALS;
+        di.m_distortionDistanceScaleX = 1.f;
+        di.m_distortionDistanceScaleY = 1.f;
+        di.m_distortionPolynomialRed = {0.f, 1.f};
+        di.m_distortionPolynomialGreen = {0.f, 1.f};
+        di.m_distortionPolynomialBlue = {0.f, 1.f};
+    } else if (!di.m_distortionTypeString.empty()) {
+        std::cerr << "OSVRDisplayConfiguration::ParseDistortionJson(): ERROR: Unrecognized "
+                     "distortion type: "
+                  << di.m_distortionTypeString << std::endl;
+        return false;
+
+    } else {
+        // No configuration found.
+        std::cout << "OSVRDisplayConfiguration::DistortionInfo::ParseJson(): No "
+                     "RenderManager-compatible distortion parameters "
+                     "found, falling back to an identity polynomial.\n";
+        di = OSVRDisplayConfiguration::DistortionInfo();
+        return false;
+    }
+    return true;
+}
+
 /// Returns a resolution and if it should swap eyes.
 inline std::pair<OSVRDisplayConfiguration::Resolution, bool>
 parseResolution(Json::Value const& resolution) {
@@ -529,86 +599,14 @@ void OSVRDisplayConfiguration::parse(const std::string& display_description) {
         m_rightRoll = rendering.get("right_roll", 0).asDouble();
         m_leftRoll = rendering.get("left_roll", 0).asDouble();
     }
+    // Global distortion info, used when there are not per-eye overrides.
+    // Defaults to the identity transform if it is not specified.
+    DistortionInfo globalDistortion;
     {
+        // Parse the global distortion description if one is found.
         auto const& distortion = hmd["distortion"];
-
-        /// Find out how many desired triangles, if this is specified.
-        /// If not specified, set to a default.
-        m_distortionDesiredTriangleCount =
-          distortion.get("desired_triangle_count", 200 * 64).asInt();
-
-        /// We will detect distortion type based on either the explicitly
-        /// specified string or the presence of essential object members.
-        m_distortionTypeString = distortion["type"].asString();
-        if (m_distortionTypeString == "rgb_symmetric_polynomials" ||
-            distortion.isMember("polynomial_coeffs_red")) {
-
-            std::cout << "OSVRDisplayConfiguration::parse(): Using polynomial "
-                         "distortion.\n";
-            m_distortionType = RGB_SYMMETRIC_POLYNOMIALS;
-            m_distortionDistanceScaleX =
-                distortion.get("distance_scale_x", 1.f).asFloat();
-            m_distortionDistanceScaleY =
-                distortion.get("distance_scale_y", 1.f).asFloat();
-            parseDistortionPolynomial(distortion, "red",
-                                      m_distortionPolynomialRed);
-            parseDistortionPolynomial(distortion, "green",
-                                      m_distortionPolynomialGreen);
-            parseDistortionPolynomial(distortion, "blue",
-                                      m_distortionPolynomialBlue);
-        } else if (m_distortionTypeString == "mono_point_samples" ||
-                   distortion.isMember("mono_point_samples") ||
-                   distortion.isMember("mono_point_samples_built_in") ||
-                   distortion.isMember("mono_point_samples_external_file")) {
-
-            std::cout << "OSVRDisplayConfiguration::parse(): Using mono point "
-                         "sample distortion.\n";
-            m_distortionType = MONO_POINT_SAMPLES;
-            parseDistortionMonoPointMeshes(distortion,
-                                           m_distortionMonoPointMesh);
-
-        } else if (m_distortionTypeString == "rgb_point_samples" ||
-                   distortion.isMember("rgb_point_samples") ||
-                   distortion.isMember("rgb_point_samples_external_file")) {
-
-            std::cout << "OSVRDisplayConfiguration::parse(): Using rgb point "
-                         "sample distortion.\n";
-            m_distortionType = RGB_POINT_SAMPLES;
-            parseDistortionRGBPointMeshes(distortion, m_distortionRGBPointMesh);
-
-        } else if (m_distortionTypeString == "rgb_k1_coefficients") {
-#if 0
-            // Simple distortion params ignored by RenderManager
-            /// @todo how to use these, or use them if non-zero, to set up
-            /// distortion?
-            double k1_red = distortion.get("k1_red", 0).asDouble();
-            double k1_green = distortion.get("k1_green", 0).asDouble();
-            double k1_blue = distortion.get("k1_blue", 0).asDouble();
-#endif
-            m_distortionType = RGB_SYMMETRIC_POLYNOMIALS;
-            m_distortionDistanceScaleX = 1.f;
-            m_distortionDistanceScaleY = 1.f;
-            m_distortionPolynomialRed = {0.f, 1.f};
-            m_distortionPolynomialGreen = {0.f, 1.f};
-            m_distortionPolynomialBlue = {0.f, 1.f};
-        } else if (!m_distortionTypeString.empty()) {
-            std::cerr
-                << "OSVRDisplayConfiguration::parse(): ERROR: Unrecognized "
-                   "distortion type: "
-                << m_distortionTypeString << std::endl;
-            throw DisplayConfigurationParseException(
-                "Unrecognized distortion type: " + m_distortionTypeString);
-
-        } else {
-            std::cout << "OSVRDisplayConfiguration::parse(): No "
-                         "RenderManager-compatible distortion parameters "
-                         "found, falling back to an identity polynomial.\n";
-            m_distortionType = RGB_SYMMETRIC_POLYNOMIALS;
-            m_distortionDistanceScaleX = 1.f;
-            m_distortionDistanceScaleY = 1.f;
-            m_distortionPolynomialRed = {0.f, 1.f};
-            m_distortionPolynomialGreen = {0.f, 1.f};
-            m_distortionPolynomialBlue = {0.f, 1.f};
+        if (!distortion.isNull()) {
+            ParseDistortionJson(globalDistortion, distortion);
         }
     }
     {
@@ -630,6 +628,12 @@ void OSVRDisplayConfiguration::parse(const std::string& display_description) {
                 } else {
                     e.m_rotate180 = (rot.asInt() != 0);
                 }
+            }
+            // Handle distortion correction, defaulting to the global value if it
+            // is not overridden for this eye.
+            e.m_distortion = globalDistortion;
+            if (eye.isMember("distortion")) {
+                ParseDistortionJson(e.m_distortion, eye["distortion"]);
             }
             m_eyes.push_back(e);
         }
@@ -765,46 +769,76 @@ double OSVRDisplayConfiguration::getIPDMeters() const { return m_IPDMeters; }
 
 bool OSVRDisplayConfiguration::getSwapEyes() const { return m_swapEyes; }
 
-std::string OSVRDisplayConfiguration::getDistortionTypeString() const {
-    return m_distortionTypeString;
+OSVRDisplayConfiguration::DistortionType OSVRDisplayConfiguration::getDistortionType(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionType;
+}
+
+std::string OSVRDisplayConfiguration::getDistortionTypeString(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionTypeString;
 }
 
 osvr::renderkit::MonoPointDistortionMeshDescriptions
-OSVRDisplayConfiguration::getDistortionMonoPointMeshes() const {
-    return m_distortionMonoPointMesh;
+OSVRDisplayConfiguration::getDistortionMonoPointMeshes(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionMonoPointMesh;
 }
 
 osvr::renderkit::RGBPointDistortionMeshDescriptions
-OSVRDisplayConfiguration::getDistortionRGBPointMeshes() const {
-    return m_distortionRGBPointMesh;
+OSVRDisplayConfiguration::getDistortionRGBPointMeshes(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionRGBPointMesh;
 }
 
-float OSVRDisplayConfiguration::getDistortionDistanceScaleX() const {
-    return m_distortionDistanceScaleX;
+float OSVRDisplayConfiguration::getDistortionDistanceScaleX(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionDistanceScaleX;
 }
 
-float OSVRDisplayConfiguration::getDistortionDistanceScaleY() const {
-    return m_distortionDistanceScaleY;
+float OSVRDisplayConfiguration::getDistortionDistanceScaleY(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionDistanceScaleY;
 }
 
-std::vector<float> const&
-OSVRDisplayConfiguration::getDistortionPolynomalRed() const {
-    return m_distortionPolynomialRed;
+std::vector<float> const& OSVRDisplayConfiguration::getDistortionPolynomalRed(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionPolynomialRed;
 }
 
-std::vector<float> const&
-OSVRDisplayConfiguration::getDistortionPolynomalGreen() const {
-    return m_distortionPolynomialGreen;
+std::vector<float> const& OSVRDisplayConfiguration::getDistortionPolynomalGreen(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionPolynomialGreen;
 }
 
-std::vector<float> const&
-OSVRDisplayConfiguration::getDistortionPolynomalBlue() const {
-    return m_distortionPolynomialBlue;
+std::vector<float> const& OSVRDisplayConfiguration::getDistortionPolynomalBlue(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionPolynomialBlue;
 }
 
-int OSVR_RENDERMANAGER_EXPORT
-OSVRDisplayConfiguration::getDesiredDistortionTriangleCount() const {
-    return m_distortionDesiredTriangleCount;
+int OSVR_RENDERMANAGER_EXPORT OSVRDisplayConfiguration::getDesiredDistortionTriangleCount(size_t eye) const {
+    if (eye >= m_eyes.size()) {
+        throw DisplayConfigurationParseException("Eye parameter out of range.");
+    }
+    return m_eyes[eye].m_distortion.m_distortionDesiredTriangleCount;
 }
 
 std::vector<OSVRDisplayConfiguration::EyeInfo> const&

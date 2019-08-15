@@ -115,29 +115,52 @@ class OSVRDisplayConfiguration {
     double OSVR_RENDERMANAGER_EXPORT getIPDMeters() const;
     bool OSVR_RENDERMANAGER_EXPORT getSwapEyes() const;
 
-    DistortionType OSVR_RENDERMANAGER_EXPORT getDistortionType() const {
-        return m_distortionType;
-    }
+    DistortionType OSVR_RENDERMANAGER_EXPORT getDistortionType(size_t eye = 0) const;
     /// deprecated
-    std::string OSVR_RENDERMANAGER_EXPORT getDistortionTypeString() const;
+    std::string OSVR_RENDERMANAGER_EXPORT getDistortionTypeString(size_t eye = 0) const;
     /// Only valid if getDistortionType() == MONO_POINT_SAMPLES
     osvr::renderkit::MonoPointDistortionMeshDescriptions
-    getDistortionMonoPointMeshes() const;
+    getDistortionMonoPointMeshes(size_t eye = 0) const;
     /// Only valid if getDistortionType() == RGB_POINT_SAMPLES
     osvr::renderkit::RGBPointDistortionMeshDescriptions
-    getDistortionRGBPointMeshes() const;
+    getDistortionRGBPointMeshes(size_t eye = 0) const;
     /// @name Polynomial distortion
     /// @brief Only valid if getDistortionType() == RGB_SYMMETRIC_POLYNOMIALS
     /// @{
-    float OSVR_RENDERMANAGER_EXPORT getDistortionDistanceScaleX() const;
-    float OSVR_RENDERMANAGER_EXPORT getDistortionDistanceScaleY() const;
-    std::vector<float> const& getDistortionPolynomalRed() const;
-    std::vector<float> const& getDistortionPolynomalGreen() const;
-    std::vector<float> const& getDistortionPolynomalBlue() const;
+    float OSVR_RENDERMANAGER_EXPORT getDistortionDistanceScaleX(size_t eye = 0) const;
+    float OSVR_RENDERMANAGER_EXPORT getDistortionDistanceScaleY(size_t eye = 0) const;
+    std::vector<float> const& getDistortionPolynomalRed(size_t eye = 0) const;
+    std::vector<float> const& getDistortionPolynomalGreen(size_t eye = 0) const;
+    std::vector<float> const& getDistortionPolynomalBlue(size_t eye = 0) const;
     ///@}
 
     /// Returns the desired number of triangles in the constructed distortion mesh.
-    int OSVR_RENDERMANAGER_EXPORT getDesiredDistortionTriangleCount() const;
+    int OSVR_RENDERMANAGER_EXPORT getDesiredDistortionTriangleCount(size_t eye = 0) const;
+
+    // Distortion
+    class DistortionInfo {
+      public:
+        DistortionInfo() {
+            // Default is identity polynomial
+            m_distortionType = RGB_SYMMETRIC_POLYNOMIALS;
+            m_distortionDistanceScaleX = 1.f;
+            m_distortionDistanceScaleY = 1.f;
+            m_distortionPolynomialRed = {0.f, 1.f};
+            m_distortionPolynomialGreen = {0.f, 1.f};
+            m_distortionPolynomialBlue = {0.f, 1.f};
+        }
+
+        DistortionType m_distortionType;
+        std::string m_distortionTypeString;
+        osvr::renderkit::MonoPointDistortionMeshDescriptions m_distortionMonoPointMesh;
+        osvr::renderkit::RGBPointDistortionMeshDescriptions m_distortionRGBPointMesh;
+        float m_distortionDistanceScaleX;
+        float m_distortionDistanceScaleY;
+        std::vector<float> m_distortionPolynomialRed;
+        std::vector<float> m_distortionPolynomialGreen;
+        std::vector<float> m_distortionPolynomialBlue;
+        int m_distortionDesiredTriangleCount;
+    };
 
     /// Structure holding the information for one eye.
     class EyeInfo {
@@ -145,6 +168,8 @@ class OSVRDisplayConfiguration {
         double m_CenterProjX = 0.5;
         double m_CenterProjY = 0.5;
         bool m_rotate180 = false;
+
+        DistortionInfo m_distortion;
 
         void OSVR_RENDERMANAGER_EXPORT print() const;
     };
@@ -187,20 +212,6 @@ class OSVRDisplayConfiguration {
     double m_farClipMeters = 100.0;
     double m_IPDMeters = 0.065; // 65 mm;
     bool m_swapEyes = false;
-
-    // Distortion
-    DistortionType m_distortionType;
-    std::string m_distortionTypeString;
-    osvr::renderkit::MonoPointDistortionMeshDescriptions
-        m_distortionMonoPointMesh;
-    osvr::renderkit::RGBPointDistortionMeshDescriptions
-        m_distortionRGBPointMesh;
-    float m_distortionDistanceScaleX;
-    float m_distortionDistanceScaleY;
-    std::vector<float> m_distortionPolynomialRed;
-    std::vector<float> m_distortionPolynomialGreen;
-    std::vector<float> m_distortionPolynomialBlue;
-    int m_distortionDesiredTriangleCount;
 
     // Rendering
     double m_rightRoll = 0.;
