@@ -1239,9 +1239,19 @@ namespace renderkit {
             return false;
         }
 
+        //-----------------------------------------------------------------
+        // Record all state we change and re-set it to what it was
+        // originally so we don't mess with client rendering.
+        // We make use of the util::finally() lambda function to put
+        // things back no matter how we exit this function, whether at
+        // the end or in an error return partway through.
+        // This is canceled after the first eye ends without error so it
+        // iss only reset after the last eye
+
+
         // If first eye, Store the client GL state from before we started rendering,
         // so we can put it back when we finalize.
-        if (params.m_index == 0 && m_storeClientGLState) {
+        if ((params.m_index == 0) && m_storeClientGLState) {
 		    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_initialFrameBuffer);
             glGetIntegerv(GL_CURRENT_PROGRAM, &m_prevUserProgram);
             glGetIntegerv(GL_ACTIVE_TEXTURE, &m_prevTextureUnit);
@@ -1273,49 +1283,6 @@ namespace renderkit {
 	            return false;
             }
         }
-
-        // Switch to our vertex/shader programs
-        if (params.m_index == 0)
-		    glUseProgram(m_programId);
-        if (checkForGLError("RenderManagerOpenGL::PresentEye after use program")) {
-          return false;
-        }
-
-        // Construct the OpenGL viewport based on which eye this is.
-        OSVR_ViewportDescription viewportDesc;
-        if (!ConstructViewportForPresent(
-                params.m_index, viewportDesc,
-                m_params.m_displayConfiguration->getSwapEyes())) {
-            m_log->error() << "RenderManagerOpenGL::PresentEye(): Could not "
-                              "construct viewport";
-            return false;
-        }
-        // Adjust the viewport based on how much the display window is
-        // rotated with respect to the rendering window.
-        viewportDesc = RotateViewport(viewportDesc);
-        glViewport(static_cast<GLint>(viewportDesc.left),
-                   static_cast<GLint>(viewportDesc.lower),
-                   static_cast<GLsizei>(viewportDesc.width),
-                   static_cast<GLsizei>(viewportDesc.height));
-        if (checkForGLError(
-          "RenderManagerOpenGL::PresentEye after glViewport")) {
-          return false;
-        }
-
-        // Figure out which display we're rendering to for this eye.
-        /// @todo This will need to be generalized when we have multiple
-        /// displays per eye.
-        size_t display = GetDisplayUsedByEye(params.m_index);
-
-        //-----------------------------------------------------------------
-        // Record all state we change and re-set it to what it was
-        // originally so we don't mess with client rendering.
-        // We make use of the util::finally() lambda function to put
-        // things back no matter how we exit this function, whether at
-        // the end or in an error return partway through.
-        // This is canceled after the first eye ends without error so it
-        // iss only reset after the last eye
-
         auto resetState = util::finally([&]{
             // Put the frame buffer back to the default one.
             if (m_storeClientGLState) {
@@ -1360,6 +1327,40 @@ namespace renderkit {
               return;
             }
         });
+
+        // Switch to our vertex/shader programs
+        if (params.m_index == 0) {
+            glUseProgram(m_programId);
+        }
+        if (checkForGLError("RenderManagerOpenGL::PresentEye after use program")) {
+          return false;
+        }
+
+        // Construct the OpenGL viewport based on which eye this is.
+        OSVR_ViewportDescription viewportDesc;
+        if (!ConstructViewportForPresent(
+                params.m_index, viewportDesc,
+                m_params.m_displayConfiguration->getSwapEyes())) {
+            m_log->error() << "RenderManagerOpenGL::PresentEye(): Could not "
+                              "construct viewport";
+            return false;
+        }
+        // Adjust the viewport based on how much the display window is
+        // rotated with respect to the rendering window.
+        viewportDesc = RotateViewport(viewportDesc);
+        glViewport(static_cast<GLint>(viewportDesc.left),
+                   static_cast<GLint>(viewportDesc.lower),
+                   static_cast<GLsizei>(viewportDesc.width),
+                   static_cast<GLsizei>(viewportDesc.height));
+        if (checkForGLError(
+          "RenderManagerOpenGL::PresentEye after glViewport")) {
+          return false;
+        }
+
+        // Figure out which display we're rendering to for this eye.
+        /// @todo This will need to be generalized when we have multiple
+        /// displays per eye.
+        size_t display = GetDisplayUsedByEye(params.m_index);
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1506,9 +1507,10 @@ namespace renderkit {
         }
 
         // If we made it here without an error, cancel the fail-safe
-        // state reset if this is the first eye
-        if (params.m_index == 0)
+        // state reset if this is not the last eye.
+        if (params.m_index != GetNumEyes() - 1) {
             resetState.cancel();
+        }
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;
