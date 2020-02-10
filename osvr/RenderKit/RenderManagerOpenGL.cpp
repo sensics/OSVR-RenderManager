@@ -924,7 +924,7 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::RenderDisplayFinalize(size_t eye) {
-        checkForGLError("RenderManagerOpenGL::RenderEyeFinalize starting");
+        checkForGLError("RenderManagerOpenGL::RenderDisplayFinalize starting");
 
         return true;
     }
