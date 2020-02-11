@@ -153,15 +153,6 @@ namespace renderkit {
         // Stored client GL state
         bool m_storeClientGLState = true;
         GLint m_initialFrameBuffer;
-        GLboolean m_prevDepthTest, m_prevCullFace, m_prevBlend, m_prevStencilTest;
-        GLint m_prevUserProgram;
-        GLint m_prevTextureUnit;
-        GLint m_prevTexture;
-        GLint m_prevVAO;
-#ifdef OSVR_RM_USE_OPENGLES20
-        GLint m_prevArray;
-        GLint m_prevElement;
-#endif
 
         struct DistortionVertex {
             GLfloat pos[4];
