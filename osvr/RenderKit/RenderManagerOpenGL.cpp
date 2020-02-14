@@ -879,6 +879,14 @@ namespace renderkit {
         }
         checkForGLError("RenderManagerOpenGL::RenderDisplayInitialize end");
 
+        // Store the frame buffer that was active before we started rendering,	
+        // so we can put it back when we finalize.	
+        if (m_storeClientGLState) {
+            GLint fb;
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
+            m_initialFrameBuffer = static_cast<GLuint>(fb);
+        }
+
 		return true;
     }
 
@@ -924,7 +932,15 @@ namespace renderkit {
     }
 
     bool RenderManagerOpenGL::RenderDisplayFinalize(size_t eye) {
-        checkForGLError("RenderManagerOpenGL::RenderEyeFinalize starting");
+        checkForGLError("RenderManagerOpenGL::RenderDisplayFinalize starting");
+
+        // Put the frame buffer back to the default one.	
+        if (m_storeClientGLState)
+            glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
+        if (checkForGLError(
+            "RenderManagerOpenGL::RenderEyeFinalize glBindFrameBuffer")) {
+            return false;
+        }
 
         return true;
     }
@@ -1239,48 +1255,6 @@ namespace renderkit {
             return false;
         }
 
-        // If first eye, Store the client GL state from before we started rendering,
-        // so we can put it back when we finalize.
-        if (params.m_index == 0 && m_storeClientGLState) {
-		    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_initialFrameBuffer);
-            glGetIntegerv(GL_CURRENT_PROGRAM, &m_prevUserProgram);
-            glGetIntegerv(GL_ACTIVE_TEXTURE, &m_prevTextureUnit);
-            glGetIntegerv(GL_TEXTURE_BINDING_2D, &m_prevTexture);
-#ifdef OSVR_RM_USE_OPENGLES20
-            if(m_GLVAOExtensionAvailable) {
-                glGetIntegerv(GL_VERTEX_ARRAY_BINDING_OES, &m_prevVAO);
-            }
-            else {
-                glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &m_prevArray);
-                glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &m_prevElement);
-            }
-#else
-            glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &m_prevVAO);
-#endif
-            glGetBooleanv(GL_DEPTH_TEST, &m_prevDepthTest);
-            glGetBooleanv(GL_CULL_FACE, &m_prevCullFace);
-            glGetBooleanv(GL_BLEND, &m_prevBlend);
-            glGetBooleanv(GL_STENCIL_TEST, &m_prevStencilTest);
-
-            // Disable modes in case client set them
-            glDisable(GL_BLEND);
-            glDisable(GL_STENCIL_TEST);
-            glDisable(GL_DEPTH_TEST);
-            glDisable(GL_CULL_FACE);
-
-            if (checkForGLError(
-	            "RenderManagerOpenGL::PresentEye after storing client state")) {
-	            return false;
-            }
-        }
-
-        // Switch to our vertex/shader programs
-        if (params.m_index == 0)
-		    glUseProgram(m_programId);
-        if (checkForGLError("RenderManagerOpenGL::PresentEye after use program")) {
-          return false;
-        }
-
         // Construct the OpenGL viewport based on which eye this is.
         OSVR_ViewportDescription viewportDesc;
         if (!ConstructViewportForPresent(
@@ -1313,53 +1287,108 @@ namespace renderkit {
         // We make use of the util::finally() lambda function to put
         // things back no matter how we exit this function, whether at
         // the end or in an error return partway through.
-        // This is canceled after the first eye ends without error so it
-        // iss only reset after the last eye
+        GLint userProgram;
+        GLint prevFrameBuffer;
+        GLint prevTextureUnit;
+        GLint prevTexture;
 
-        auto resetState = util::finally([&]{
-            // Put the frame buffer back to the default one.
+        if (m_storeClientGLState) {
+            glGetIntegerv(GL_CURRENT_PROGRAM, &userProgram);
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFrameBuffer);
+            glGetIntegerv(GL_ACTIVE_TEXTURE, &prevTextureUnit);
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
+        }
+        auto resetState = util::finally([&] {
             if (m_storeClientGLState) {
-                glBindFramebuffer(GL_FRAMEBUFFER, m_initialFrameBuffer);
-                glUseProgram(m_prevUserProgram);
-                glActiveTexture(m_prevTextureUnit);
-                glBindTexture(GL_TEXTURE_2D, m_prevTexture);
+                glUseProgram(userProgram);
+                glBindFramebuffer(GL_FRAMEBUFFER, prevFrameBuffer);
+                glActiveTexture(prevTextureUnit);
+                glBindTexture(GL_TEXTURE_2D, prevTexture);
+            }
+            });
+        checkForGLError("RenderManagerOpenGL::PresentEye after storing GL state");
+
 #ifdef OSVR_RM_USE_OPENGLES20
-                if(m_GLVAOExtensionAvailable) {
-                    glBindVertexArrayOES(m_prevVAO);
+        GLint prevVAO;
+        GLint prevArray;
+        GLint prevElement;
+
+        if (m_storeClientGLState) {
+            if (m_GLVAOExtensionAvailable) {
+                glGetIntegerv(GL_VERTEX_ARRAY_BINDING_OES, &prevVAO);
+            }
+            else {
+                glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArray);
+                glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &prevElement);
+            }
+        }
+
+        auto resetArrays = util::finally([&] {
+            if (m_storeClientGLState) {
+                if (m_GLVAOExtensionAvailable) {
+                    glBindVertexArrayOES(prevVAO);
                 }
                 else {
-                    glBindBuffer(GL_ARRAY_BUFFER, m_prevArray);
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_prevElement);
+                    glBindBuffer(GL_ARRAY_BUFFER, prevArray);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prevElement);
                 }
+            }
+            });
 #else
-                glBindVertexArray(m_prevVAO);
+        GLint prevVAO;
+        if (m_storeClientGLState)
+            glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+        auto resetVAO = util::finally([&] {
+            if (m_storeClientGLState)
+                glBindVertexArray(prevVAO);
+            });
 #endif
-                if (m_prevDepthTest) {
+
+        GLboolean depthTest, cullFace, blend, stencilTest;
+        if (m_storeClientGLState) {
+            glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+            glGetBooleanv(GL_CULL_FACE, &cullFace);
+            glGetBooleanv(GL_BLEND, &blend);
+            glGetBooleanv(GL_STENCIL_TEST, &stencilTest);
+        }
+        auto resetModes = util::finally([&] {
+            if (m_storeClientGLState) {
+                if (depthTest) {
                     glEnable(GL_DEPTH_TEST);
                 } else {
                     glDisable(GL_DEPTH_TEST);
                 }
-                if (m_prevCullFace) {
+                if (cullFace) {
                     glEnable(GL_CULL_FACE);
                 } else {
                     glDisable(GL_CULL_FACE);
                 }
-                if (m_prevBlend) {
+                if (blend) {
                     glEnable(GL_BLEND);
                 } else {
                     glDisable(GL_BLEND);
                 }
-                if (m_prevStencilTest) {
+                if (stencilTest) {
                     glEnable(GL_STENCIL_TEST);
                 } else {
                     glDisable(GL_STENCIL_TEST);
                 }
             }
-            if (checkForGLError(
-               "RenderManagerOpenGL::PresentEye after resetState")) {
-              return;
-            }
-        });
+            });
+
+        /// Switch to our vertex/shader programs
+        glUseProgram(m_programId);
+        if (checkForGLError(
+            "RenderManagerOpenGL::PresentEye after use program")) {
+            return false;
+        }
+
+        // Turn off blending and stencil test, in case the application has
+        // turned them on.
+        if (m_storeClientGLState) {
+            glDisable(GL_BLEND);
+            glDisable(GL_STENCIL_TEST);
+        }
 
         // Set up a Projection matrix that undoes the scale factor applied
         // due to our rendering overfill factor.  This will put only the part
@@ -1446,21 +1475,25 @@ namespace renderkit {
         }
 
         // Only bind and clear buffer if first eye or the eyes use different displays
+        glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
         if (params.m_index == 0 || GetDisplayUsedByEye(0) != GetDisplayUsedByEye(1)) {
-		        glBindFramebuffer(GL_FRAMEBUFFER, displayFrameBuffer);
 	        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                glActiveTexture(GL_TEXTURE0);
         }
 
         // Bind the texture that we're going to use to render into the
         // frame buffer.
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, params.m_buffer.OpenGL->colorBufferName);
-
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after texture bind")) {
           return false;
         }
 
+        // Disable depth testing.
+        // Enable 2D texturing.
+        // Disable face culling (in case client switched front-face).	
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
         if (checkForGLError(
           "RenderManagerOpenGL::PresentEye after environment setting")) {
           return false;
@@ -1471,8 +1504,7 @@ namespace renderkit {
 #ifdef OSVR_RM_USE_OPENGLES20
         if(m_GLVAOExtensionAvailable) {
             glBindVertexArrayOES(meshBuffer.VAO);
-        }
-        else {
+        } else {
             glBindBuffer(GL_ARRAY_BUFFER, meshBuffer.vertexBuffer);
             size_t const stride = sizeof(DistortionVertex);
             glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, stride,
@@ -1504,11 +1536,6 @@ namespace renderkit {
             "RenderManagerOpenGL::PresentEye after glDrawElements")) {
             //return false;
         }
-
-        // If we made it here without an error, cancel the fail-safe
-        // state reset if this is the first eye
-        if (params.m_index == 0)
-            resetState.cancel();
 
         if (checkForGLError("RenderManagerOpenGL::PresentEye end")) {
             return false;

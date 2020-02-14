@@ -40,7 +40,7 @@ Russ Taylor <russ@sensics.com>
 #include <windows.h>
 #endif
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
 #else
 #include <GL/gl.h>
 #endif
@@ -413,7 +413,6 @@ static float lightblu_col[] = { 0.0, 1.0, 1.0 };
 static float pur_col[] = { 1.0, 0.0, 1.0 };
 
 void draw_cube(double radius) {
-    GLfloat matspec[4] = { 0.5, 0.5, 0.5, 0.0 };
     glPushMatrix();
     glScaled(radius, radius, radius);
     glMaterialfv(GL_FRONT, GL_SPECULAR, matspec);

@@ -35,22 +35,22 @@ namespace osvr {
     OSVR_RENDERMANAGER_EXPORT DistortionParameters::DistortionParameters(
       OSVRDisplayConfiguration& osvrParams,
       size_t eye) : DistortionParameters() {
-      m_desiredTriangles = osvrParams.getDesiredDistortionTriangleCount();
-      if (osvrParams.getDistortionType() ==
+      m_desiredTriangles = osvrParams.getDesiredDistortionTriangleCount(eye);
+      if (osvrParams.getDistortionType(eye) ==
         OSVRDisplayConfiguration::RGB_SYMMETRIC_POLYNOMIALS) {
         m_type = rgb_symmetric_polynomials;
         std::vector<float> Ds;
         Ds.push_back(
-          osvrParams.getDistortionDistanceScaleX());
+          osvrParams.getDistortionDistanceScaleX(eye));
         Ds.push_back(
-          osvrParams.getDistortionDistanceScaleY());
+          osvrParams.getDistortionDistanceScaleY(eye));
         m_distortionD = Ds;
         m_distortionPolynomialRed =
-          osvrParams.getDistortionPolynomalRed();
+          osvrParams.getDistortionPolynomalRed(eye);
         m_distortionPolynomialGreen =
-          osvrParams.getDistortionPolynomalGreen();
+          osvrParams.getDistortionPolynomalGreen(eye);
         m_distortionPolynomialBlue =
-          osvrParams.getDistortionPolynomalBlue();
+          osvrParams.getDistortionPolynomalBlue(eye);
         std::vector<float> COP = {
           static_cast<float>(
           osvrParams.getEyes()[eye].m_CenterProjX),
@@ -58,22 +58,22 @@ namespace osvr {
           osvrParams.getEyes()[eye].m_CenterProjY) };
         m_distortionCOP = COP;
       }
-      else if (osvrParams.getDistortionType() ==
+      else if (osvrParams.getDistortionType(eye) ==
         OSVRDisplayConfiguration::MONO_POINT_SAMPLES) {
         m_type = mono_point_samples;
         m_monoPointSamples =
-          osvrParams.getDistortionMonoPointMeshes();
+          osvrParams.getDistortionMonoPointMeshes(eye);
       }
-      else if (osvrParams.getDistortionType() ==
+      else if (osvrParams.getDistortionType(eye) ==
         OSVRDisplayConfiguration::RGB_POINT_SAMPLES) {
         m_type = rgb_point_samples;
         m_rgbPointSamples =
-          osvrParams.getDistortionRGBPointMeshes();
+          osvrParams.getDistortionRGBPointMeshes(eye);
       }
       else {
         std::cerr << "DistortionParameters::DistortionParameters(): "
           "Unrecognized distortion correction type ("
-          << osvrParams.getDistortionTypeString()
+          << osvrParams.getDistortionTypeString(eye)
           << "), ignoring" << std::endl;
       }
     }
