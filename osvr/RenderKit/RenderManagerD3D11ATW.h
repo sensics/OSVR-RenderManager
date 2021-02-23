@@ -36,6 +36,7 @@ Sensics, Inc.
 #include <string>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <functional>
 #include <map>
 #include <set>
@@ -58,12 +59,13 @@ namespace osvr {
             } RenderBufferATWInfo;
             std::map<ID3D11Texture2D*, RenderBufferATWInfo> mBufferMap;
 
-            std::mutex mLock;
+            std::mutex mMutex;
+			std::condition_variable mPresentFinishedCV;
             std::shared_ptr<std::thread> mThread = nullptr;
 
             /// Holds information about the buffers to be used by the next rendering
             /// pass.  This is filled in by PresentRenderBuffersInternal() and used
-            /// by the ATW thread.  Access should be guarded using the mLock to prevent
+            /// by the ATW thread.  Access should be guarded using the mMutex to prevent
             /// simultaneous use in both threads.
             struct {
                 std::vector<ID3D11Texture2D*> colorBuffers;
@@ -72,6 +74,7 @@ namespace osvr {
                 RenderParams renderParams;
                 bool flipInY;
             } mNextFrameInfo;
+			bool mNextFrameAvailable = false;
 
             bool mQuit = false;
             bool mStarted = false;
@@ -106,7 +109,7 @@ namespace osvr {
             }
 
             OpenResults OpenDisplay() override {
-                std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mMutex);
 
                 OpenResults ret;
 
@@ -192,7 +195,7 @@ namespace osvr {
                 { // Adding block to scope the lock_guard.
                   // Lock our mutex so we don't adjust the buffers while rendering is happening.
                   // This lock is automatically released when we're done with this function.
-                  std::lock_guard<std::mutex> lock(mLock);
+                  std::lock_guard<std::mutex> lock(mMutex);
                   HRESULT hr;
 
                   mNextFrameInfo.colorBuffers.clear();
@@ -250,7 +253,17 @@ namespace osvr {
                   mNextFrameInfo.renderParams = renderParams;
                   mNextFrameInfo.normalizedCroppingViewports = normalizedCroppingViewports;
                   mFirstFramePresented = true;
+				  mNextFrameAvailable = true;
+				  //m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Queued next frame info, waiting for it to be presented...";
                 }
+
+				if(m_params.m_verticalSyncBlocksRendering)
+				{
+					std::unique_lock<std::mutex> lock(mMutex);
+					mPresentFinishedCV.wait(lock, [this] { return !mNextFrameAvailable; });
+					//m_log->info() << "RenderManagerD3D11ATW::PresentFrameInternal: Finished waiting for the frame to be presented.";
+				}
+
                 return true;
             }
 
@@ -272,7 +285,7 @@ namespace osvr {
             }
 
             void stop() {
-                std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mMutex);
                 if (!mStarted) {
                     m_log->error() << "RenderManagerThread::stop() - thread loop not already started.";
                 }
@@ -280,12 +293,13 @@ namespace osvr {
             }
 
             bool getQuit() {
-                std::lock_guard<std::mutex> lock(mLock);
+                std::lock_guard<std::mutex> lock(mMutex);
                 return mQuit;
             }
 
             void threadFunc() {
                 // Used to make sure we don't take too long to render
+				m_log->info() << "RenderManagerD3D11ATW::threadFunc thread id: " << std::this_thread::get_id() << std::endl;
                 struct timeval lastFrameTime = {};
                 bool quit = getQuit();
                 size_t iteration = 0;
@@ -334,79 +348,87 @@ namespace osvr {
                     }
 
                     if (timeToPresent) {
-                        // Lock our mutex so that we're not rendering while new buffers are
-                        // being presented.
-                        std::lock_guard<std::mutex> lock(mLock);
-                        if (mFirstFramePresented) {
-                            // Update the context so we get our callbacks called and
-                            // update tracker state, which will be read during the
-                            // time-warp calculation in our harnessed RenderManager.
-                            osvrClientUpdate(mRenderManager->m_context);
+						{
+							// Lock our mutex so that we're not rendering while new buffers are
+							// being presented.
+							std::lock_guard<std::mutex> lock(mMutex);
+							if (mFirstFramePresented) {
+								// Update the context so we get our callbacks called and
+								// update tracker state, which will be read during the
+								// time-warp calculation in our harnessed RenderManager.
+								osvrClientUpdate(mRenderManager->m_context);
 
-                            // make a new RenderBuffers array with the atw thread's buffers
-                            std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
-                            for (size_t i = 0; i < mNextFrameInfo.colorBuffers.size(); i++) {
-                                auto key = mNextFrameInfo.colorBuffers[i];
-                                auto bufferInfoItr = mBufferMap.find(key);
-                                if (bufferInfoItr == mBufferMap.end()) {
-                                    m_log->error() << "No buffer info for key " << (size_t)key;
-                                    setDoingOkay(false);
-                                    mQuit = true;
-                                    break;
-                                }
+								// make a new RenderBuffers array with the atw thread's buffers
+								std::vector<osvr::renderkit::RenderBuffer> atwRenderBuffers;
+								for (size_t i = 0; i < mNextFrameInfo.colorBuffers.size(); i++) {
+									auto key = mNextFrameInfo.colorBuffers[i];
+									auto bufferInfoItr = mBufferMap.find(key);
+									if (bufferInfoItr == mBufferMap.end()) {
+										m_log->error() << "No buffer info for key " << (size_t)key;
+										setDoingOkay(false);
+										mQuit = true;
+										break;
+									}
 
-                                atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
-                            }
+									atwRenderBuffers.push_back(bufferInfoItr->second.atwBuffer);
+								}
 
-                            // Send the rendered results to the screen, using the
-                            // RenderInfo that was handed to us by the client the last
-                            // time they gave us some images.
-                            if (!mRenderManager->PresentRenderBuffers(
-                                atwRenderBuffers,
-                                mNextFrameInfo.renderInfo,
-                                mNextFrameInfo.renderParams,
-                                mNextFrameInfo.normalizedCroppingViewports,
-                                mNextFrameInfo.flipInY)) {
-                                    /// @todo if this might be intentional (expected) - shouldn't be an error...
-                                    m_log->error()
-                                        << "PresentRenderBuffers() returned false, maybe because it was asked to quit";
-                                    setDoingOkay(false);
-                                    mQuit = true;
-                            }
+								//m_log->info() << "RenderManagerD3D11ATW::threadFunc: presenting frame to internal backend.";
 
-                            struct timeval now;
-                            vrpn_gettimeofday(&now, nullptr);
-                            if (expectedFrameInterval >= 0 && lastFrameTime.tv_sec != 0) {
-                                double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
-                                if (frameInterval > expectedFrameInterval * 1.9) {
-                                    m_log->info() << "RenderManagerThread::threadFunc(): Missed"
-                                        " 1+ frame at " << iteration <<
-                                        ", expected interval " << expectedFrameInterval * 1e3
-                                        << "ms but got " << frameInterval * 1e3;
-                                    m_log->info() << "  (PresentRenderBuffers took "
-                                        << mRenderManager->timePresentRenderBuffers * 1e3
-                                        << "ms)";
-                                    m_log->info() << "  (FrameInit "
-                                        << mRenderManager->timePresentFrameInitialize * 1e3
-                                        << ", WaitForSync "
-                                        << mRenderManager->timeWaitForSync * 1e3
-                                        << ", DisplayInit "
-                                        << mRenderManager->timePresentDisplayInitialize * 1e3
-                                        << ", PresentEye "
-                                        << mRenderManager->timePresentEye * 1e3
-                                        << ", DisplayFinal "
-                                        << mRenderManager->timePresentDisplayFinalize * 1e3
-                                        << ", FrameFinal "
-                                        << mRenderManager->timePresentFrameFinalize * 1e3
-                                        << ")";
-                                }
-                            }
-                            lastFrameTime = now;
+								// Send the rendered results to the screen, using the
+								// RenderInfo that was handed to us by the client the last
+								// time they gave us some images.
+								if (!mRenderManager->PresentRenderBuffers(
+									atwRenderBuffers,
+									mNextFrameInfo.renderInfo,
+									mNextFrameInfo.renderParams,
+									mNextFrameInfo.normalizedCroppingViewports,
+									mNextFrameInfo.flipInY)) {
+									/// @todo if this might be intentional (expected) - shouldn't be an error...
+									m_log->error()
+										<< "PresentRenderBuffers() returned false, maybe because it was asked to quit";
+									setDoingOkay(false);
+									mQuit = true;
+								}
 
-                            iteration++;
-                        }
+								//m_log->info() << "RenderManagerD3D11ATW::threadFunc: finished presenting frame to internal backend.";
+
+								struct timeval now;
+								vrpn_gettimeofday(&now, nullptr);
+								if (expectedFrameInterval >= 0 && lastFrameTime.tv_sec != 0) {
+									double frameInterval = vrpn_TimevalDurationSeconds(now, lastFrameTime);
+									if (frameInterval > expectedFrameInterval * 1.9) {
+										m_log->info() << "RenderManagerThread::threadFunc(): Missed"
+											" 1+ frame at " << iteration <<
+											", expected interval " << expectedFrameInterval * 1e3
+											<< "ms but got " << frameInterval * 1e3;
+										m_log->info() << "  (PresentRenderBuffers took "
+											<< mRenderManager->timePresentRenderBuffers * 1e3
+											<< "ms)";
+										m_log->info() << "  (FrameInit "
+											<< mRenderManager->timePresentFrameInitialize * 1e3
+											<< ", WaitForSync "
+											<< mRenderManager->timeWaitForSync * 1e3
+											<< ", DisplayInit "
+											<< mRenderManager->timePresentDisplayInitialize * 1e3
+											<< ", PresentEye "
+											<< mRenderManager->timePresentEye * 1e3
+											<< ", DisplayFinal "
+											<< mRenderManager->timePresentDisplayFinalize * 1e3
+											<< ", FrameFinal "
+											<< mRenderManager->timePresentFrameFinalize * 1e3
+											<< ")";
+									}
+								}
+								lastFrameTime = now;
+
+								iteration++;
+
+								mNextFrameAvailable = false;
+							}
+						}
+						mPresentFinishedCV.notify_all();
                     }
-
                     quit = mQuit;
                 }
             }
@@ -425,7 +447,7 @@ namespace osvr {
             bool PresentFrameFinalize() override { return true; }
 
             bool SolidColorEye(size_t eye, const RGBColorf &color) override {
-              std::lock_guard<std::mutex> lock(mLock);
+              std::lock_guard<std::mutex> lock(mMutex);
               // Stop the rendering thread from overwriting with warped
               // versions of the most recently presented buffers.
               mFirstFramePresented = false;
@@ -577,7 +599,7 @@ namespace osvr {
                   { // Adding block to scope the lock_guard.
                     // Lock our mutex so that we're not rendering while new buffers are
                     // being added or old ones modified.
-                    std::lock_guard<std::mutex> lock(mLock);
+                    std::lock_guard<std::mutex> lock(mMutex);
                     mBufferMap[buffers[i].D3D11->colorBuffer] = newInfo;
                   }
                 }

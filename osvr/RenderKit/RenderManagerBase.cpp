@@ -2607,8 +2607,15 @@ namespace renderkit {
                     // DirectMode interface as well.
                     if (p.m_asynchronousTimeWarp) {
                         RenderManager::ConstructorParameters pTemp = p;
+						pTemp.m_verticalSync = true;
+						pTemp.m_verticalSyncBlocksRendering = false;
+						pTemp.m_maxMSBeforeVsyncTimeWarp = 0;
+						pTemp.m_enableTimeWarp = true;
+						pTemp.m_asynchronousTimeWarp = false;
                         pTemp.m_graphicsLibrary.D3D11 = nullptr;
+
                         auto wrappedRm = openRenderManagerDirectMode(contextParameter, pTemp);
+						wrappedRm->m_vsyncBlockAfterFrameBufferPresent = true;
                         ret.reset(new RenderManagerD3D11ATW(contextParameter, p, wrappedRm));
                     }
                     else {
