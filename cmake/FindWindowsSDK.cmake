@@ -30,8 +30,16 @@
 #  get_windowssdk_library_dirs(<directory> <output variable>) - Find the architecture-appropriate
 #     library directories corresponding to the SDK directory you pass in (or NOTFOUND if none)
 #
+#  get_windowssdk_library_dirs_multiple(<output variable> <directory> ...) - Find the architecture-appropriate
+#     library directories corresponding to the SDK directories you pass in, in order, skipping those not found. NOTFOUND if none at all.
+#     Good for passing WINDOWSSDK_DIRS or WINDOWSSDK_DIRS to if you really just want a file and don't care where from.
+#
 #  get_windowssdk_include_dirs(<directory> <output variable>) - Find the
 #     include directories corresponding to the SDK directory you pass in (or NOTFOUND if none)
+#
+#  get_windowssdk_include_dirs_multiple(<output variable> <directory> ...) - Find the
+#     include directories corresponding to the SDK directories you pass in, in order, skipping those not found. NOTFOUND if none at all.
+#     Good for passing WINDOWSSDK_DIRS or WINDOWSSDK_DIRS to if you really just want a file and don't care where from.
 #
 # Requires these CMake modules:
 #  FindPackageHandleStandardArgs (known included with CMake >=2.6.2)
@@ -65,6 +73,7 @@ macro(_winsdk_announce)
 endmacro()
 
 set(_winsdk_win10vers
+	10.0.14393.0 # Redstone aka Win10 1607 "Anniversary Update"
 	10.0.10586.0 # TH2 aka Win10 1511
 	10.0.10240.0 # Win10 RTM
 	10.0.10150.0 # just ucrt
@@ -237,7 +246,8 @@ if(MSVC AND NOT _WINDOWSSDK_IGNOREMSVC)
 		# OK, we're VC11 or newer and not using a backlevel or XP-compatible toolset.
 		# These versions have no XP (and possibly Vista pre-SP1) support
 		set(_winsdk_vistaonly_ok ON)
-		if(_WINDOWSSDK_ANNOUNCE AND NOT WINDOWSSDK_DIRS)
+		if(_WINDOWSSDK_ANNOUNCE AND NOT _WINDOWSSDK_VISTAONLY_PESTERED)
+			set(_WINDOWSSDK_VISTAONLY_PESTERED ON CACHE INTERNAL "" FORCE)
 			message(STATUS "FindWindowsSDK: Detected Visual Studio 2012 or newer, not using the _xp toolset variant: including SDK versions that drop XP support in search!")
 		endif()
 	endif()
@@ -498,7 +508,7 @@ if(WINDOWSSDK_FOUND)
 		set(${_var} "NOTFOUND" PARENT_SCOPE)
 	endfunction()
 	function(get_windowssdk_library_dirs _winsdk_dir _var)
-		set(_result)
+		set(_dirs)
 		set(_suffixes
 			"lib${_winsdk_archbare}" # SDKs like 7.1A
 			"lib/${_winsdk_arch}" # just because some SDKs have x86 dir and root dir
@@ -532,6 +542,7 @@ if(WINDOWSSDK_FOUND)
 			endif()
 		endforeach()
 
+		# Look in each Win10+ SDK version for the components
 		foreach(_win10ver ${_winsdk_win10vers})
 			foreach(_component um km ucrt mmos)
 				list(APPEND _suffixes "lib/${_win10ver}/${_component}/${_winsdk_arch8}")
@@ -542,18 +553,18 @@ if(WINDOWSSDK_FOUND)
 			# Check to see if a library actually exists here.
 			file(GLOB _libs "${_winsdk_dir}/${_suffix}/*.lib")
 			if(_libs)
-				list(APPEND _result "${_winsdk_dir}/${_suffix}")
+				list(APPEND _dirs "${_winsdk_dir}/${_suffix}")
 			endif()
 		endforeach()
-		if(NOT _result)
-			set(_result NOTFOUND)
+		if("${_dirs}" STREQUAL "")
+			set(_dirs NOTFOUND)
 		else()
-			list(REMOVE_DUPLICATES _result)
+			list(REMOVE_DUPLICATES _dirs)
 		endif()
-		set(${_var} ${_result} PARENT_SCOPE)
+		set(${_var} ${_dirs} PARENT_SCOPE)
 	endfunction()
 	function(get_windowssdk_include_dirs _winsdk_dir _var)
-		set(_result)
+		set(_dirs)
 
 		set(_subdirs shared um winrt km wdf mmos ucrt)
 		set(_suffixes Include)
@@ -572,14 +583,44 @@ if(WINDOWSSDK_FOUND)
 			# Check to see if a header file actually exists here.
 			file(GLOB _headers "${_winsdk_dir}/${_suffix}/*.h")
 			if(_headers)
-				list(APPEND _result "${_winsdk_dir}/${_suffix}")
+				list(APPEND _dirs "${_winsdk_dir}/${_suffix}")
 			endif()
 		endforeach()
-		if(NOT _result)
-			set(_result NOTFOUND)
+		if("${_dirs}" STREQUAL "")
+			set(_dirs NOTFOUND)
 		else()
-			list(REMOVE_DUPLICATES _result)
+			list(REMOVE_DUPLICATES _dirs)
 		endif()
-		set(${_var} ${_result} PARENT_SCOPE)
+		set(${_var} ${_dirs} PARENT_SCOPE)
+	endfunction()
+	function(get_windowssdk_library_dirs_multiple _var)
+		set(_dirs)
+		foreach(_sdkdir ${ARGN})
+			get_windowssdk_library_dirs("${_sdkdir}" _current_sdk_libdirs)
+			if(_current_sdk_libdirs)
+				list(APPEND _dirs ${_current_sdk_libdirs})
+			endif()
+		endforeach()
+		if("${_dirs}" STREQUAL "")
+			set(_dirs NOTFOUND)
+		else()
+			list(REMOVE_DUPLICATES _dirs)
+		endif()
+		set(${_var} ${_dirs} PARENT_SCOPE)
+	endfunction()
+	function(get_windowssdk_include_dirs_multiple _var)
+		set(_dirs)
+		foreach(_sdkdir ${ARGN})
+			get_windowssdk_include_dirs("${_sdkdir}" _current_sdk_incdirs)
+			if(_current_sdk_libdirs)
+				list(APPEND _dirs ${_current_sdk_incdirs})
+			endif()
+		endforeach()
+		if("${_dirs}" STREQUAL "")
+			set(_dirs NOTFOUND)
+		else()
+			list(REMOVE_DUPLICATES _dirs)
+		endif()
+		set(${_var} ${_dirs} PARENT_SCOPE)
 	endfunction()
 endif()

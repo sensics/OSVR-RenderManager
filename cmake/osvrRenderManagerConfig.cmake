@@ -18,19 +18,19 @@ set(OSVRRM_NEED_GLEW @OSVRRM_NEED_GLEW@)
 set(OSVRRM_PREV_CMAKE_MODULES ${CMAKE_MODULE_PATH})
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}" ${CMAKE_MODULE_PATH})
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerConfigBuildTreeHints.cmake" OPTIONAL)
-include(osvrStashMapConfig)
+include(StashMapConfig)
 include(CMakeFindDependencyMacro)
 if(OSVRRM_NEED_SDL2)
     # TODO
-	#find_dependency(SDL2)
+    #find_dependency(SDL2)
 endif()
 if(OSVRRM_NEED_GLEW)
     # TODO
-	#find_dependency(GLEW)
+    #find_dependency(GLEW)
 endif()
 
 # Set up config mapping
-osvr_stash_common_map_config()
+stash_common_map_config()
 
 find_dependency(osvr)
 
@@ -41,7 +41,7 @@ set(CMAKE_MODULE_PATH ${OSVRRM_PREV_CMAKE_MODULES})
 include("${CMAKE_CURRENT_LIST_DIR}/osvrRenderManagerTargets.cmake")
 
 # Undo our changes for later consumers
-osvr_unstash_common_map_config()
+unstash_common_map_config()
 
 if(NOT TARGET osvrRenderManager::osvrRenderManagerCpp)
     add_library(osvrRenderManager::osvrRenderManagerCpp INTERFACE IMPORTED)

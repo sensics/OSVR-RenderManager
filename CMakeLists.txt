@@ -25,7 +25,7 @@ include (GenerateExportHeader)
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(INSTALL_EXAMPLES "Install source code and build system for examples" ON)
 
-include(osvrStashMapConfig)
+include(StashMapConfig)
 
 #-----------------------------------------------------------------------------
 # This looks for an osvrConfig.cmake file - most of the time it can be
@@ -33,9 +33,9 @@ include(osvrStashMapConfig)
 # C:/Users/Ryan/Desktop/build/OSVR-Core-vc12 or
 # C:/Users/Ryan/Downloads/OSVR-Core-Snapshot-v0.1-406-gaa55515-build54-vs12-32bit
 # in the CMake GUI or command line
-osvr_stash_common_map_config()
+stash_common_map_config()
 find_package(osvr REQUIRED)
-osvr_unstash_common_map_config()
+stash_common_map_config()
 
 find_package(Eigen3 REQUIRED)
 find_package(JsonCpp REQUIRED)
@@ -657,7 +657,7 @@ configure_file("cmake/osvrRenderManagerConfig.cmake"
 
 # Copy over the shared CMake modules for use in a build tree,
 # and install for an install tree.
-foreach(HELPER CMakeBoostHelper FindSDL2 FindGLEW CopyImportedTarget osvrStashMapConfig)
+foreach(HELPER CMakeBoostHelper FindSDL2 FindGLEW CopyImportedTarget StashMapConfig)
 	configure_file("cmake/${HELPER}.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${HELPER}.cmake" COPYONLY)
 	install(FILES
 		"cmake/${HELPER}.cmake"
